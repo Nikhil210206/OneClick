@@ -25,6 +25,7 @@ _FALLBACK_ORDER = ("onClickURL", "updateURL", "onURL", "offURL", "unknown")
 
 _nodes: dict[str, ScreenNode] = {}
 _extras: dict[str, dict] = {}
+_node_by_entry: dict[str, str] = {}  # DL-0412 -> SN-0267, built once so node_of() is a lookup
 
 
 def load_graph(catalog_path: str | Path) -> list[ScreenNode]:
@@ -32,6 +33,7 @@ def load_graph(catalog_path: str | Path) -> list[ScreenNode]:
     global _nodes, _extras
     nodes, _extras = build_graph(load_clean_catalog(catalog_path))
     _nodes = {node.node_id: node for node in nodes}
+    _index_entries()
     return nodes
 
 
@@ -53,6 +55,7 @@ def load_prebuilt(path: str | Path) -> list[ScreenNode]:
     nodes = [ScreenNode(**node) for node in payload["nodes"]]
     _extras = payload["extras"]
     _nodes = {node.node_id: node for node in nodes}
+    _index_entries()
     return nodes
 
 
@@ -99,11 +102,17 @@ def node_docs(nodes: list[ScreenNode]) -> list[dict]:
 
 def node_of(entry_id: str) -> str | None:
     """The screen a catalog entry belongs to."""
-    for node in _nodes.values():
-        for ids in node.entries_by_polarity.values():
-            if entry_id in ids:
-                return node.node_id
-    return None
+    return _node_by_entry.get(entry_id)
+
+
+def _index_entries() -> None:
+    global _node_by_entry
+    _node_by_entry = {
+        entry_id: node.node_id
+        for node in _nodes.values()
+        for ids in node.entries_by_polarity.values()
+        for entry_id in ids
+    }
 
 
 def sibling_for(entry_id: str, verb: str | None) -> str:

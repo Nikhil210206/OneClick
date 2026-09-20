@@ -1,0 +1,30 @@
+{"row": "row_1", "step": "Alternatively, go to Settings, tap Connections, and then tap Wi-Fi.", "screen": "Settings > Connections > Wi-Fi", "verb": "open", "expected_id": "DL-0313", "alt_ids": ["DL-0513", "DL-0492", "DL-0308"]}
+{"row": "row_1", "step": "Touch and hold the Wi-Fi icon to check your connection status.", "screen": "Quick settings > Wi-Fi", "verb": "check", "expected_id": "DL-0313", "alt_ids": ["DL-0513"]}
+{"row": "row_1", "step": "Navigate to Settings, select your email app, then tap Storage.", "screen": "Settings > Apps > Email > Storage", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_1", "step": "Tap Clear cache.", "screen": "Settings > Apps > Email > Storage > Clear cache", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_1", "step": "Tap Clear data, and then tap OK.", "screen": "Settings > Apps > Email > Storage > Clear data", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_1", "step": "Tap Safe mode when it appears on the screen.", "screen": "Safe mode", "verb": "restart", "expected_id": "MANUAL"}
+{"row": "row_1", "step": "Swipe down from the top of the screen to open Quick settings, and then tap the Power icon.", "screen": "Quick settings > Power", "verb": "restart", "expected_id": "MANUAL"}
+{"row": "row_2", "step": "Turn off your device and reconnect it to the appropriate charger until it is fully charged.", "screen": "Charger", "verb": "charge", "expected_id": "MANUAL"}
+{"row": "row_2", "step": "If the screen still fails to turn on, your device may require service.", "screen": "Service centre", "verb": "visit", "expected_id": "MANUAL"}
+{"row": "row_3", "step": "Go to Settings > Security and privacy > Screen lock and biometrics.", "screen": "Settings > Security and privacy > Screen lock and biometrics", "verb": "open", "expected_id": "DL-0528", "alt_ids": ["DL-0194"]}
+{"row": "row_3", "step": "Connect the mouse and keyboard to your phone using a USB adapter, then navigate your device.", "screen": "USB adapter", "verb": "connect", "expected_id": "MANUAL"}
+{"row": "row_5", "step": "Tap the Search field, then enter and select Smart Switch to open the app.", "screen": "Smart Switch app", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_5", "step": "On the new device, tap Receive on this phone.", "screen": "Smart Switch > Receive data", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_7", "step": "Navigate to and open Settings, and then tap Advanced features.", "screen": "Settings > Advanced features", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_7", "step": "Turn on Multi window for all apps.", "screen": "Settings > Advanced features > Labs > Multi window for all apps", "verb": "enable", "expected_id": "DL-0168"}
+{"row": "row_7", "step": "From any screen, swipe left on the Edge panel, and then tap the Edit icon.", "screen": "Edge panel > Edit", "verb": "open", "expected_id": "DUMMY", "alt_ids": ["DL-0096"]}
+{"row": "row_8", "step": "Swipe down from your mobile device's top screen and tap Smart View.", "screen": "Quick settings > Smart View", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_8", "step": "Select your TV from the list of Available devices, and then tap Start now.", "screen": "Smart View > Available devices", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_8", "step": "Some TVs may require you to switch inputs or turn on screen mirroring.", "screen": "TV input", "verb": "visit", "expected_id": "MANUAL"}
+{"row": "row_11", "step": "Force a restart by pressing and holding the Power and Volume down buttons for 20 seconds.", "screen": "Force restart", "verb": "restart", "expected_id": "MANUAL"}
+{"row": "row_20", "step": "Adjust screen orientation settings.", "screen": "Settings > Display > Screen rotation", "verb": "set", "expected_id": "DUMMY", "alt_ids": ["DL-0461"]}
+{"row": "row_20", "step": "Press and hold the Power button, then tap Restart.", "screen": "Power menu > Restart", "verb": "restart", "expected_id": "MANUAL"}
+{"row": "row_20", "step": "Navigate to Settings, search for and select Factory data reset, and then tap Factory data reset again.", "screen": "Settings > General management > Reset > Factory data reset", "verb": "open", "expected_id": "DUMMY", "alt_ids": ["DL-0022"]}
+{"row": "row_20", "step": "Review the information presented, then tap Reset.", "screen": "Factory data reset > Reset", "verb": "open", "expected_id": "DUMMY"}
+{"row": "row_21", "step": "Go to Settings, tap Display, and then tap the switch next to Touch sensitivity.", "screen": "Settings > Display > Touch sensitivity", "verb": "enable", "expected_id": "DL-0126"}
+{"row": "row_21", "step": "To turn off this feature, navigate to Settings, tap Display, and then tap the switch next to Touch sensitivity to disable it.", "screen": "Settings > Display > Touch sensitivity", "verb": "disable", "expected_id": "DL-0125"}
+{"row": "row_21", "step": "Go to Settings, tap Display, and then tap Navigation bar.", "screen": "Settings > Display > Navigation bar", "verb": "open", "expected_id": "DL-0169"}
+{"row": "row_21", "step": "Select Buttons to turn off full screen gestures.", "screen": "Settings > Display > Navigation bar > Buttons", "verb": "set", "expected_id": "DL-0169", "alt_ids": ["DUMMY"]}
+{"row": "row_21", "step": "Touch and hold Power off, then tap Safe mode.", "screen": "Power menu > Safe mode", "verb": "restart", "expected_id": "MANUAL"}
+{"row": "row_21", "step": "Navigate to and open Settings, then tap General management.", "screen": "Settings > General management", "verb": "open", "expected_id": "DUMMY"}

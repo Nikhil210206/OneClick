@@ -5,3 +5,8 @@ python-dotenv>=1.0
 httpx>=0.27
 pytest>=8.0
 ruff>=0.4
+
+# Retrieval (Karur): keyword + dense search over the deeplink catalog
+rank-bm25>=0.2.2
+fastembed>=0.4
+numpy>=1.26

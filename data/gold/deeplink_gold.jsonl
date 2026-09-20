@@ -1,0 +1,87 @@
+{"step": "Open Settings, tap Battery, then turn on Power saving.", "screen": "Settings > Battery > Power saving", "verb": "enable", "expected_id": "DL-0412"}
+{"step": "Turn Power saving back off once the phone is charged.", "screen": "Settings > Battery > Power saving", "verb": "disable", "expected_id": "DL-0411"}
+{"step": "Go to Settings and tap Battery to see power saving mode.", "screen": "Settings > Battery > Power saving mode", "verb": "open", "expected_id": "DL-0519"}
+{"step": "Open the battery settings screen.", "screen": "Settings > Battery", "verb": "open", "expected_id": "DL-0560"}
+{"step": "Switch on Adaptive battery so unused apps are limited.", "screen": "Settings > Battery > Background usage limits > Adaptive battery", "verb": "enable", "expected_id": "DL-0398"}
+{"step": "Turn off Adaptive battery.", "screen": "Settings > Battery > Adaptive battery", "verb": "disable", "expected_id": "DL-0397"}
+{"step": "Enable Protect battery to cap charging at 85 percent.", "screen": "Settings > Battery > Battery protection", "verb": "enable", "expected_id": "DL-0410"}
+{"step": "Check whether battery protection is currently on.", "screen": "Settings > Battery > Battery protection", "verb": "open", "expected_id": "DL-0517"}
+{"step": "Turn on Fast charging for the cable charger.", "screen": "Settings > Battery > Charging > Fast charging", "verb": "enable", "expected_id": "DL-0404"}
+{"step": "Switch off fast cable charging if the phone gets warm.", "screen": "Settings > Battery > Charging > Fast charging", "verb": "disable", "expected_id": "DL-0403"}
+{"step": "Open the charging settings to review the options.", "screen": "Settings > Battery > Charging", "verb": "open", "expected_id": "DL-0514"}
+{"step": "Lower the screen brightness using the slider.", "screen": "Settings > Display > Brightness", "verb": "set", "expected_id": "DL-0232", "alt_ids": ["DL-0496"]}
+{"step": "Turn on Adaptive brightness so the screen adjusts itself.", "screen": "Settings > Display > Adaptive brightness", "verb": "enable", "expected_id": "DL-0021"}
+{"step": "Turn off automatic brightness adjustment.", "screen": "Settings > Display > Adaptive brightness", "verb": "disable", "expected_id": "DL-0020"}
+{"step": "Shorten how long the screen stays on before it sleeps.", "screen": "Settings > Display > Screen timeout", "verb": "set", "expected_id": "DL-0220"}
+{"step": "Check the current screen timeout value.", "screen": "Settings > Display > Screen timeout", "verb": "check", "expected_id": "DL-0471"}
+{"step": "Turn on the blue light filter in the evening.", "screen": "Settings > Display > Eye comfort shield", "verb": "enable", "expected_id": "DL-0040"}
+{"step": "Turn the blue light filter off.", "screen": "Settings > Display > Eye comfort shield", "verb": "disable", "expected_id": "DL-0039"}
+{"step": "Open the navigation bar settings.", "screen": "Settings > Display > Navigation bar", "verb": "open", "expected_id": "DL-0169"}
+{"step": "Turn on Touch sensitivity if you use a screen protector.", "screen": "Settings > Display > Touch sensitivity", "verb": "enable", "expected_id": "DL-0126"}
+{"step": "Turn off increased touch sensitivity.", "screen": "Settings > Display > Touch sensitivity", "verb": "disable", "expected_id": "DL-0125"}
+{"step": "Open Screen mode to change the colour profile.", "screen": "Settings > Display > Screen mode", "verb": "open", "expected_id": "DL-0215"}
+{"step": "Switch on Edge panels.", "screen": "Settings > Display > Edge panels", "verb": "enable", "expected_id": "DL-0096"}
+{"step": "Turn Edge panels off.", "screen": "Settings > Display > Edge panels", "verb": "disable", "expected_id": "DL-0095"}
+{"step": "Turn on Always On Display.", "screen": "Settings > Lock screen > Always On Display", "verb": "enable", "expected_id": "DL-0483"}
+{"step": "Turn Always On Display off to save power.", "screen": "Settings > Lock screen > Always On Display", "verb": "disable", "expected_id": "DL-0482"}
+{"step": "Open the Dark mode schedule settings.", "screen": "Settings > Display > Dark mode > Dark mode settings", "verb": "open", "expected_id": "DL-0225"}
+{"step": "Turn on Auto dim screen.", "screen": "Settings > Display > Auto dim screen", "verb": "enable", "expected_id": "DL-0402"}
+{"step": "Turn on Double tap to wake.", "screen": "Settings > Advanced features > Motions and gestures > Double tap to wake", "verb": "enable", "expected_id": "DL-0089"}
+{"step": "Open Settings, tap Connections, then tap Wi-Fi.", "screen": "Settings > Connections > Wi-Fi", "verb": "open", "expected_id": "DL-0313", "alt_ids": ["DL-0513", "DL-0492"]}
+{"step": "Switch Wi-Fi on.", "screen": "Settings > Connections > Wi-Fi", "verb": "enable", "expected_id": "DL-0574", "alt_ids": ["DL-0310", "DL-0312"]}
+{"step": "Switch Wi-Fi off and back on again.", "screen": "Settings > Connections > Wi-Fi", "verb": "disable", "expected_id": "DL-0573", "alt_ids": ["DL-0309", "DL-0311"]}
+{"step": "Turn on Mobile data.", "screen": "Settings > Connections > Mobile data", "verb": "enable", "expected_id": "DL-0082"}
+{"step": "Turn Mobile data off.", "screen": "Settings > Connections > Mobile data", "verb": "disable", "expected_id": "DL-0081"}
+{"step": "Turn on Airplane mode for a few seconds.", "screen": "Settings > Connections > Airplane mode", "verb": "enable", "expected_id": "DL-0275"}
+{"step": "Turn Airplane mode back off.", "screen": "Settings > Connections > Airplane mode", "verb": "disable", "expected_id": "DL-0274"}
+{"step": "Open Settings, tap Connections, then tap Bluetooth.", "screen": "Settings > Connections > Bluetooth", "verb": "open", "expected_id": "DL-0044"}
+{"step": "Turn Bluetooth on.", "screen": "Settings > Connections > Bluetooth", "verb": "enable", "expected_id": "DL-0495", "alt_ids": ["DL-0043"]}
+{"step": "Turn Bluetooth off.", "screen": "Settings > Connections > Bluetooth", "verb": "disable", "expected_id": "DL-0494", "alt_ids": ["DL-0042"]}
+{"step": "Turn on Mobile Hotspot.", "screen": "Settings > Connections > Mobile Hotspot and Tethering > Mobile Hotspot", "verb": "enable", "expected_id": "DL-0312"}
+{"step": "Turn on NFC and contactless payments.", "screen": "Settings > Connections > NFC and contactless payments", "verb": "enable", "expected_id": "DL-0177"}
+{"step": "Turn on Data Saver.", "screen": "Settings > Connections > Data usage > Data Saver", "verb": "enable", "expected_id": "DL-0080"}
+{"step": "Turn Location on.", "screen": "Settings > Location", "verb": "enable", "expected_id": "DL-0149"}
+{"step": "Turn Location off.", "screen": "Settings > Location", "verb": "disable", "expected_id": "DL-0148"}
+{"step": "Open Do not disturb settings.", "screen": "Settings > Notifications > Do not disturb", "verb": "open", "expected_id": "DL-0101"}
+{"step": "Turn on Do not disturb.", "screen": "Settings > Notifications > Do not disturb", "verb": "enable", "expected_id": "DL-0506"}
+{"step": "Turn off Do not disturb.", "screen": "Settings > Notifications > Do not disturb", "verb": "disable", "expected_id": "DL-0505"}
+{"step": "Turn on app icon badges.", "screen": "Settings > Notifications > Advanced settings > App icon badges", "verb": "enable", "expected_id": "DL-0179"}
+{"step": "Open the app icon badge settings.", "screen": "Settings > Notifications > App icon badges", "verb": "open", "expected_id": "DL-0451"}
+{"step": "Turn the media volume down.", "screen": "Settings > Sounds and vibration > Volume > Media", "verb": "set", "expected_id": "DL-0161"}
+{"step": "Lower the ringtone volume.", "screen": "Settings > Sounds and vibration > Volume > Ringtone", "verb": "set", "expected_id": "DL-0208"}
+{"step": "Open the volume settings.", "screen": "Settings > Sounds and vibration > Volume", "verb": "open", "expected_id": "DL-0570"}
+{"step": "Turn the alarm volume up.", "screen": "Settings > Sounds and vibration > Volume > Alarm", "verb": "set", "expected_id": "DL-0011"}
+{"step": "Open Settings, tap Accounts and backup, then turn on Back up data.", "screen": "Settings > Accounts and backup > Samsung Cloud > Back up data", "verb": "enable", "expected_id": "DL-0542"}
+{"step": "Turn off backing up data to Samsung Cloud.", "screen": "Settings > Accounts and backup > Back up data", "verb": "disable", "expected_id": "DL-0541"}
+{"step": "Turn on automatic syncing of your account data.", "screen": "Settings > Accounts and backup > Manage accounts > Auto sync data", "verb": "enable", "expected_id": "DL-0026"}
+{"step": "Open Reset options.", "screen": "Settings > General management > Reset", "verb": "open", "expected_id": "DL-0022"}
+{"step": "Open the camera access privacy setting.", "screen": "Settings > Security and privacy > Camera access", "verb": "open", "expected_id": "DL-0197"}
+{"step": "Open Lock screen settings.", "screen": "Settings > Lock screen", "verb": "open", "expected_id": "DL-0528"}
+{"step": "Turn on Multi window for all apps.", "screen": "Settings > Advanced features > Labs > Multi window for all apps", "verb": "enable", "expected_id": "DL-0168"}
+{"step": "Turn off multi window for all apps.", "screen": "Settings > Advanced features > Labs > Multi window for all apps", "verb": "disable", "expected_id": "DL-0167"}
+{"step": "Turn on app pinning.", "screen": "Settings > Security and privacy > Other security settings > Pin windows", "verb": "enable", "expected_id": "DL-0219"}
+{"step": "Run Optimize now to free up memory.", "screen": "Settings > Battery and device care > Optimize now", "verb": "open", "expected_id": "DL-0538"}
+{"step": "Open Settings, tap Apps, tap Storage, then tap Clear cache.", "screen": "Settings > Apps > Storage > Clear cache", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Tap Clear data and confirm with OK.", "screen": "Settings > Apps > Storage > Clear data", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Tap Force stop to close the misbehaving app.", "screen": "Settings > Apps > Force stop", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Open the app info screen for the email app.", "screen": "Settings > Apps > Email > App info", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Open Settings, tap Software update, then tap Download and install.", "screen": "Settings > Software update > Download and install", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Select Smart View to mirror the screen to your TV.", "screen": "Settings > Connections > Smart View", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Change the font size and screen zoom.", "screen": "Settings > Display > Font size and style", "verb": "set", "expected_id": "DUMMY"}
+{"step": "Open Secure Folder from the Apps screen.", "screen": "Settings > Security and privacy > Secure Folder", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Open Find My Mobile to locate the device.", "screen": "Settings > Security and privacy > Find My Mobile", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Open Developer options to check the animation scale.", "screen": "Settings > Developer options", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Change the screen resolution to a lower setting.", "screen": "Settings > Display > Screen resolution", "verb": "set", "expected_id": "DUMMY"}
+{"step": "Open the Downloads folder in My Files.", "screen": "My Files > Downloads", "verb": "open", "expected_id": "DUMMY"}
+{"step": "Restart the phone in safe mode to test third-party apps.", "screen": "Safe mode", "verb": "restart", "expected_id": "MANUAL"}
+{"step": "Press and hold the Side key, then tap Restart.", "screen": "Power menu > Restart", "verb": "restart", "expected_id": "MANUAL"}
+{"step": "Force restart by holding the Side key and Volume down for 20 seconds.", "screen": "Force restart", "verb": "restart", "expected_id": "MANUAL"}
+{"step": "Visit an authorized Samsung Service Center for inspection.", "screen": "Service centre", "verb": "visit", "expected_id": "MANUAL"}
+{"step": "Contact Samsung Support to arrange a repair.", "screen": "Samsung support", "verb": "contact", "expected_id": "MANUAL"}
+{"step": "Clean the charging port carefully with a soft brush.", "screen": "Charging port", "verb": "clean", "expected_id": "MANUAL"}
+{"step": "Wipe the camera lens with a soft cloth.", "screen": "Camera lens", "verb": "clean", "expected_id": "MANUAL"}
+{"step": "Charge the phone for at least 30 minutes with the original charger.", "screen": "Charger", "verb": "charge", "expected_id": "MANUAL"}
+{"step": "Remove the phone case and screen protector, then test again.", "screen": "Phone case", "verb": "replace", "expected_id": "MANUAL"}
+{"step": "Take out the SIM tray and reseat the SIM card.", "screen": "SIM tray", "verb": "replace", "expected_id": "MANUAL"}
+{"step": "Connect the phone to a PC with a USB cable.", "screen": "USB cable", "verb": "connect", "expected_id": "MANUAL"}
+{"step": "Perform a factory data reset after backing up your data.", "screen": "Settings > General management > Reset > Factory data reset", "verb": "reset", "expected_id": "DUMMY"}

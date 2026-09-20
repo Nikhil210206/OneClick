@@ -24,7 +24,11 @@ _CRITICAL_PHRASES = (
     "reboot",
     "restart",
 )
+# Surfaces outside the Settings app: a deeplink opens Settings screens, nothing else.
+_OFF_APP_SURFACES = ("quick settings", "quick panel", "notification panel", "power menu", "recents")
+
 _MANUAL_PHRASES = (
+    *_OFF_APP_SURFACES,
     "service cent",  # centre / center
     "samsung support",
     "authorized",

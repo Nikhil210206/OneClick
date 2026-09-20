@@ -25,12 +25,30 @@ KIT = ROOT / "data" / "kit" / "deeplinks.json"
 GOLD = ROOT / "data" / "gold" / "deeplink_gold.jsonl"
 GOLD_ARTICLES = ROOT / "data" / "gold" / "deeplink_gold_articles.jsonl"
 GRAPH = ROOT / "data" / "build" / "screengraph.json"
-NO_CATALOG = {"DUMMY", "MANUAL"}
+NO_CATALOG = {"dummy", "manual"}
 
 
 def load_gold(path) -> list[dict]:
+    """Rows in the team schema (data/gold/README.md): tier + expected_id + acceptable_ids."""
     lines = path.read_text(encoding="utf-8").splitlines()
-    return [json.loads(line) for line in lines if line.strip()]
+    rows = []
+    for line in lines:
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        # the article-worded file still uses the older DUMMY / MANUAL sentinels
+        if "tier" not in row:
+            sentinel = row.get("expected_id")
+            row["tier"] = {"DUMMY": "dummy", "MANUAL": "manual"}.get(sentinel, "catalog")
+            if row["tier"] != "catalog":
+                row["expected_id"] = None
+        rows.append(row)
+    return rows
+
+
+def accepted_ids(case: dict) -> set[str]:
+    ids = {case.get("expected_id"), *(case.get("acceptable_ids") or []), *(case.get("alt_ids") or [])}
+    return {i for i in ids if i}
 
 
 def main() -> None:
@@ -73,14 +91,14 @@ def main() -> None:
             intent_verb=case.get("verb"),
         )
         offscreen = offscreen_tier(action) is not None
-        if case["expected_id"] == "MANUAL":
+        if case["tier"] == "manual":
             manual_cases += 1
             refused_manual += offscreen
             continue
         if offscreen:
             # Refusing a DUMMY step costs nothing (no catalog entry existed); refusing a step
             # with a real catalog answer is a genuine loss.
-            if case["expected_id"] != "DUMMY":
+            if case["tier"] != "dummy":
                 refused_wrongly += 1
                 scored += 1
                 if args.verbose:
@@ -98,12 +116,12 @@ def main() -> None:
             top_ids = [sibling_for(e, case.get("verb")) for e in top_ids]
         top_score = results[0][1] if results else 0.0
 
-        if case["expected_id"] in NO_CATALOG:
+        if case["tier"] in NO_CATALOG:
             no_catalog_scores.append(top_score)
             continue
 
         scored += 1
-        accepted = {case["expected_id"], *case.get("alt_ids", [])}
+        accepted = accepted_ids(case)
         top_scores.append(top_score)
         if top_ids[:1] and top_ids[0] in accepted:
             hits1 += 1

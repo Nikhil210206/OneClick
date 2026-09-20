@@ -51,6 +51,8 @@ jobs:
         run: ruff check eval && ruff format --check eval
       - name: eval unit tests
         run: pytest eval/tests -q
+      - name: validate the test sets and gold labels
+        run: python eval/sets/validate_sets.py
       - name: start API (fresh process, empty SIIS cache)
         working-directory: api
         run: |

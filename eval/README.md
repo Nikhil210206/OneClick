@@ -10,7 +10,8 @@ Run everything from the repo root:
 
 ```bash
 pip install -r api/requirements.txt -r eval/requirements.txt
-pytest eval/tests                      # unit tests for the checkers
+pytest eval/tests                      # unit tests for the checkers and the sets
+python eval/sets/validate_sets.py      # schema and sanity checks on the sets + gold
 ruff check eval && ruff format --check eval
 ```
 
@@ -53,12 +54,24 @@ The default, `strict`, follows the FAQ, as the compiler does. `--goal-mode lenie
 
 Note: the kit's own `sample_output.json` also breaks the 5–7-word description rule, with 9- and 12-word descriptions. Treat it as a reference for the *shape* of a response, not for its rules.
 
+## Test sets and gold labels
+
+`sets/` holds the held-out inputs (200 paraphrases, 60 near misses, 15 unseen scenarios, 15
+adversarial cases) and `data/gold/deeplink_gold.jsonl` the hand-labelled link answers. Both have
+their own README; `python eval/sets/validate_sets.py` guards them and runs in CI.
+
+The gold set is labelled with `tools/label_gold.py`, which shortlists candidates using
+`evalkit/bm25.py` rather than the engine's retriever — grading a resolver with labels the same
+resolver produced would only measure self-agreement. On the 24 catalog-tier labels committed so
+far, that BM25 scores 67% precision@1, which is the baseline the Screen Graph has to beat.
+
 ## CI
 
 `.github/workflows/ci.yml` runs on every PR:
 
 - the api tests and lint
 - the eval tests and lint
+- the set and gold validator
 - the gate replica against a fresh `uvicorn`, with **G2, G4 and G5 enforced** and the rest reported
 
 The `gates.json` report is uploaded as an artifact.
@@ -71,7 +84,10 @@ The `gates.json` report is uploaded as an artifact.
 | `evalkit/catalog.py` | Deeplink validity against `data/kit/deeplinks.json` |
 | `evalkit/client.py` | HTTP client that records latency, cache flag and tier the way a scorer would |
 | `evalkit/sets.py`, `evalkit/stats.py` | Kit and set loaders; percentiles, Jaccard, query normalisation |
+| `evalkit/bm25.py` | Standalone BM25 over the catalog, used only to shortlist gold candidates |
 | `gate_replica.py` | G2–G5 and A1–A5 |
 | `judge.py`, `loadtest.py`, `ablation.py`, `report.py` | Step accuracy and deeplink relevance, latency at N ≥ 30, the mapping ablation, and `docs/metrics.md` |
 | `sets/` | Paraphrase, near-miss, unseen and adversarial sets (see `sets/README.md`) |
+| `sets/validate_sets.py` | Validates the four sets and `data/gold/deeplink_gold.jsonl`; runs in CI |
+| `tools/label_gold.py` | Interactive labelling helper for the gold set (see `data/gold/README.md`) |
 | `results/` | JSON outputs of the runs above, read by `report.py` |

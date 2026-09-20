@@ -33,6 +33,8 @@ python scripts/build_lookup.py        # pre-warmed no-SIIS lookup table
 python scripts/make_results.py        # cold run over data/kit -> results.jsonl
 
 # Evaluation (run from repo root, against a running API)
+python eval/sets/validate_sets.py  # test sets + gold labels; runs in CI, so edit a set and check this
+python eval/tools/label_gold.py --owner <you>   # label your ~33 of data/gold/deeplink_gold.jsonl
 python eval/gate_replica.py   # G2-G5 + A1-A5, each query twice on an empty cache
 python eval/judge.py          # step accuracy 0-3, deeplink relevance 0-2
 python eval/loadtest.py       # p50/p95 for repeat-hit, paraphrase-hit, cold paths
@@ -127,6 +129,8 @@ Stay in your lane; needed changes elsewhere go through a GitHub issue tagging th
 - `POST /v1/troubleshoot/stream` replays [data/fixtures/](data/fixtures/README.md) while `settings.stream_mock` is `True`. Mock frames are marked (`X-Mock: true`, `detail.mock`). Once `pipeline.run.run_stream` is implemented, set `stream_mock = False`. `data/` is not in the Docker image, so the mock only works when the API runs from the repo.
 - `data/fixtures/` is a contract for Karur and Nikhil, guarded by [api/tests/test_fixtures.py](api/tests/test_fixtures.py): official schema, zero URLs, verbatim catalog links, every step traced to a real article sentence, the score formula. If you change a fixture, keep those tests green and tell the other lanes.
 - Catalog quirk the fixtures and the simulator must respect: all 138 `onURL` (enable) entries carry a full validation object (key, condition, value) and every `offURL`, `onClickURL` and `updateURL` entry is key-only. So the design's "138 fully validatable entries" are exactly the enable toggles, and only those can show "Verified". `DL-0022 View Reset Options` is the *auto* factory reset, not Factory data reset.
+- A catalog entry's `message` can contradict its `description`: `DL-0397`/`DL-0398` read "Adaptive Display" but are adaptive **battery**. Match on `description`. Some entries are exact duplicates (`DL-0518`, `DL-0552`). Several common screens have no entry at all — software update, Safe mode, Dark mode, auto-rotate, per-app storage, Factory data reset — so those steps resolve to `bixby://dummy_positive` or stay manual, and that is the correct answer, not a bug.
+- `data/gold/deeplink_gold.jsonl` is the answer key for deeplink precision@1, split ~33 each; 36 are labelled so far. Label yours with `eval/tools/label_gold.py`, and read the chosen entry's own description before accepting it — the tool's BM25 shortlist gets 1 in 3 wrong.
 
 ## Open questions with the organisers
 

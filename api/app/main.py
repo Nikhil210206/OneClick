@@ -1,16 +1,30 @@
 """OneClick API entrypoint."""
-from fastapi import FastAPI
+
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.obs import readiness
 from app.routes import device, metrics, stream, troubleshoot
 
-app = FastAPI(title="OneClick", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    readiness.warm()  # catalog, Screen Graph, vector index, cache snapshot
+    yield
+
+
+app = FastAPI(title="OneClick", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
 @app.get("/health")
-def health() -> dict:
-    # TODO(B): return 503 until Screen Graph, indexes, lookup table and LLM clients are loaded.
+def health(response: Response) -> dict:
+    """{"status": "ok"} only once the request path can actually serve; 503 until then (ADR-007)."""
+    if not readiness.ensure():
+        response.status_code = 503
+        return {"status": "starting", **readiness.state()}
     return {"status": "ok"}
 
 

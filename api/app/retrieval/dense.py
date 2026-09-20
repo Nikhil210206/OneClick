@@ -1,5 +1,7 @@
 """Local ONNX embeddings (ADR-005) + in-memory vector index. Shared by retrieval, cache and grounding."""
 
+from pathlib import Path
+
 import numpy as np
 from fastembed import TextEmbedding
 
@@ -39,6 +41,31 @@ def build(docs: list[dict]) -> None:
     global _ids, _matrix
     _ids = [d["id"] for d in docs]
     _matrix = np.asarray(embed([_doc_text(d["fields"]) for d in docs]), dtype=np.float32)
+
+
+def save(path: str | Path) -> None:
+    """Write the vectors to disk so a container starts without re-embedding the catalog."""
+    if _matrix is None:
+        raise RuntimeError("dense.build() must be called before save()")
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(path, ids=np.array(_ids, dtype=object), matrix=_matrix)
+
+
+def load(path: str | Path) -> bool:
+    """Load vectors written by save(). False when the file is absent or was built differently."""
+    global _ids, _matrix
+    path = Path(path)
+    if not path.exists():
+        return False
+    payload = np.load(path, allow_pickle=True)
+    _ids = [str(doc_id) for doc_id in payload["ids"]]
+    _matrix = payload["matrix"].astype(np.float32)
+    return True
+
+
+def is_loaded() -> bool:
+    return _matrix is not None
 
 
 def search(query: str, k: int = 20) -> list[tuple[str, float]]:

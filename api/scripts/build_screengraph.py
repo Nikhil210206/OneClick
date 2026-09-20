@@ -9,11 +9,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.config import settings
 from app.screengraph import load_graph, save_graph
 
-ROOT = Path(__file__).resolve().parents[2]
-CATALOG = ROOT / "data" / "kit" / "deeplinks.json"
-OUT = ROOT / "data" / "build" / "screengraph.json"
+DATA = Path(settings.data_dir)
+CATALOG = DATA / "kit" / "deeplinks.json"
+OUT = DATA / "build" / "screengraph.json"
 
 
 def main() -> None:
@@ -21,7 +22,7 @@ def main() -> None:
     save_graph(nodes, OUT)
     buttons = sum(len(ids) for node in nodes for ids in node.entries_by_polarity.values())
     print(f"{buttons} catalog entries -> {len(nodes)} screens")
-    print(f"written to {OUT.relative_to(ROOT)} ({OUT.stat().st_size // 1024} KB)")
+    print(f"written to {OUT} ({OUT.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":

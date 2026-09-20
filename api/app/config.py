@@ -1,6 +1,12 @@
 """Central settings. Every threshold and budget lives here, never hard-coded in modules."""
 
+import os
+from pathlib import Path
+
 from pydantic import BaseModel
+
+# Repo root in a checkout; the Docker image sets ONECLICK_DATA because api/ is copied alone.
+_DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 class Settings(BaseModel):
@@ -20,7 +26,10 @@ class Settings(BaseModel):
     # 0.85 hit only 63% of held-out paraphrases (A3 needs >= 80%), and below 0.80 a paraphrase
     # starts matching the wrong cached plan. 0.80 gave 90% with zero wrong plans or false hits.
     cache_sim_threshold: float = 0.80
-    sqlite_path: str = "cache.sqlite"
+    sqlite_path: str = os.getenv("ONECLICK_SQLITE", "cache.sqlite")
+
+    # Where data/kit and data/build live. Set ONECLICK_DATA in the container.
+    data_dir: str = os.getenv("ONECLICK_DATA", str(_DEFAULT_DATA_DIR))
 
     # Grounding (component 6)
     grounding_cos_threshold: float = 0.75

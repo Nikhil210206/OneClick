@@ -48,11 +48,17 @@ def load_catalog_docs(path: str | Path) -> list[dict]:
     ]
 
 
-def build(docs: list[dict]) -> None:
-    """Build both indexes over the same documents."""
+def build(docs: list[dict], vectors_path: str | Path | None = None) -> None:
+    """Build both indexes over the same documents.
+
+    BM25 is cheap to rebuild; the embeddings are not (~12 s for the catalog), so vectors_path
+    loads them from disk when scripts/build_index.py has written them.
+    """
     global _docs_by_id
     _docs_by_id = {d["id"]: d for d in docs}
     bm25.build(docs)
+    if vectors_path and dense.load(vectors_path) and len(dense._ids) == len(docs):
+        return
     dense.build(docs)
 
 

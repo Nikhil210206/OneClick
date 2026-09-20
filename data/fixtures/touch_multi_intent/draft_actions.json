@@ -1,0 +1,446 @@
+{
+  "scenario": "touch_multi_intent",
+  "state": "compiler input: grounded, resolved, categorized, ordered, deduped across goals",
+  "actions": [
+    {
+      "steps": [
+        {
+          "text": "Go to Settings.",
+          "src_ids": [
+            "S31"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Display.",
+          "src_ids": [
+            "S31"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Navigation bar.",
+          "src_ids": [
+            "S31"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Select Buttons to turn off full screen gestures.",
+          "src_ids": [
+            "S32"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": "Settings > Display > Navigation bar",
+      "intent_verb": "open",
+      "description": "It will turn off full screen gestures",
+      "category": "auto",
+      "disruption_rank": 0,
+      "depends_on": [],
+      "link": {
+        "tier": "catalog",
+        "node_id": "node_navigation_bar",
+        "entry_id": "DL-0169",
+        "confidence": 0.9
+      },
+      "intent_index": 1,
+      "name": "Turn Off Full Screen Gestures"
+    },
+    {
+      "steps": [
+        {
+          "text": "Keep your device software up to date.",
+          "src_ids": [
+            "S35"
+          ],
+          "grounded": true,
+          "grounding_score": 0.88
+        },
+        {
+          "text": "Check for updates for your third-party apps.",
+          "src_ids": [
+            "S36"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": "check",
+      "description": "It will keep software and apps current",
+      "category": "critical",
+      "disruption_rank": 5,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 1,
+      "name": "Update Device Software"
+    },
+    {
+      "steps": [
+        {
+          "text": "Remove your screen protector if it is peeling or has debris under it.",
+          "src_ids": [
+            "S7"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": null,
+      "description": "It will remove damaged screen protectors",
+      "category": "manual",
+      "disruption_rank": 0,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Remove Damaged Screen Protector"
+    },
+    {
+      "steps": [
+        {
+          "text": "If you keep a screen protector on, enable Touch sensitivity.",
+          "src_ids": [
+            "S8"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Go to Settings.",
+          "src_ids": [
+            "S9"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Display.",
+          "src_ids": [
+            "S9"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap the switch next to Touch sensitivity.",
+          "src_ids": [
+            "S9"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": "Settings > Display > Touch sensitivity",
+      "intent_verb": "enable",
+      "description": "It will improve touch through screen protectors",
+      "category": "auto",
+      "disruption_rank": 0,
+      "depends_on": [],
+      "link": {
+        "tier": "catalog",
+        "node_id": "node_touch_sensitivity",
+        "entry_id": "DL-0126",
+        "confidence": 0.93
+      },
+      "intent_index": 0,
+      "name": "Enable Touch Sensitivity"
+    },
+    {
+      "steps": [
+        {
+          "text": "Try using a different, undamaged charger.",
+          "src_ids": [
+            "S27"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Avoid using the touchscreen while your device is charging.",
+          "src_ids": [
+            "S28"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": null,
+      "description": "It will rule out charger problems",
+      "category": "manual",
+      "disruption_rank": 0,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Try Different Charger"
+    },
+    {
+      "steps": [
+        {
+          "text": "If you are not using a protective film, disable Touch sensitivity.",
+          "src_ids": [
+            "S33"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Go to Settings.",
+          "src_ids": [
+            "S34"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Display.",
+          "src_ids": [
+            "S34"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap the switch next to Touch sensitivity to disable it.",
+          "src_ids": [
+            "S34"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": "Settings > Display > Touch sensitivity",
+      "intent_verb": "disable",
+      "description": "It will stop overly sensitive touch input",
+      "category": "auto",
+      "disruption_rank": 0,
+      "depends_on": [],
+      "link": {
+        "tier": "catalog",
+        "node_id": "node_touch_sensitivity",
+        "entry_id": "DL-0125",
+        "confidence": 0.93
+      },
+      "intent_index": 0,
+      "name": "Disable Touch Sensitivity"
+    },
+    {
+      "steps": [
+        {
+          "text": "Back up your personal data before you continue.",
+          "src_ids": [
+            "S46"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": null,
+      "description": "It will protect your data before reset",
+      "category": "manual",
+      "disruption_rank": 0,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Back Up Your Data"
+    },
+    {
+      "steps": [
+        {
+          "text": "Contact Samsung Support for further assistance if the issue persists.",
+          "src_ids": [
+            "S56"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": "visit",
+      "description": "It will connect you with Samsung Support",
+      "category": "manual",
+      "disruption_rank": 4,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Contact Samsung Support"
+    },
+    {
+      "steps": [
+        {
+          "text": "Press and hold the Power button, then tap Restart.",
+          "src_ids": [
+            "S19"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Restart again to confirm.",
+          "src_ids": [
+            "S20"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": "restart",
+      "description": "It will fix minor software glitches",
+      "category": "critical",
+      "disruption_rank": 5,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Restart Your Device"
+    },
+    {
+      "steps": [
+        {
+          "text": "Swipe down from the top of the screen with two fingers and tap the Power icon.",
+          "src_ids": [
+            "S40"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Touch and hold Power off, then tap Safe mode.",
+          "src_ids": [
+            "S41"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Remove any third-party apps installed or updated around when the issue began.",
+          "src_ids": [
+            "S42"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": "restart",
+      "description": "It will find conflicting third-party apps",
+      "category": "critical",
+      "disruption_rank": 5,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Restart In Safe Mode"
+    },
+    {
+      "steps": [
+        {
+          "text": "Navigate to and open Settings.",
+          "src_ids": [
+            "S48"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap General management.",
+          "src_ids": [
+            "S49"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Reset.",
+          "src_ids": [
+            "S50"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Factory data reset.",
+          "src_ids": [
+            "S51"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Swipe to and tap Reset.",
+          "src_ids": [
+            "S52"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Delete all.",
+          "src_ids": [
+            "S53"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": "Settings > General management > Reset > Factory data reset",
+      "intent_verb": "reset",
+      "description": "It will restore factory default settings",
+      "category": "critical",
+      "disruption_rank": 5,
+      "depends_on": [
+        "backup"
+      ],
+      "link": {
+        "tier": "dummy",
+        "node_id": null,
+        "entry_id": "DL-DUMMY",
+        "confidence": 0.55
+      },
+      "intent_index": 0,
+      "name": "Factory Data Reset"
+    }
+  ]
+}

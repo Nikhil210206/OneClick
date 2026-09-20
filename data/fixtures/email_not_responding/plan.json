@@ -1,0 +1,100 @@
+{
+  "contexts": [
+    {
+      "goal": "Follow these steps to perform this Email Connection Issues Troubleshooting.",
+      "title": "Email blank screen",
+      "score": 0.77,
+      "actions": [
+        {
+          "actionName": "Check Wi-Fi Connection",
+          "description": "It will verify your internet connection",
+          "stepGroups": [
+            {
+              "steps": [
+                "Go to Settings.",
+                "Tap Connections.",
+                "Tap Wi-Fi.",
+                "Try loading a webpage to confirm your internet connection is working."
+              ],
+              "actionableDeeplink": {
+                "deeplink": "bixby://masked/act/cb03ac7425",
+                "description": "Opens the Wi-Fi settings page in device Settings on the device.",
+                "message": "View WiFi Settings",
+                "originalType": "onClickURL"
+              },
+              "validationDeeplink": {
+                "deeplink": "bixby://masked/val/9f9c37507d",
+                "key": "Wi-Fi"
+              }
+            }
+          ],
+          "category": "auto"
+        },
+        {
+          "actionName": "Clear Email App Cache And Data",
+          "description": "It will clear temporary email app data",
+          "stepGroups": [
+            {
+              "steps": [
+                "Navigate to Settings.",
+                "Tap Apps.",
+                "Select your email app.",
+                "Tap Storage.",
+                "Tap Clear cache.",
+                "Tap Clear data, and then tap OK."
+              ],
+              "actionableDeeplink": {
+                "deeplink": "bixby://dummy_positive",
+                "description": "Opens the email app storage settings page",
+                "message": "Open email app storage screen",
+                "originalType": "placeholder"
+              },
+              "validationDeeplink": null
+            }
+          ],
+          "category": "auto"
+        },
+        {
+          "actionName": "Restart In Safe Mode",
+          "description": "It will check for app conflicts",
+          "stepGroups": [
+            {
+              "steps": [
+                "Press and hold the Power button or Side button.",
+                "Touch and hold the Power off icon.",
+                "Tap Safe mode when it appears on the screen.",
+                "Check if your email app is still experiencing issues."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Uninstall Email App",
+          "description": "It will remove the conflicting email app",
+          "stepGroups": [
+            {
+              "steps": [
+                "Uninstall the email app while in Safe mode."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "latency_ms": 2147.9,
+    "cache_hit": false,
+    "cache_tier": null,
+    "model": "gemini-flash",
+    "cost_usd": 0.000674,
+    "trace_id": "t_mock_email_not_responding",
+    "fallback": null
+  }
+}

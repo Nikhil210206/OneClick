@@ -1,0 +1,68 @@
+{
+  "exact": {
+    "event": {
+      "stage": "cache",
+      "ms": 2.4,
+      "summary": "Exact cache hit (Tier 0)",
+      "detail": {
+        "hit": true,
+        "tier": "exact",
+        "similarity": 1.0,
+        "query": "My Galaxy S22 touch is laggy and my swipes keep getting read as the wrong gesture.",
+        "matched_query": "My Galaxy S22 touch is laggy and my swipes keep getting read as the wrong gesture.",
+        "norm_query": "my galaxy s22 touch is laggy and my swipes keep getting read as the wrong gesture.",
+        "slots": {
+          "component": null,
+          "symptom": null
+        },
+        "siis_hash": "aa71c2c2cb988681",
+        "siis_hash_match": true,
+        "slots_match": true,
+        "key": "6503ff4cd4f98d6e",
+        "threshold": 0.85
+      }
+    },
+    "meta": {
+      "latency_ms": 3.1,
+      "cache_hit": true,
+      "cache_tier": "exact",
+      "model": null,
+      "cost_usd": 0.0,
+      "trace_id": "t_mock_touch_multi_intent_hit",
+      "fallback": null
+    }
+  },
+  "semantic": {
+    "event": {
+      "stage": "cache",
+      "ms": 24.6,
+      "summary": "Semantic cache hit (Tier 1)",
+      "detail": {
+        "hit": true,
+        "tier": "semantic",
+        "similarity": 0.91,
+        "query": "The touchscreen on my Galaxy S22 responds slowly and swipes are interpreted as incorrect gestures.",
+        "matched_query": "My Galaxy S22 touch is laggy and my swipes keep getting read as the wrong gesture.",
+        "norm_query": "the touchscreen on my galaxy s22 responds slowly and swipes are interpreted as incorrect gestures.",
+        "slots": {
+          "component": null,
+          "symptom": null
+        },
+        "siis_hash": "aa71c2c2cb988681",
+        "siis_hash_match": true,
+        "slots_match": true,
+        "key": "6503ff4cd4f98d6e",
+        "threshold": 0.85
+      }
+    },
+    "meta": {
+      "latency_ms": 27.9,
+      "cache_hit": true,
+      "cache_tier": "semantic",
+      "model": null,
+      "cost_usd": 0.0,
+      "trace_id": "t_mock_touch_multi_intent_hit",
+      "fallback": null
+    }
+  }
+}

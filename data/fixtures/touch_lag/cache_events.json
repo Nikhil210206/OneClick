@@ -1,0 +1,68 @@
+{
+  "exact": {
+    "event": {
+      "stage": "cache",
+      "ms": 2.4,
+      "summary": "Exact cache hit (Tier 0)",
+      "detail": {
+        "hit": true,
+        "tier": "exact",
+        "similarity": 1.0,
+        "query": "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when I try to interact with the phone.",
+        "matched_query": "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when I try to interact with the phone.",
+        "norm_query": "my galaxy s22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when i try to interact with the phone.",
+        "slots": {
+          "component": "screen",
+          "symptom": null
+        },
+        "siis_hash": "aa71c2c2cb988681",
+        "siis_hash_match": true,
+        "slots_match": true,
+        "key": "606c4d70d5d0f638",
+        "threshold": 0.85
+      }
+    },
+    "meta": {
+      "latency_ms": 3.1,
+      "cache_hit": true,
+      "cache_tier": "exact",
+      "model": null,
+      "cost_usd": 0.0,
+      "trace_id": "t_mock_touch_lag_hit",
+      "fallback": null
+    }
+  },
+  "semantic": {
+    "event": {
+      "stage": "cache",
+      "ms": 24.6,
+      "summary": "Semantic cache hit (Tier 1)",
+      "detail": {
+        "hit": true,
+        "tier": "semantic",
+        "similarity": 0.91,
+        "query": "The touchscreen on my Galaxy S22 responds to input with a noticeable delay.",
+        "matched_query": "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when I try to interact with the phone.",
+        "norm_query": "the touchscreen on my galaxy s22 responds to input with a noticeable delay.",
+        "slots": {
+          "component": null,
+          "symptom": null
+        },
+        "siis_hash": "aa71c2c2cb988681",
+        "siis_hash_match": true,
+        "slots_match": true,
+        "key": "606c4d70d5d0f638",
+        "threshold": 0.85
+      }
+    },
+    "meta": {
+      "latency_ms": 27.9,
+      "cache_hit": true,
+      "cache_tier": "semantic",
+      "model": null,
+      "cost_usd": 0.0,
+      "trace_id": "t_mock_touch_lag_hit",
+      "fallback": null
+    }
+  }
+}

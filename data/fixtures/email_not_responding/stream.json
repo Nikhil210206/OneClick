@@ -1,0 +1,1038 @@
+[
+  {
+    "stage": "cache",
+    "ms": 9.7,
+    "summary": "Cache miss (no exact key, no semantic match)",
+    "detail": {
+      "hit": false,
+      "tier": null,
+      "norm_query": "my samsung a115g tablet screen flashes and then goes completely blank whenever i tap to open an email in gmail, and after it works for a short time it goes blank again.",
+      "slots": {
+        "component": "screen",
+        "symptom": "black"
+      },
+      "key": "c9c140afccd300c8",
+      "siis_hash": "4e765390aee789aa",
+      "siis_title": "Email server not responding on Samsung phone or tablet",
+      "threshold": 0.85,
+      "similarity": null
+    }
+  },
+  {
+    "stage": "enrich",
+    "ms": 798.2,
+    "summary": "1 intent, 10 variations kept (2 dropped as near-duplicates)",
+    "detail": {
+      "canonical_query": "intermittent screen flashing and blanking when opening the Gmail app on a Samsung tablet",
+      "intents": [
+        {
+          "text": "Screen flashes and goes blank when opening the email app",
+          "domain": "Display",
+          "title": "Email blank screen",
+          "relevance": 0.65
+        }
+      ],
+      "variations": [
+        "The display on my Samsung tablet flickers then turns black each time I launch Gmail.",
+        "Opening my email app makes the tablet go dark, and the problem keeps coming back.",
+        "Samsung tablet black screen Gmail flicker intermittent",
+        "A115G Gmail blank display flashing",
+        "Every time I tap Gmail my tablet blinks and dies for a while, super annoying!",
+        "Why does my tablet go black whenever I check my email? It happens over and over.",
+        "my samsng tablt scren flashs n goes blank in gmial",
+        "Gmail knocks out the display on my Galaxy tablet after a short while, then it shuts off by itself.",
+        "Intermittent blank display on Samsung tablet when using the email application.",
+        "Screen blanks out on my A115G as soon as an email opens, briefly recovers, then goes dark again."
+      ],
+      "dropped_variations": [
+        {
+          "text": "My Samsung A115G tablet screen flashes and goes blank whenever I tap to open an email in Gmail.",
+          "reason": "token_jaccard_vs_original",
+          "jaccard": 0.64
+        },
+        {
+          "text": "tablet screen goes blank when i open gmail, works a bit then blanks again",
+          "reason": "over_limit",
+          "jaccard": 0.35
+        }
+      ],
+      "candidates": 12,
+      "model": "gemini-flash",
+      "tokens_in": 447,
+      "tokens_out": 391
+    }
+  },
+  {
+    "stage": "segment",
+    "ms": 38.5,
+    "summary": "7 sections, 40 sentences, 3 relevant",
+    "detail": {
+      "sections": [
+        {
+          "id": "sec1",
+          "heading": "Troubleshooting Email Connection Issues on Your Samsung Phone",
+          "level": 1,
+          "sentence_ids": [
+            "S1"
+          ],
+          "relevance": [
+            0.22
+          ],
+          "relevant": false
+        },
+        {
+          "id": "sec2",
+          "heading": "Step 1: Check Email Access on a PC",
+          "level": 2,
+          "sentence_ids": [
+            "S2",
+            "S3",
+            "S4"
+          ],
+          "relevance": [
+            0.33
+          ],
+          "relevant": false
+        },
+        {
+          "id": "sec3",
+          "heading": "Step 2: Verify Your Phone's Internet Connection",
+          "level": 2,
+          "sentence_ids": [
+            "S5",
+            "S6",
+            "S7",
+            "S8",
+            "S9"
+          ],
+          "relevance": [
+            0.52
+          ],
+          "relevant": true
+        },
+        {
+          "id": "sec4",
+          "heading": "Step 3: Review Your Email Account Settings",
+          "level": 2,
+          "sentence_ids": [
+            "S10",
+            "S11",
+            "S12",
+            "S13",
+            "S14",
+            "S15"
+          ],
+          "relevance": [
+            0.38
+          ],
+          "relevant": false
+        },
+        {
+          "id": "sec5",
+          "heading": "Step 4: Clear the Email App's Cache and Data",
+          "level": 2,
+          "sentence_ids": [
+            "S16",
+            "S17",
+            "S18",
+            "S19",
+            "S20",
+            "S21",
+            "S22",
+            "S23",
+            "S24",
+            "S25",
+            "S26",
+            "S27",
+            "S28",
+            "S29"
+          ],
+          "relevance": [
+            0.74
+          ],
+          "relevant": true
+        },
+        {
+          "id": "sec6",
+          "heading": "Step 5: Restart Your Phone in Safe Mode",
+          "level": 2,
+          "sentence_ids": [
+            "S30",
+            "S31",
+            "S32",
+            "S33",
+            "S34",
+            "S35",
+            "S36",
+            "S37",
+            "S38",
+            "S39"
+          ],
+          "relevance": [
+            0.69
+          ],
+          "relevant": true
+        },
+        {
+          "id": "sec7",
+          "heading": "Step 6: Contact Your Email Service Provider",
+          "level": 2,
+          "sentence_ids": [
+            "S40"
+          ],
+          "relevance": [
+            0.29
+          ],
+          "relevant": false
+        }
+      ],
+      "sentences": [
+        {
+          "id": "S1",
+          "section": "Troubleshooting Email Connection Issues on Your Samsung Phone",
+          "text": "If you're having trouble accessing your email on your Samsung phone, here are some steps you can take to resolve the issue.",
+          "relevance": 0.22
+        },
+        {
+          "id": "S2",
+          "section": "Step 1: Check Email Access on a PC",
+          "text": "First, try accessing your email on a personal computer.",
+          "relevance": 0.33
+        },
+        {
+          "id": "S3",
+          "section": "Step 1: Check Email Access on a PC",
+          "text": "This helps determine if the problem is with your phone's connection or your email account itself.",
+          "relevance": 0.33
+        },
+        {
+          "id": "S4",
+          "section": "Step 1: Check Email Access on a PC",
+          "text": "If you can sign in and access your email on a PC, your phone might not be connected to Wi-Fi or mobile data.",
+          "relevance": 0.33
+        },
+        {
+          "id": "S5",
+          "section": "Step 2: Verify Your Phone's Internet Connection",
+          "text": "Ensure your phone is connected to a stable Wi-Fi or mobile data network.",
+          "relevance": 0.52
+        },
+        {
+          "id": "S6",
+          "section": "Step 2: Verify Your Phone's Internet Connection",
+          "text": "Swipe down from the top of your phone's screen to open the Quick settings panel.",
+          "relevance": 0.52
+        },
+        {
+          "id": "S7",
+          "section": "Step 2: Verify Your Phone's Internet Connection",
+          "text": "Touch and hold the Wi-Fi icon to check your connection status.",
+          "relevance": 0.52
+        },
+        {
+          "id": "S8",
+          "section": "Step 2: Verify Your Phone's Internet Connection",
+          "text": "Alternatively, go to Settings, tap Connections, and then tap Wi-Fi.",
+          "relevance": 0.52
+        },
+        {
+          "id": "S9",
+          "section": "Step 2: Verify Your Phone's Internet Connection",
+          "text": "To confirm your internet connection is working, try loading a webpage or performing a quick search.",
+          "relevance": 0.52
+        },
+        {
+          "id": "S10",
+          "section": "Step 3: Review Your Email Account Settings",
+          "text": "Sometimes, changes made by your email provider on their server can cause connection problems.",
+          "relevance": 0.38
+        },
+        {
+          "id": "S11",
+          "section": "Step 3: Review Your Email Account Settings",
+          "text": "In such cases, you may need to remove and re-add your email account to your phone to apply the new configuration.",
+          "relevance": 0.38
+        },
+        {
+          "id": "S12",
+          "section": "Step 3: Review Your Email Account Settings",
+          "text": "You can find instructions on how to remove your account and add it again at the provided links.",
+          "relevance": 0.38
+        },
+        {
+          "id": "S13",
+          "section": "Step 3: Review Your Email Account Settings",
+          "text": "Before proceeding, make sure you have your email account's username and password readily available.",
+          "relevance": 0.38
+        },
+        {
+          "id": "S14",
+          "section": "Step 3: Review Your Email Account Settings",
+          "text": "Remember that passwords are case-sensitive.",
+          "relevance": 0.38
+        },
+        {
+          "id": "S15",
+          "section": "Step 3: Review Your Email Account Settings",
+          "text": "Entering the password incorrectly will prevent your phone from connecting to your email server.",
+          "relevance": 0.38
+        },
+        {
+          "id": "S16",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Clearing the cache and data for your email app can resolve temporary glitches.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S17",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "To clear the app's cache:",
+          "relevance": 0.74
+        },
+        {
+          "id": "S18",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Navigate to Settings.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S19",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Tap Apps.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S20",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Select your email app.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S21",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Tap Storage.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S22",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Tap Clear cache.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S23",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "To clear the app's data:",
+          "relevance": 0.74
+        },
+        {
+          "id": "S24",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Navigate to Settings.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S25",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Tap Apps.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S26",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Select your email app.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S27",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Tap Storage.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S28",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Tap Clear data, and then tap OK.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S29",
+          "section": "Step 4: Clear the Email App's Cache and Data",
+          "text": "Clearing the app's data will reset it to its original settings, effectively wiping it clean.",
+          "relevance": 0.74
+        },
+        {
+          "id": "S30",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "Using Safe mode helps identify if a third-party app, including your email app, is causing conflicts with your phone's performance.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S31",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "Press and hold the Power button or Side button.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S32",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "If your phone doesn't have a dedicated Power button, swipe down from the top of the screen to open Quick settings, and then tap the Power icon.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S33",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "Touch and hold the Power off icon.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S34",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "Tap Safe mode when it appears on the screen.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S35",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "Your phone will restart, and \"Safe mode\" will be displayed in the bottom left corner of the screen.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S36",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "While in Safe mode, check if your email app is still experiencing issues.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S37",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "If the problem is resolved, it indicates that another app might be causing the conflict.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S38",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "You can also uninstall the email app if necessary while in Safe mode.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S39",
+          "section": "Step 5: Restart Your Phone in Safe Mode",
+          "text": "To exit Safe mode, simply restart your phone normally.",
+          "relevance": 0.69
+        },
+        {
+          "id": "S40",
+          "section": "Step 6: Contact Your Email Service Provider",
+          "text": "If you have followed all the above steps and are still experiencing difficulties with your email connection, it is recommended to contact your email service provider directly for further assistance.",
+          "relevance": 0.29
+        }
+      ],
+      "relevance_floor": 0.5,
+      "intent_titles": [
+        "Email blank screen"
+      ]
+    }
+  },
+  {
+    "stage": "extract",
+    "ms": 1104.9,
+    "summary": "4 actions, 16 steps proposed",
+    "detail": {
+      "topics": [
+        "Email Connection Issues"
+      ],
+      "actions": [
+        {
+          "steps": [
+            {
+              "text": "Go to Settings.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Connections.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Wi-Fi.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Try loading a webpage to confirm your internet connection is working.",
+              "src_ids": [
+                "S9"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Restart your router to refresh the connection.",
+              "src_ids": [
+                "S5"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": "Settings > Connections > Wi-Fi",
+          "intent_verb": "open",
+          "description": "It will verify your internet connection",
+          "category": "auto",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Check Wi-Fi Connection"
+        },
+        {
+          "steps": [
+            {
+              "text": "Navigate to Settings.",
+              "src_ids": [
+                "S18",
+                "S24"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Apps.",
+              "src_ids": [
+                "S19",
+                "S25"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Select your email app.",
+              "src_ids": [
+                "S20",
+                "S26"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Storage.",
+              "src_ids": [
+                "S21",
+                "S27"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Clear cache.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Clear data, and then tap OK.",
+              "src_ids": [
+                "S28"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            }
+          ],
+          "screen_path": "Settings > Apps > Email app > Storage",
+          "intent_verb": "open",
+          "description": "It will clear temporary email app data",
+          "category": "auto",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Clear Email App Cache And Data"
+        },
+        {
+          "steps": [
+            {
+              "text": "Press and hold the Power button or Side button.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Touch and hold the Power off icon.",
+              "src_ids": [
+                "S33"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Safe mode when it appears on the screen.",
+              "src_ids": [
+                "S34"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Check if your email app is still experiencing issues.",
+              "src_ids": [
+                "S36"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "restart",
+          "description": "It will check for app conflicts",
+          "category": "critical",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Restart In Safe Mode"
+        },
+        {
+          "steps": [
+            {
+              "text": "Uninstall the email app while in Safe mode.",
+              "src_ids": [
+                "S38"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will remove the conflicting email app",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Uninstall Email App"
+        }
+      ],
+      "model": "gemini-flash",
+      "tokens_in": 1522,
+      "tokens_out": 803
+    }
+  },
+  {
+    "stage": "ground",
+    "ms": 58.2,
+    "summary": "15 of 16 steps grounded, 1 dropped",
+    "detail": {
+      "threshold": 0.75,
+      "proposed_steps": 16,
+      "kept_steps": 15,
+      "coverage": 0.94,
+      "dropped_steps": [
+        {
+          "action": "Check Wi-Fi Connection",
+          "text": "Restart your router to refresh the connection.",
+          "src_ids": [
+            "S5"
+          ],
+          "grounding_score": 0.41,
+          "reason": "below_threshold_and_no_shared_term",
+          "shared_terms": []
+        }
+      ],
+      "actions": [
+        {
+          "steps": [
+            {
+              "text": "Go to Settings.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Connections.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Wi-Fi.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Try loading a webpage to confirm your internet connection is working.",
+              "src_ids": [
+                "S9"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            }
+          ],
+          "screen_path": "Settings > Connections > Wi-Fi",
+          "intent_verb": "open",
+          "description": "It will verify your internet connection",
+          "category": "auto",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Check Wi-Fi Connection"
+        },
+        {
+          "steps": [
+            {
+              "text": "Navigate to Settings.",
+              "src_ids": [
+                "S18",
+                "S24"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Apps.",
+              "src_ids": [
+                "S19",
+                "S25"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Select your email app.",
+              "src_ids": [
+                "S20",
+                "S26"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Storage.",
+              "src_ids": [
+                "S21",
+                "S27"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Clear cache.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Clear data, and then tap OK.",
+              "src_ids": [
+                "S28"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            }
+          ],
+          "screen_path": "Settings > Apps > Email app > Storage",
+          "intent_verb": "open",
+          "description": "It will clear temporary email app data",
+          "category": "auto",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Clear Email App Cache And Data"
+        },
+        {
+          "steps": [
+            {
+              "text": "Press and hold the Power button or Side button.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Touch and hold the Power off icon.",
+              "src_ids": [
+                "S33"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Tap Safe mode when it appears on the screen.",
+              "src_ids": [
+                "S34"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            },
+            {
+              "text": "Check if your email app is still experiencing issues.",
+              "src_ids": [
+                "S36"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "restart",
+          "description": "It will check for app conflicts",
+          "category": "critical",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Restart In Safe Mode"
+        },
+        {
+          "steps": [
+            {
+              "text": "Uninstall the email app while in Safe mode.",
+              "src_ids": [
+                "S38"
+              ],
+              "grounded": true,
+              "grounding_score": 0.95
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will remove the conflicting email app",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Uninstall Email App"
+        }
+      ]
+    }
+  },
+  {
+    "stage": "resolve",
+    "ms": 131.0,
+    "summary": "1 catalog, 1 dummy, 2 manual",
+    "detail": {
+      "links": [
+        {
+          "action": "Check Wi-Fi Connection",
+          "screen_path": "Settings > Connections > Wi-Fi",
+          "intent_verb": "open",
+          "tier": "catalog",
+          "node_id": "node_wifi_settings",
+          "entry_id": "DL-0313",
+          "confidence": 0.9,
+          "candidates": [
+            {
+              "node_id": "node_wifi_settings",
+              "path": "Settings > Connections > Wi-Fi",
+              "score": 0.9
+            },
+            {
+              "node_id": "node_wifi_scanning",
+              "path": "Wi-Fi scanning",
+              "score": 0.61
+            },
+            {
+              "node_id": "node_intelligent_wifi",
+              "path": "Intelligent Wi-Fi",
+              "score": 0.52
+            }
+          ]
+        },
+        {
+          "action": "Clear Email App Cache And Data",
+          "screen_path": "Settings > Apps > Email app > Storage",
+          "intent_verb": "open",
+          "tier": "dummy",
+          "node_id": null,
+          "entry_id": "DL-DUMMY",
+          "confidence": 0.55,
+          "candidates": []
+        },
+        {
+          "action": "Restart In Safe Mode",
+          "screen_path": null,
+          "intent_verb": "restart",
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
+        },
+        {
+          "action": "Uninstall Email App",
+          "screen_path": null,
+          "intent_verb": null,
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
+        }
+      ],
+      "counts": {
+        "catalog": 1,
+        "dummy": 1,
+        "manual": 2
+      }
+    }
+  },
+  {
+    "stage": "compile",
+    "ms": 7.4,
+    "summary": "1 goal, 4 actions, score 0.77, 0 URL leaks, schema valid",
+    "detail": {
+      "goals": 1,
+      "actions": 4,
+      "score_inputs": [
+        {
+          "intent_index": 0,
+          "title": "Email blank screen",
+          "score": 0.77,
+          "relevance": 0.65,
+          "grounding_coverage": 0.94,
+          "link_coverage": 0.75
+        }
+      ],
+      "score_formula": "0.4*relevance + 0.3*grounding_coverage + 0.3*link_coverage",
+      "deduped": [],
+      "dropped_intents": [],
+      "url_leaks": 0,
+      "schema_valid": true,
+      "repairs": 0,
+      "dropped_actions": 0
+    }
+  },
+  {
+    "stage": "done",
+    "ms": 2147.9,
+    "summary": "1 goal, 4 actions in 2147.9 ms (cold)",
+    "detail": {
+      "contexts": [
+        {
+          "goal": "Follow these steps to perform this Email Connection Issues Troubleshooting.",
+          "title": "Email blank screen",
+          "score": 0.77,
+          "actions": [
+            {
+              "actionName": "Check Wi-Fi Connection",
+              "description": "It will verify your internet connection",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Go to Settings.",
+                    "Tap Connections.",
+                    "Tap Wi-Fi.",
+                    "Try loading a webpage to confirm your internet connection is working."
+                  ],
+                  "actionableDeeplink": {
+                    "deeplink": "bixby://masked/act/cb03ac7425",
+                    "description": "Opens the Wi-Fi settings page in device Settings on the device.",
+                    "message": "View WiFi Settings",
+                    "originalType": "onClickURL"
+                  },
+                  "validationDeeplink": {
+                    "deeplink": "bixby://masked/val/9f9c37507d",
+                    "key": "Wi-Fi"
+                  }
+                }
+              ],
+              "category": "auto"
+            },
+            {
+              "actionName": "Clear Email App Cache And Data",
+              "description": "It will clear temporary email app data",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Navigate to Settings.",
+                    "Tap Apps.",
+                    "Select your email app.",
+                    "Tap Storage.",
+                    "Tap Clear cache.",
+                    "Tap Clear data, and then tap OK."
+                  ],
+                  "actionableDeeplink": {
+                    "deeplink": "bixby://dummy_positive",
+                    "description": "Opens the email app storage settings page",
+                    "message": "Open email app storage screen",
+                    "originalType": "placeholder"
+                  },
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "auto"
+            },
+            {
+              "actionName": "Restart In Safe Mode",
+              "description": "It will check for app conflicts",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Press and hold the Power button or Side button.",
+                    "Touch and hold the Power off icon.",
+                    "Tap Safe mode when it appears on the screen.",
+                    "Check if your email app is still experiencing issues."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "critical"
+            },
+            {
+              "actionName": "Uninstall Email App",
+              "description": "It will remove the conflicting email app",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Uninstall the email app while in Safe mode."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "manual"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "latency_ms": 2147.9,
+        "cache_hit": false,
+        "cache_tier": null,
+        "model": "gemini-flash",
+        "cost_usd": 0.000674,
+        "trace_id": "t_mock_email_not_responding",
+        "fallback": null
+      }
+    }
+  }
+]

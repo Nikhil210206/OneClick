@@ -1,0 +1,38 @@
+{
+  "_readme": "Mock scenarios for POST /v1/troubleshoot/stream (settings.stream_mock) and for tests. A request matches by normalized query first, then by article title.",
+  "scenarios": [
+    {
+      "name": "touch_lag",
+      "description": "On-topic pair. Catalog toggles (enable and disable Touch sensitivity), an open-screen link, manual physical steps, critical actions, a backup-before-reset dependency. The headline run.",
+      "kit_row": "row_21",
+      "authored_query": false,
+      "query": "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when I try to interact with the phone.",
+      "siis_title": "Touchscreen issues on a Galaxy phone or tablet",
+      "goals": 1,
+      "actions": 11,
+      "dir": "touch_lag"
+    },
+    {
+      "name": "email_not_responding",
+      "description": "Partly mismatched pair (the article is about email servers, the complaint about a blank screen). Shows all three link tiers, greyed-out irrelevant sections, a lower score, a same-screen merge, and a safe-mode dependency that pushes an action after a critical one.",
+      "kit_row": "row_1",
+      "authored_query": false,
+      "query": "My Samsung A115G tablet screen flashes and then goes completely blank whenever I tap to open an email in Gmail, and after it works for a short time it goes blank again.",
+      "siis_title": "Email server not responding on Samsung phone or tablet",
+      "goals": 1,
+      "actions": 4,
+      "dir": "email_not_responding"
+    },
+    {
+      "name": "touch_multi_intent",
+      "description": "Authored two-intent complaint against the touch article (the kit has no pair that grounds two goals). Two Goals, duplicate actions removed from the less relevant Goal.",
+      "kit_row": "row_21 (article only)",
+      "authored_query": true,
+      "query": "My Galaxy S22 touch is laggy and my swipes keep getting read as the wrong gesture.",
+      "siis_title": "Touchscreen issues on a Galaxy phone or tablet",
+      "goals": 2,
+      "actions": 11,
+      "dir": "touch_multi_intent"
+    }
+  ]
+}

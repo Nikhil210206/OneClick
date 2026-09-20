@@ -1,0 +1,68 @@
+{
+  "exact": {
+    "event": {
+      "stage": "cache",
+      "ms": 2.4,
+      "summary": "Exact cache hit (Tier 0)",
+      "detail": {
+        "hit": true,
+        "tier": "exact",
+        "similarity": 1.0,
+        "query": "My Samsung A115G tablet screen flashes and then goes completely blank whenever I tap to open an email in Gmail, and after it works for a short time it goes blank again.",
+        "matched_query": "My Samsung A115G tablet screen flashes and then goes completely blank whenever I tap to open an email in Gmail, and after it works for a short time it goes blank again.",
+        "norm_query": "my samsung a115g tablet screen flashes and then goes completely blank whenever i tap to open an email in gmail, and after it works for a short time it goes blank again.",
+        "slots": {
+          "component": "screen",
+          "symptom": "black"
+        },
+        "siis_hash": "4e765390aee789aa",
+        "siis_hash_match": true,
+        "slots_match": true,
+        "key": "c9c140afccd300c8",
+        "threshold": 0.85
+      }
+    },
+    "meta": {
+      "latency_ms": 3.1,
+      "cache_hit": true,
+      "cache_tier": "exact",
+      "model": null,
+      "cost_usd": 0.0,
+      "trace_id": "t_mock_email_not_responding_hit",
+      "fallback": null
+    }
+  },
+  "semantic": {
+    "event": {
+      "stage": "cache",
+      "ms": 24.6,
+      "summary": "Semantic cache hit (Tier 1)",
+      "detail": {
+        "hit": true,
+        "tier": "semantic",
+        "similarity": 0.91,
+        "query": "The display on my Samsung tablet flickers then turns black each time I launch Gmail.",
+        "matched_query": "My Samsung A115G tablet screen flashes and then goes completely blank whenever I tap to open an email in Gmail, and after it works for a short time it goes blank again.",
+        "norm_query": "the display on my samsung tablet flickers then turns black each time i launch gmail.",
+        "slots": {
+          "component": "screen",
+          "symptom": "black"
+        },
+        "siis_hash": "4e765390aee789aa",
+        "siis_hash_match": true,
+        "slots_match": true,
+        "key": "c9c140afccd300c8",
+        "threshold": 0.85
+      }
+    },
+    "meta": {
+      "latency_ms": 27.9,
+      "cache_hit": true,
+      "cache_tier": "semantic",
+      "model": null,
+      "cost_usd": 0.0,
+      "trace_id": "t_mock_email_not_responding_hit",
+      "fallback": null
+    }
+  }
+}

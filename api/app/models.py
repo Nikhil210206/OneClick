@@ -2,6 +2,7 @@
 
 Only compiler output reaches the official schema (app/schema.py).
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -11,6 +12,7 @@ from pydantic import BaseModel, Field
 
 class Slots(BaseModel):
     """Deterministic slots from the lexicon. No LLM."""
+
     component: str | None = None
     symptom: str | None = None
 
@@ -59,6 +61,7 @@ class DraftAction(BaseModel):
     depends_on: list[str] = Field(default_factory=list)
     link: LinkDecision | None = None
     intent_index: int = 0
+    name: str | None = None  # LLM-proposed action name; the compiler Title-Cases and dedupes it
 
 
 class ScreenNode(BaseModel):
@@ -93,3 +96,41 @@ class Trace(BaseModel):
     cache_tier: str | None = None  # exact | semantic | None
     model: str | None = None
     fallback: str | None = None  # no_match | no_siis_context | None
+
+
+class ResponseMeta(BaseModel):
+    """The ignorable `meta` block beside `contexts` in the response body (ADR-006)."""
+
+    latency_ms: float = 0.0
+    cache_hit: bool = False
+    cache_tier: str | None = None  # exact | semantic | None
+    model: str | None = None
+    cost_usd: float = 0.0
+    trace_id: str | None = None
+    fallback: str | None = None  # no_match | no_siis_context | None
+
+
+class StageName(str, Enum):
+    cache = "cache"
+    enrich = "enrich"
+    segment = "segment"
+    extract = "extract"
+    ground = "ground"
+    resolve = "resolve"
+    compile = "compile"
+    done = "done"
+    error = "error"
+
+
+class StageEvent(BaseModel):
+    """One SSE frame from POST /v1/troubleshoot/stream: {stage, ms, summary, detail}.
+
+    Order: cache -> enrich -> segment -> extract -> ground -> resolve -> compile -> done. A cache hit
+    jumps from cache to done. `done.detail` is the full response body (contexts + meta). `error` ends
+    the stream early. Per-stage `detail` shapes are documented in data/fixtures/README.md.
+    """
+
+    stage: StageName
+    ms: float = 0.0
+    summary: str = ""
+    detail: dict = Field(default_factory=dict)

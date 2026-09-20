@@ -1,0 +1,648 @@
+{
+  "_readme": "Pre-resolve DraftActions with the LinkDecision the resolver should return. `basis` is 'design-explicit' when the design doc states it, 'interpretation' when it is our reading of the tiered link table (confirm before treating as gospel). must_not_match lists real catalog entries that look right but are wrong screens.",
+  "cases": [
+    {
+      "id": "touch-enable",
+      "source": "touchscreen article S8-S9",
+      "action": {
+        "steps": [
+          {
+            "text": "If you keep a screen protector on, enable Touch sensitivity.",
+            "src_ids": [
+              "S8"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Go to Settings.",
+            "src_ids": [
+              "S9"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Display.",
+            "src_ids": [
+              "S9"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap the switch next to Touch sensitivity.",
+            "src_ids": [
+              "S9"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": "Settings > Display > Touch sensitivity",
+        "intent_verb": "enable",
+        "description": "It will improve touch through screen protectors",
+        "category": "auto",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Enable Touch Sensitivity"
+      },
+      "expected": {
+        "tier": "catalog",
+        "entry_id": "DL-0126",
+        "must_not_match": [
+          "DL-0125"
+        ],
+        "basis": "design-explicit",
+        "note": "enable -> onURL; validation has condition/value, so it can be Verified",
+        "original_type": "onURL"
+      }
+    },
+    {
+      "id": "touch-disable",
+      "source": "touchscreen article S33-S34",
+      "action": {
+        "steps": [
+          {
+            "text": "If you are not using a protective film, disable Touch sensitivity.",
+            "src_ids": [
+              "S33"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Go to Settings.",
+            "src_ids": [
+              "S34"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Display.",
+            "src_ids": [
+              "S34"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap the switch next to Touch sensitivity to disable it.",
+            "src_ids": [
+              "S34"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": "Settings > Display > Touch sensitivity",
+        "intent_verb": "disable",
+        "description": "It will stop overly sensitive touch input",
+        "category": "auto",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Disable Touch Sensitivity"
+      },
+      "expected": {
+        "tier": "catalog",
+        "entry_id": "DL-0125",
+        "must_not_match": [
+          "DL-0126"
+        ],
+        "basis": "design-explicit",
+        "note": "disable -> offURL; same node as touch-enable, opposite polarity; its own validation object is key-only (no condition), copy it as is",
+        "original_type": "offURL"
+      }
+    },
+    {
+      "id": "navigation-bar-open",
+      "source": "touchscreen article S31-S32",
+      "action": {
+        "steps": [
+          {
+            "text": "Go to Settings.",
+            "src_ids": [
+              "S31"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Display.",
+            "src_ids": [
+              "S31"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Navigation bar.",
+            "src_ids": [
+              "S31"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Select Buttons to turn off full screen gestures.",
+            "src_ids": [
+              "S32"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": "Settings > Display > Navigation bar",
+        "intent_verb": "open",
+        "description": "It will turn off full screen gestures",
+        "category": "auto",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Turn Off Full Screen Gestures"
+      },
+      "expected": {
+        "tier": "catalog",
+        "entry_id": "DL-0169",
+        "must_not_match": [
+          "DL-0136",
+          "DL-0137",
+          "DL-0170",
+          "DL-0171"
+        ],
+        "basis": "design-explicit",
+        "note": "open -> onClickURL on the leaf screen, not a gesture toggle",
+        "original_type": "onClickURL"
+      }
+    },
+    {
+      "id": "wifi-open",
+      "source": "email article S8-S9",
+      "action": {
+        "steps": [
+          {
+            "text": "Go to Settings.",
+            "src_ids": [
+              "S8"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Connections.",
+            "src_ids": [
+              "S8"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Wi-Fi.",
+            "src_ids": [
+              "S8"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Try loading a webpage to confirm your internet connection is working.",
+            "src_ids": [
+              "S9"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": "Settings > Connections > Wi-Fi",
+        "intent_verb": "open",
+        "description": "It will verify your internet connection",
+        "category": "auto",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Check Wi-Fi Connection"
+      },
+      "expected": {
+        "tier": "catalog",
+        "entry_id": "DL-0313",
+        "must_not_match": [
+          "DL-0308",
+          "DL-0492",
+          "DL-0513",
+          "DL-0572",
+          "DL-0536"
+        ],
+        "basis": "design-explicit",
+        "note": "five entries share the message 'View WiFi Settings'; only the description 'Opens the Wi-Fi settings page' is the real Wi-Fi screen",
+        "original_type": "onClickURL"
+      }
+    },
+    {
+      "id": "backup-enable",
+      "source": "data/kit/sample_output.json (organisers' own example)",
+      "action": {
+        "steps": [
+          {
+            "text": "Navigate to and open Settings.",
+            "src_ids": [],
+            "grounded": true,
+            "grounding_score": 0.9
+          },
+          {
+            "text": "Tap on Accounts and backup.",
+            "src_ids": [],
+            "grounded": true,
+            "grounding_score": 0.9
+          },
+          {
+            "text": "Select Back up data to secure your personal files.",
+            "src_ids": [],
+            "grounded": true,
+            "grounding_score": 0.9
+          }
+        ],
+        "screen_path": "Settings > Accounts and backup > Back up data",
+        "intent_verb": "enable",
+        "description": "It will facilitate secure data transfer between your devices",
+        "category": "auto",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Back Up Phone Data"
+      },
+      "expected": {
+        "tier": "catalog",
+        "entry_id": "DL-0542",
+        "must_not_match": [
+          "DL-0541"
+        ],
+        "basis": "design-explicit",
+        "note": "the organisers' sample output uses exactly this entry; DL-0541 is the disable twin",
+        "original_type": "onURL"
+      }
+    },
+    {
+      "id": "clear-cache-dummy",
+      "source": "email article S18-S28",
+      "action": {
+        "steps": [
+          {
+            "text": "Navigate to Settings.",
+            "src_ids": [
+              "S18",
+              "S24"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Apps.",
+            "src_ids": [
+              "S19",
+              "S25"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Select your email app.",
+            "src_ids": [
+              "S20",
+              "S26"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Storage.",
+            "src_ids": [
+              "S21",
+              "S27"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Clear cache.",
+            "src_ids": [
+              "S22"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Clear data, and then tap OK.",
+            "src_ids": [
+              "S28"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": "Settings > Apps > Email app > Storage",
+        "intent_verb": "open",
+        "description": "It will clear temporary email app data",
+        "category": "auto",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Clear Email App Cache And Data"
+      },
+      "expected": {
+        "tier": "dummy",
+        "entry_id": "DL-DUMMY",
+        "must_not_match": [],
+        "basis": "design-explicit",
+        "note": "the design names clear cache as a catalog gap; expect the placeholder"
+      }
+    },
+    {
+      "id": "factory-reset-dummy",
+      "source": "touchscreen article S48-S53",
+      "action": {
+        "steps": [
+          {
+            "text": "Navigate to and open Settings.",
+            "src_ids": [
+              "S48"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap General management.",
+            "src_ids": [
+              "S49"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Reset.",
+            "src_ids": [
+              "S50"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Factory data reset.",
+            "src_ids": [
+              "S51"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Swipe to and tap Reset.",
+            "src_ids": [
+              "S52"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Delete all.",
+            "src_ids": [
+              "S53"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": "Settings > General management > Reset > Factory data reset",
+        "intent_verb": "reset",
+        "description": "It will restore factory default settings",
+        "category": "critical",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Factory Data Reset"
+      },
+      "expected": {
+        "tier": "dummy",
+        "entry_id": "DL-DUMMY",
+        "must_not_match": [
+          "DL-0022",
+          "DL-0349"
+        ],
+        "basis": "interpretation",
+        "note": "one clear Settings screen and no catalog node. DL-0022 'View Reset Options' is the AUTO factory reset, not this screen. The compiler, not the resolver, drops links on critical actions"
+      }
+    },
+    {
+      "id": "safe-mode-manual",
+      "source": "email article S31-S36",
+      "action": {
+        "steps": [
+          {
+            "text": "Press and hold the Power button or Side button.",
+            "src_ids": [
+              "S31"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Touch and hold the Power off icon.",
+            "src_ids": [
+              "S33"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Tap Safe mode when it appears on the screen.",
+            "src_ids": [
+              "S34"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Check if your email app is still experiencing issues.",
+            "src_ids": [
+              "S36"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": null,
+        "intent_verb": "restart",
+        "description": "It will check for app conflicts",
+        "category": "critical",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Restart In Safe Mode"
+      },
+      "expected": {
+        "tier": "manual",
+        "entry_id": null,
+        "must_not_match": [],
+        "basis": "interpretation",
+        "note": "power-menu gesture, not a Settings screen"
+      }
+    },
+    {
+      "id": "software-update-manual",
+      "source": "touchscreen article S35-S36",
+      "action": {
+        "steps": [
+          {
+            "text": "Keep your device software up to date.",
+            "src_ids": [
+              "S35"
+            ],
+            "grounded": true,
+            "grounding_score": 0.88
+          },
+          {
+            "text": "Check for updates for your third-party apps.",
+            "src_ids": [
+              "S36"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": null,
+        "intent_verb": "check",
+        "description": "It will keep software and apps current",
+        "category": "critical",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Update Device Software"
+      },
+      "expected": {
+        "tier": "manual",
+        "entry_id": null,
+        "must_not_match": [
+          "DL-0024",
+          "DL-0115",
+          "DL-0135"
+        ],
+        "basis": "interpretation",
+        "note": "no screen path in the article. The 'View Update Settings' entries are system-config, Galaxy-app and security-policy updates, all wrong screens"
+      }
+    },
+    {
+      "id": "charger-physical",
+      "source": "touchscreen article S27-S28",
+      "action": {
+        "steps": [
+          {
+            "text": "Try using a different, undamaged charger.",
+            "src_ids": [
+              "S27"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          },
+          {
+            "text": "Avoid using the touchscreen while your device is charging.",
+            "src_ids": [
+              "S28"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": null,
+        "intent_verb": null,
+        "description": "It will rule out charger problems",
+        "category": "manual",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Try Different Charger"
+      },
+      "expected": {
+        "tier": "manual",
+        "entry_id": null,
+        "must_not_match": [],
+        "basis": "design-explicit",
+        "note": "physical step"
+      }
+    },
+    {
+      "id": "screen-protector-physical",
+      "source": "touchscreen article S7",
+      "action": {
+        "steps": [
+          {
+            "text": "Remove your screen protector if it is peeling or has debris under it.",
+            "src_ids": [
+              "S7"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": null,
+        "intent_verb": null,
+        "description": "It will remove damaged screen protectors",
+        "category": "manual",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Remove Damaged Screen Protector"
+      },
+      "expected": {
+        "tier": "manual",
+        "entry_id": null,
+        "must_not_match": [],
+        "basis": "design-explicit",
+        "note": "physical step"
+      }
+    },
+    {
+      "id": "contact-support-external",
+      "source": "touchscreen article S56",
+      "action": {
+        "steps": [
+          {
+            "text": "Contact Samsung Support for further assistance if the issue persists.",
+            "src_ids": [
+              "S56"
+            ],
+            "grounded": true,
+            "grounding_score": 0.95
+          }
+        ],
+        "screen_path": null,
+        "intent_verb": "visit",
+        "description": "It will connect you with Samsung Support",
+        "category": "manual",
+        "disruption_rank": 0,
+        "depends_on": [],
+        "link": null,
+        "intent_index": 0,
+        "name": "Contact Samsung Support"
+      },
+      "expected": {
+        "tier": "manual",
+        "entry_id": null,
+        "must_not_match": [],
+        "basis": "design-explicit",
+        "note": "external help"
+      }
+    }
+  ]
+}

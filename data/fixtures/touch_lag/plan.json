@@ -1,0 +1,220 @@
+{
+  "contexts": [
+    {
+      "goal": "Follow these steps to perform this Touchscreen Issues Troubleshooting.",
+      "title": "Touchscreen input lag",
+      "score": 0.88,
+      "actions": [
+        {
+          "actionName": "Remove Damaged Screen Protector",
+          "description": "It will remove damaged screen protectors",
+          "stepGroups": [
+            {
+              "steps": [
+                "Remove your screen protector if it is peeling or has debris under it."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        },
+        {
+          "actionName": "Enable Touch Sensitivity",
+          "description": "It will improve touch through screen protectors",
+          "stepGroups": [
+            {
+              "steps": [
+                "If you keep a screen protector on, enable Touch sensitivity.",
+                "Go to Settings.",
+                "Tap Display.",
+                "Tap the switch next to Touch sensitivity."
+              ],
+              "actionableDeeplink": {
+                "deeplink": "bixby://masked/act/14eb42b895",
+                "description": "Enables touch sensitivity via device Settings on the device.",
+                "message": "Enable Touch sensitivity",
+                "originalType": "onURL"
+              },
+              "validationDeeplink": {
+                "deeplink": "bixby://masked/val/6451858b28",
+                "key": "Touch sensitivity",
+                "resultType": "boolean",
+                "condition": "equal",
+                "value": "True"
+              }
+            }
+          ],
+          "category": "auto"
+        },
+        {
+          "actionName": "Try Different Charger",
+          "description": "It will rule out charger problems",
+          "stepGroups": [
+            {
+              "steps": [
+                "Try using a different, undamaged charger.",
+                "Avoid using the touchscreen while your device is charging."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        },
+        {
+          "actionName": "Turn Off Full Screen Gestures",
+          "description": "It will turn off full screen gestures",
+          "stepGroups": [
+            {
+              "steps": [
+                "Go to Settings.",
+                "Tap Display.",
+                "Tap Navigation bar.",
+                "Select Buttons to turn off full screen gestures."
+              ],
+              "actionableDeeplink": {
+                "deeplink": "bixby://masked/act/2f3dd95259",
+                "description": "Opens the navigation bar settings page in device Settings on the device.",
+                "message": "View Navigation bar",
+                "originalType": "onClickURL"
+              },
+              "validationDeeplink": {
+                "deeplink": "bixby://masked/val/d8310c1b7d",
+                "key": "Navigation bar"
+              }
+            }
+          ],
+          "category": "auto"
+        },
+        {
+          "actionName": "Disable Touch Sensitivity",
+          "description": "It will stop overly sensitive touch input",
+          "stepGroups": [
+            {
+              "steps": [
+                "If you are not using a protective film, disable Touch sensitivity.",
+                "Go to Settings.",
+                "Tap Display.",
+                "Tap the switch next to Touch sensitivity to disable it."
+              ],
+              "actionableDeeplink": {
+                "deeplink": "bixby://masked/act/1b0d34e9b4",
+                "description": "Disables touch sensitivity via device Settings on the device.",
+                "message": "Disable Touch sensitivity",
+                "originalType": "offURL"
+              },
+              "validationDeeplink": {
+                "deeplink": "bixby://masked/val/6451858b28",
+                "key": "Touch sensitivity"
+              }
+            }
+          ],
+          "category": "auto"
+        },
+        {
+          "actionName": "Back Up Your Data",
+          "description": "It will protect your data before reset",
+          "stepGroups": [
+            {
+              "steps": [
+                "Back up your personal data before you continue."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        },
+        {
+          "actionName": "Contact Samsung Support",
+          "description": "It will connect you with Samsung Support",
+          "stepGroups": [
+            {
+              "steps": [
+                "Contact Samsung Support for further assistance if the issue persists."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        },
+        {
+          "actionName": "Restart Your Device",
+          "description": "It will fix minor software glitches",
+          "stepGroups": [
+            {
+              "steps": [
+                "Press and hold the Power button, then tap Restart.",
+                "Tap Restart again to confirm."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Restart In Safe Mode",
+          "description": "It will find conflicting third-party apps",
+          "stepGroups": [
+            {
+              "steps": [
+                "Swipe down from the top of the screen with two fingers and tap the Power icon.",
+                "Touch and hold Power off, then tap Safe mode.",
+                "Remove any third-party apps installed or updated around when the issue began."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Update Device Software",
+          "description": "It will keep software and apps current",
+          "stepGroups": [
+            {
+              "steps": [
+                "Keep your device software up to date.",
+                "Check for updates for your third-party apps."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Factory Data Reset",
+          "description": "It will restore factory default settings",
+          "stepGroups": [
+            {
+              "steps": [
+                "Navigate to and open Settings.",
+                "Tap General management.",
+                "Tap Reset.",
+                "Tap Factory data reset.",
+                "Swipe to and tap Reset.",
+                "Tap Delete all."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "latency_ms": 2357.8,
+    "cache_hit": false,
+    "cache_tier": null,
+    "model": "gemini-flash",
+    "cost_usd": 0.000842,
+    "trace_id": "t_mock_touch_lag",
+    "fallback": null
+  }
+}

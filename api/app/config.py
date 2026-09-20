@@ -1,4 +1,5 @@
 """Central settings. Every threshold and budget lives here, never hard-coded in modules."""
+
 from pydantic import BaseModel
 
 
@@ -29,6 +30,11 @@ class Settings(BaseModel):
 
     # Response (ADR-006)
     include_meta: bool = True
+
+    # Console stream (Vishaal): replays data/fixtures until pipeline.run.run_stream is implemented
+    stream_mock: bool = True
+    stream_mock_time_scale: float = 1.0  # 1.0 = recorded stage timings; 0 = no delay (tests)
+    stream_fixtures_dir: str | None = None  # None = <repo>/data/fixtures (not in the Docker image)
 
 
 settings = Settings()

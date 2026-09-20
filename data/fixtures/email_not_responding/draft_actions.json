@@ -1,0 +1,204 @@
+{
+  "scenario": "email_not_responding",
+  "state": "compiler input: grounded, resolved, categorized, ordered, deduped across goals",
+  "actions": [
+    {
+      "steps": [
+        {
+          "text": "Go to Settings.",
+          "src_ids": [
+            "S8"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Connections.",
+          "src_ids": [
+            "S8"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Wi-Fi.",
+          "src_ids": [
+            "S8"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Try loading a webpage to confirm your internet connection is working.",
+          "src_ids": [
+            "S9"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": "Settings > Connections > Wi-Fi",
+      "intent_verb": "open",
+      "description": "It will verify your internet connection",
+      "category": "auto",
+      "disruption_rank": 0,
+      "depends_on": [],
+      "link": {
+        "tier": "catalog",
+        "node_id": "node_wifi_settings",
+        "entry_id": "DL-0313",
+        "confidence": 0.9
+      },
+      "intent_index": 0,
+      "name": "Check Wi-Fi Connection"
+    },
+    {
+      "steps": [
+        {
+          "text": "Navigate to Settings.",
+          "src_ids": [
+            "S18",
+            "S24"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Apps.",
+          "src_ids": [
+            "S19",
+            "S25"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Select your email app.",
+          "src_ids": [
+            "S20",
+            "S26"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Storage.",
+          "src_ids": [
+            "S21",
+            "S27"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Clear cache.",
+          "src_ids": [
+            "S22"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Clear data, and then tap OK.",
+          "src_ids": [
+            "S28"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": "Settings > Apps > Email app > Storage",
+      "intent_verb": "open",
+      "description": "It will clear temporary email app data",
+      "category": "auto",
+      "disruption_rank": 1,
+      "depends_on": [],
+      "link": {
+        "tier": "dummy",
+        "node_id": null,
+        "entry_id": "DL-DUMMY",
+        "confidence": 0.55
+      },
+      "intent_index": 0,
+      "name": "Clear Email App Cache And Data"
+    },
+    {
+      "steps": [
+        {
+          "text": "Press and hold the Power button or Side button.",
+          "src_ids": [
+            "S31"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Touch and hold the Power off icon.",
+          "src_ids": [
+            "S33"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Tap Safe mode when it appears on the screen.",
+          "src_ids": [
+            "S34"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        },
+        {
+          "text": "Check if your email app is still experiencing issues.",
+          "src_ids": [
+            "S36"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": "restart",
+      "description": "It will check for app conflicts",
+      "category": "critical",
+      "disruption_rank": 5,
+      "depends_on": [],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Restart In Safe Mode"
+    },
+    {
+      "steps": [
+        {
+          "text": "Uninstall the email app while in Safe mode.",
+          "src_ids": [
+            "S38"
+          ],
+          "grounded": true,
+          "grounding_score": 0.95
+        }
+      ],
+      "screen_path": null,
+      "intent_verb": null,
+      "description": "It will remove the conflicting email app",
+      "category": "manual",
+      "disruption_rank": 1,
+      "depends_on": [
+        "safe mode"
+      ],
+      "link": {
+        "tier": "manual",
+        "node_id": null,
+        "entry_id": null,
+        "confidence": 0.0
+      },
+      "intent_index": 0,
+      "name": "Uninstall Email App"
+    }
+  ]
+}

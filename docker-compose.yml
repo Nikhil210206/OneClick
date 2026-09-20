@@ -5,7 +5,9 @@ services:
       dockerfile: api/Dockerfile
     ports:
       - "8000:8000"
-    env_file: .env
+    env_file:
+      - path: .env          # LLM keys; retrieval and cache need none
+        required: false     # a fresh clone has no .env, and `docker compose up` must still work
     environment:
       ONECLICK_DATA: /data      # data/kit is copied here; build scripts write /data/build
       ONECLICK_SQLITE: /data/cache.sqlite

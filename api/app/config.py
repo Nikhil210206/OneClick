@@ -16,7 +16,10 @@ class Settings(BaseModel):
     retrieval_budget_s: float = 0.5
 
     # Cache (ADR-004)
-    cache_sim_threshold: float = 0.85
+    # 0.80 measured on data/gold/cache_paraphrases.jsonl (scripts/eval_cache.py --sweep):
+    # 0.85 hit only 63% of held-out paraphrases (A3 needs >= 80%), and below 0.80 a paraphrase
+    # starts matching the wrong cached plan. 0.80 gave 90% with zero wrong plans or false hits.
+    cache_sim_threshold: float = 0.80
     sqlite_path: str = "cache.sqlite"
 
     # Grounding (component 6)

@@ -1,5 +1,189 @@
 {
-  "_readme": "Deterministic slots for the cache guard. Add synonyms freely; keep values lowercase.",
-  "component": {"screen": ["screen", "display"], "battery": ["battery", "charge", "charging"]},
-  "symptom": {"black": ["black", "blank"], "cracked": ["cracked", "broken", "shattered"]}
+  "_readme": "Deterministic slots for the cache guard. Add synonyms freely; keep values lowercase. Longest matching phrase wins, so multi-word entries beat single words. Components answer 'which part', symptoms answer 'what is wrong' - two filled symptoms that differ block a semantic cache hit (black vs cracked).",
+  "component": {
+    "screen": [
+      "screen",
+      "display",
+      "touchscreen",
+      "touch screen",
+      "inner screen",
+      "cover screen",
+      "lcd",
+      "panel"
+    ],
+    "battery": [
+      "battery",
+      "charging",
+      "charger",
+      "charge",
+      "power saving",
+      "juice"
+    ],
+    "camera": [
+      "camera",
+      "lens",
+      "photo",
+      "picture",
+      "video recording",
+      "selfie",
+      "flash"
+    ],
+    "app": [
+      "app",
+      "apps",
+      "application",
+      "gmail",
+      "email app",
+      "play store"
+    ],
+    "network": [
+      "wi-fi",
+      "wifi",
+      "mobile data",
+      "network",
+      "signal",
+      "hotspot",
+      "bluetooth",
+      "internet",
+      "connection"
+    ],
+    "sound": [
+      "sound",
+      "audio",
+      "speaker",
+      "volume",
+      "ringtone",
+      "microphone",
+      "mic"
+    ],
+    "storage": [
+      "storage",
+      "memory",
+      "space",
+      "cache"
+    ],
+    "performance": [
+      "performance",
+      "phone speed",
+      "device speed"
+    ],
+    "keyboard": [
+      "keyboard",
+      "typing",
+      "autocorrect"
+    ],
+    "sim": [
+      "sim",
+      "sim card",
+      "esim"
+    ]
+  },
+  "symptom": {
+    "black": [
+      "black",
+      "blank",
+      "dark",
+      "no display",
+      "nothing shows",
+      "won't turn on",
+      "does not turn on",
+      "doesn't display",
+      "no image",
+      "wont turn on",
+      "doesnt display",
+      "doesn't show",
+      "doesnt show"
+    ],
+    "cracked": [
+      "cracked",
+      "crack",
+      "broken",
+      "shattered",
+      "bleeding"
+    ],
+    "flicker": [
+      "flicker",
+      "flickers",
+      "flickering",
+      "flashes",
+      "flashing",
+      "blinking"
+    ],
+    "drain": [
+      "drain",
+      "drains",
+      "draining",
+      "dies fast",
+      "battery life",
+      "discharges"
+    ],
+    "overheating": [
+      "overheat",
+      "overheating",
+      "too hot",
+      "heating up",
+      "warm"
+    ],
+    "slow": [
+      "slow",
+      "sluggish",
+      "lag",
+      "laggy",
+      "delayed",
+      "delay",
+      "freezing",
+      "freezes",
+      "hangs"
+    ],
+    "unresponsive": [
+      "unresponsive",
+      "not responding",
+      "doesn't respond",
+      "won't respond",
+      "stopped working",
+      "touch doesn't work",
+      "doesnt respond",
+      "wont respond",
+      "touch doesnt work"
+    ],
+    "distorted": [
+      "distorted",
+      "green line",
+      "lines on",
+      "discoloured",
+      "discolored",
+      "white screen"
+    ],
+    "crash": [
+      "crash",
+      "crashes",
+      "crashing",
+      "force close",
+      "closes by itself",
+      "keeps stopping"
+    ],
+    "no_connection": [
+      "won't connect",
+      "cannot connect",
+      "keeps disconnecting",
+      "no internet",
+      "no signal",
+      "wont connect",
+      "cant connect"
+    ],
+    "blurry": [
+      "blurry",
+      "blurred",
+      "out of focus",
+      "fuzzy",
+      "grainy"
+    ],
+    "no_sound": [
+      "no sound",
+      "no audio",
+      "muted",
+      "can't hear",
+      "silent"
+    ]
+  }
 }

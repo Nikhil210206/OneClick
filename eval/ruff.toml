@@ -1,0 +1,7 @@
+# Same style as api/pyproject.toml: Python 3.10 target, line length 110.
+line-length = 110
+target-version = "py310"
+src = ["."]  # evalkit and the scripts are first-party imports
+
+[lint]
+extend-select = ["I", "UP", "B"]

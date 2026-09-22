@@ -44,8 +44,11 @@ python eval/report.py         # regenerates docs/metrics.md
 curl -N -X POST localhost:8000/v1/troubleshoot/stream -H "Content-Type: application/json" \
      -d @data/fixtures/touch_lag/request.json          # ?mock=exact | ?mock=semantic for cache hits
 
-# Console (Next.js, not bootstrapped yet — see console/README.md)
-cd console && npm run dev     # needs NEXT_PUBLIC_API_URL
+# Console (Next.js 16 + React 19 + Tailwind v4 — see console/README.md)
+cd console
+npm install
+npm run dev                   # http://localhost:3000
+npm run lint && npm run typecheck && npm run build
 ```
 
 `test_all_modules_import` in [api/tests/test_api.py](api/tests/test_api.py) walks every package: a syntax error or bad import anywhere in `app/` fails the suite, even in code nobody calls yet.
@@ -130,6 +133,17 @@ Stay in your lane; needed changes elsewhere go through a GitHub issue tagging th
 - `data/fixtures/` is a contract for Karur and Nikhil, guarded by [api/tests/test_fixtures.py](api/tests/test_fixtures.py): official schema, zero URLs, verbatim catalog links, every step traced to a real article sentence, the score formula. If you change a fixture, keep those tests green and tell the other lanes.
 - Catalog quirk the fixtures and the simulator must respect: all 138 `onURL` (enable) entries carry a full validation object (key, condition, value) and every `offURL`, `onClickURL` and `updateURL` entry is key-only. So the design's "138 fully validatable entries" are exactly the enable toggles, and only those can show "Verified". `DL-0022 View Reset Options` is the *auto* factory reset, not Factory data reset.
 - A catalog entry's `message` can contradict its `description`: `DL-0397`/`DL-0398` read "Adaptive Display" but are adaptive **battery**. Match on `description`. Some entries are exact duplicates (`DL-0518`, `DL-0552`). Several common screens have no entry at all — software update, Safe mode, Dark mode, auto-rotate, per-app storage, Factory data reset — so those steps resolve to `bixby://dummy_positive` or stay manual, and that is the correct answer, not a bug.
+- **`.gitignore` entries must be anchored.** It started as the stock Python template, whose
+  unanchored `lib/` silently swallowed `console/lib/` — the console would have been committed
+  without its design tokens and failed to build for everyone else. The distribution/packaging
+  entries are now anchored (`/lib/`, `/build/`, `/dist/`…). Do not re-add an unanchored directory
+  name; it matches at every level, not just the repo root.
+- The console renders `data/fixtures/touch_lag/` directly through its `@fixtures/*` alias instead
+  of keeping a copy, so [api/tests/test_fixtures.py](api/tests/test_fixtures.py) guards what the
+  demo shows. That import sits above the app folder, which Turbopack will not resolve by default,
+  hence `turbopack.root` in `console/next.config.ts`.
+- `next dev` generates `console/AGENTS.md` and `console/CLAUDE.md` and keeps regenerating them.
+  Both are gitignored — the second would otherwise collide with this file.
 - `data/gold/deeplink_gold.jsonl` is the answer key for deeplink precision@1, split ~33 each; 36 are labelled so far. Label yours with `eval/tools/label_gold.py`, and read the chosen entry's own description before accepting it — the tool's BM25 shortlist gets 1 in 3 wrong.
 
 ## Open questions with the organisers

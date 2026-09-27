@@ -9,6 +9,11 @@ _PUNCT_EDGES = ".,;:!?\"'()[]"
 _FILLERS = {"the", "a", "an", "your", "my", "any", "all", "some", "this", "that", "its", "their", "our"}
 # A trimmed description must not end on one of these ("It will clear the data of").
 _DANGLING = _FILLERS | {"of", "to", "and", "or", "for", "with", "in", "on", "from", "by", "at", "into", "if"}
+# ...unless it is the particle of a phrasal verb: "It will check if the phone turns on".
+_PHRASAL = {
+    "turn", "turns", "switch", "switches", "power", "powers", "log", "logs", "sign", "signs", "come",
+    "comes", "boot", "boots", "plug", "plugs", "stay", "stays", "keep", "keeps", "carry", "carries",
+}  # fmt: skip
 # Kept capitalised inside a sentence-case title or a description.
 _PROPER = {
     "galaxy", "samsung", "wi-fi", "wifi", "bluetooth", "android", "gmail", "google", "smart", "switch",
@@ -72,6 +77,10 @@ def _lower_common(words: list[str]) -> list[str]:
     return out
 
 
+def _particle(words: list[str]) -> bool:
+    return len(words) >= 2 and words[-1].lower() in {"on", "in"} and words[-2].lower() in _PHRASAL
+
+
 def trim_description(text: str) -> str:
     """`It will ...` with 5-7 words in total, counting "It will"; no trailing period.
 
@@ -89,7 +98,7 @@ def trim_description(text: str) -> str:
         words = [w for i, w in enumerate(words) if i == 0 or w.lower() not in _FILLERS]
     if len(words) > body_max:
         words = words[:body_max]
-    while len(words) > 1 and words[-1].lower() in _DANGLING:
+    while len(words) > 1 and words[-1].lower() in _DANGLING and not _particle(words):
         words.pop()
     if not words:
         return _DESC_DEFAULT

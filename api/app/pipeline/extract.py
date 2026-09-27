@@ -26,18 +26,34 @@ _IMPERATIVE_VERBS = word_block(
     launch find choose enter reset install use wait clean inspect follow drag slide adjust set
     toggle sign delete verify confirm perform keep plug unplug insert take bring request switch move
     allow close force download log add power scroll long run start stop edit change look
+    shine examine access avoid wipe dry schedule call rotate pull push attach detach pair unpair
+    reconnect replace repeat return send share save scan search type sync transfer view place put
+    lift increase decrease reduce lower raise boot register release wake lock unlock recharge test
+    point let leave give reach ask report submit restore format free empty copy rename consider
+    retry review reopen relaunch unmount mount archive disconnect re-enable learn
     """
 )
 _LEAD_IN = re.compile(
-    r"^(?:first|then|next|finally|also|now|alternatively|afterwards|additionally|lastly|once done|"
-    r"to do (?:this|so)|if so|in that case|"
-    r"if (?:this|that|it) (?:doesn't|does not|didn't|did not) (?:help|work)|if needed|if necessary)\s*,?\s*",
+    r"^(?:first(?: of all)?|then|next|finally|also|now|alternatively|afterwards|additionally|lastly|"
+    r"once done|to do (?:this|so)|if so|in that case|in this case|otherwise|meanwhile|instead|"
+    r"if (?:this|that|it) (?:doesn't|does not|didn't|did not) (?:help|work)|if needed|if necessary|"
+    r"please|simply|just|kindly)\b\s*,?\s*",
     re.IGNORECASE,
 )
+# "You can also try forcing a restart...", "you may need to check the charger...": an instruction in
+# the article's polite form. The step keeps the article's words from the verb on.
+_MODAL = re.compile(
+    r"^(?:we (?:recommend|suggest)(?: that)? you|you)\s+(?:can|could|should|may|might|will|must|"
+    r"need to|have to|want to|are advised to)\s+(?:also\s+|first\s+|then\s+|still\s+)?"
+    r"(?:need to\s+|want to\s+|have to\s+)?(?:also\s+)?",
+    re.IGNORECASE,
+)
+_ADVERB = re.compile(r"^[A-Za-z]+ly\s+")  # "carefully inspect", "gently wipe"
 _CONDITION = re.compile(
-    r"^(?:if|when|to|once|after|before|while|on|for|in|from|with)\b[^,]{3,120},\s*(?P<rest>.+)$",
+    r"^(?:even if|even when|if|when|to|once|after|before|while|on|for|in|from|with|during|unless)\b",
     re.IGNORECASE,
 )
+_MAX_CONDITION_COMMAS = 3  # "For fast, quality repairs you can trust and rely on, visit ..."
 _HEADING_NUMBER = re.compile(r"^\s*(?:step\s*\d+\s*[:.)-]|\d+\s*[.):-])\s*", re.IGNORECASE)
 _SETTINGS_ENTRY = re.compile(
     r"\b(?:go to|open|navigate to|launch|access)\s+(?:the\s+)?settings\b", re.IGNORECASE
@@ -79,17 +95,42 @@ def instruction(text: str) -> str | None:
     return _instruction(text)
 
 
+def _strip_lead_in(text: str) -> str:
+    """ "First, please carefully inspect..." -> "carefully inspect...": connectives, politeness and the
+    modal form ("You can also try...") come off; the article's words from there on stay."""
+    body = text.strip()
+    for _ in range(4):  # "Now, please ...", "First, you may need to ..."
+        stripped = _MODAL.sub("", _LEAD_IN.sub("", body))
+        if stripped == body:
+            break
+        body = stripped
+    return body
+
+
+def _imperative(text: str) -> bool:
+    """True when `text` opens with an imperative verb, allowing one adverb before it."""
+    first = re.match(r"[A-Za-z'\-]+", _ADVERB.sub("", text))
+    return bool(first) and first.group(0).lower() in _IMPERATIVE_VERBS
+
+
+# Lead-ins that say how a step relates to the ones before it: kept in the step ("Alternatively, swipe
+# down..." is another way, not the next step). Every other lead-in is filler and comes off.
+_MEANINGFUL_LEAD = re.compile(r"^(?:alternatively|otherwise|instead)\s*,\s*", re.IGNORECASE)
+
+
 def _instruction(text: str) -> str | None:
-    body = _LEAD_IN.sub("", text.strip())
-    first = re.match(r"[A-Za-z']+", body)
-    if first and first.group(0).lower() in _IMPERATIVE_VERBS:
+    body = _strip_lead_in(text)
+    if body and _imperative(body):
+        kept = _MEANINGFUL_LEAD.match(text.strip())
+        if kept:
+            return f"{kept.group(0)[0].upper()}{kept.group(0)[1:]}{body}"
         return body[0].upper() + body[1:]
-    conditional = _CONDITION.match(body)
-    if conditional:
-        rest = _LEAD_IN.sub("", conditional.group("rest"))
-        verb = re.match(r"[A-Za-z']+", rest)
-        if verb and verb.group(0).lower() in _IMPERATIVE_VERBS:
-            return body[0].upper() + body[1:]
+    if _CONDITION.match(body):
+        # The condition may hold commas of its own: try each of its first few commas as its end.
+        for comma in [m.end() for m in re.finditer(r",\s*", body)][:_MAX_CONDITION_COMMAS]:
+            head, rest = body[:comma], _strip_lead_in(body[comma:])
+            if len(head) <= 160 and rest and _imperative(rest):
+                return f"{head[0].upper()}{head[1:]}{rest}"
     return None
 
 
@@ -111,8 +152,7 @@ def sentence_steps(text: str) -> list[str]:
 
 
 def _starts_with_verb(text: str) -> bool:
-    first = re.match(r"[A-Za-z']+", _LEAD_IN.sub("", text))
-    return bool(first) and first.group(0).lower() in _IMPERATIVE_VERBS
+    return _imperative(_strip_lead_in(text))
 
 
 def screen_path(steps: list[str]) -> str | None:
@@ -151,6 +191,34 @@ def heading_name(heading: str) -> str:
     return _HEADING_NUMBER.sub("", heading or "").strip(" :.-")
 
 
+# Descriptions for the critical kinds a heading can name ("8. Factory Data Reset"), and for a heading
+# that only names a subject ("Charger Issues"): what the reader gets, not "It will address ...".
+_KIND_DESCRIPTION = (
+    (re.compile(r"factory (?:data )?reset", re.IGNORECASE), "It will restore the factory settings"),
+    (re.compile(r"safe mode", re.IGNORECASE), "It will start the device in safe mode"),
+    (re.compile(r"software update|updates?\b", re.IGNORECASE), "It will check for the latest updates"),
+    (re.compile(r"restart|reboot", re.IGNORECASE), "It will restart the device"),
+    (
+        re.compile(r"assistance|support|service|repair|contact", re.IGNORECASE),
+        "It will get help from Samsung Support",
+    ),
+)
+
+
+def rules_name(heading: str) -> str:
+    """An action name from a section heading: "Check Email Access on a PC" as written, a subject
+    ("Charger Issues") as a check ("Check Charger Issues"), a critical kind as it is."""
+    name = heading_name(heading)
+    words = name.split()
+    if not words or words[0].lower() in _IMPERATIVE_VERBS or words[0].lower().endswith("ing"):
+        return name
+    if "check" in name.lower() or any(pattern.search(name) for pattern, _ in _KIND_DESCRIPTION[:4]):
+        return name
+    if _KIND_DESCRIPTION[4][0].search(name):
+        return f"Get {name}"  # "Further Assistance"
+    return f"Check {name}"
+
+
 def rules_description(name: str) -> str:
     """ "It will ..." from a section heading: "Check Email Access" -> "It will check email access"."""
     words = name.split()
@@ -159,9 +227,14 @@ def rules_description(name: str) -> str:
     first = words[0].lower()
     if first in _IMPERATIVE_VERBS:
         return f"It will {name[0].lower()}{name[1:]}"
+    for pattern, description in _KIND_DESCRIPTION:
+        if pattern.search(name):
+            return description
+    if "check" in name.lower():  # "Some things to check first"
+        return "It will run these checks first"
     if first.endswith("ing"):
         return f"It will help with {name.lower()}"
-    return f"It will address {name.lower()}"
+    return f"It will check {name.lower()}"
 
 
 def _topic(intent: Intent) -> str:
@@ -184,7 +257,24 @@ def extract_rules(
     actions = _rules_actions(intents, sentences, relevant) if relevant else []
     if not actions:
         actions = _rules_actions(intents, sentences, table)
-    return actions, [_topic(i) for i in intents]
+    return _most_relevant(actions, table), [_topic(i) for i in intents]
+
+
+def _most_relevant(actions: list[DraftAction], table: list[dict]) -> list[DraftAction]:
+    """At most `settings.rules_max_actions` rules actions: those from the most relevant sections, in
+    article order. A loosely matching article (row 7: a black screen, the Multi window guide) would
+    otherwise turn every one of its sections into an action."""
+    if len(actions) <= settings.rules_max_actions:
+        return actions
+    heading_of = {sid: row["heading"] for row in table for sid in row["sentence_ids"]}
+    relevance = {row["heading"]: max(row.get("relevance") or [0.0]) for row in table}
+
+    def score(action: DraftAction) -> float:
+        heads = {heading_of.get(i) for step in action.steps for i in step.src_ids}
+        return max((relevance.get(h, 0.0) for h in heads), default=0.0)
+
+    keep = sorted(range(len(actions)), key=lambda n: (-score(actions[n]), n))[: settings.rules_max_actions]
+    return [actions[n] for n in sorted(keep)]
 
 
 def _rules_actions(
@@ -203,7 +293,7 @@ def _rules_actions(
         texts = [s.text for s in steps]
         path = screen_path(texts)
         verb = intent_verb(texts, path)
-        name = heading_name(section["heading"]) or " ".join(texts[0].split()[:4])
+        name = rules_name(section["heading"]) or " ".join(texts[0].split()[:4])
         actions.append(
             DraftAction(
                 steps=steps,
@@ -473,6 +563,139 @@ def _with_lead_in(ids: list[str], sentences: list[SiisSentence]) -> list[str]:
     return [before.id, *ids]
 
 
+_ALTERNATIVES = re.compile(
+    r"\b(?:two|three|several|a few|different|other)?\s*(?:methods?|ways?|options?)\b.*:\s*$", re.IGNORECASE
+)
+
+
+def _with_introduced(ids: list[str], sentences: list[SiisSentence]) -> list[str]:
+    """The chosen ids, with each chosen introducing line ("To perform a factory data reset:", "There
+    are two methods for this:") followed by the instructions it introduces. Models cite that line with
+    only the last step under it (["To enter Safe mode:", "Touch and hold Power off, then tap Safe
+    mode."]), which dropped the steps between. The instructions directly after the line, in its
+    section, are added, up to the next one that begins a procedure of its own; after a line listing
+    methods, every method is kept."""
+    index = {s.id: n for n, s in enumerate(sentences)}
+    out: list[str] = []
+    for sid in ids:
+        out.append(sid)
+        line = sentences[index[sid]]
+        if not line.text.rstrip().endswith(":") or instruction(line.text) is not None:
+            continue
+        methods = bool(_ALTERNATIVES.search(line.text))
+        at = index[sid]
+        for nxt in sentences[at + 1 : at + 1 + settings.extract_lead_lookback]:
+            if nxt.section != line.section or instruction(nxt.text) is None:
+                break
+            if (
+                nxt.id != sentences[at + 1].id
+                and not methods
+                and _STARTS_PROCEDURE.search(_LEAD_IN.sub("", nxt.text))
+            ):
+                break
+            if nxt.id not in out and nxt.id not in ids:
+                out.append(nxt.id)
+    index_of = {sid: index[sid] for sid in out}
+    # keep the model's order, but an introduced step sits right after its line, before later picks
+    return sorted(dict.fromkeys(out), key=lambda i: index_of[i]) if len(out) > len(ids) else ids
+
+
+def _with_alternatives(ids: list[str], sentences: list[SiisSentence]) -> list[str]:
+    """The chosen ids, plus the other methods an article lists for the same step. "There are two
+    methods for this:" is followed by both (hold Power and Volume down; or take the battery out for 60
+    seconds); a model that chose the first alone left the second out. Only the instructions that
+    directly follow in the same section are added."""
+    if not ids:
+        return ids
+    index = {s.id: n for n, s in enumerate(sentences)}
+    first, last = min(index[i] for i in ids), max(index[i] for i in ids)
+    if first == 0 or not _ALTERNATIVES.search(sentences[first - 1].text):
+        return ids
+    section = sentences[first].section
+    extra = []
+    for nxt in sentences[last + 1 : last + 1 + settings.extract_tail_lookahead]:
+        if nxt.section != section or nxt.id in ids or instruction(nxt.text) is None:
+            break
+        extra.append(nxt.id)
+    return [*ids, *extra]
+
+
+# A sentence that begins a procedure of its own: a condition or a label ("If the touchscreen is
+# completely unresponsive, force a restart...", "For devices with a Side button: ..."), or opening Settings.
+_STARTS_PROCEDURE = re.compile(
+    r"^(?:if|when|for|on|once|to)\b|^[^:.]{2,60}:\s|\b(?:go|navigate) to\b", re.IGNORECASE
+)
+
+
+def _with_procedure_start(
+    ids: list[str], sentences: list[SiisSentence], name: str | None = None, path: str | None = None
+) -> list[str]:
+    """The chosen ids, plus the start of the procedure they finish. An article introduces a procedure
+    with a line of its own ("To perform a factory data reset:") and lists its steps after it; when the
+    model chose only the last of them (8B: "You will need to enter your Samsung account credentials"
+    for Factory Data Reset), the instructions between that line and the chosen ones are added. Only
+    when that line names what the action is about, and the chosen sentences do not begin a procedure
+    of their own ("If the touchscreen is completely unresponsive, force a restart" follows the plain
+    restart's steps in the same section)."""
+    if not ids:
+        return ids
+    index = {s.id: n for n, s in enumerate(sentences)}
+    at = min(index[i] for i in ids)
+    if _STARTS_PROCEDURE.search(_LEAD_IN.sub("", sentences[at].text.strip())):
+        return ids
+    about = content_terms(" ".join(x for x in (name, path) if x))
+    section = sentences[at].section
+    run: list[str] = []
+    for n in range(at - 1, max(-1, at - 1 - settings.extract_lead_lookback), -1):
+        before = sentences[n]
+        if before.section != section or before.id in ids:
+            return ids
+        if instruction(before.text) is not None:
+            run.append(before.id)
+            continue
+        header = before.text.rstrip().endswith(":") and bool(content_terms(before.text) & about)
+        return [*reversed(run), *ids] if run and header else ids
+    return ids
+
+
+def _with_tail(
+    ids: list[str], sentences: list[SiisSentence], path: str | None, name: str | None
+) -> list[str]:
+    """The chosen ids, plus the instruction that finishes the action when the model stopped one short:
+    8B picked "Navigate to Settings ... Tap Storage." for "Clear Gmail Cache" (path "... > Clear cache")
+    and left out "Tap Clear cache.". Taken only when the next sentences of the same section are
+    instructions and one names the action's own setting, which none of the chosen steps does."""
+    if not ids or not path:
+        return ids
+    leaf = content_terms(path.rsplit(">", 1)[-1])
+    if not leaf:
+        return ids
+    by_id = {s.id: s for s in sentences}
+    if any(leaf <= content_terms(by_id[i].text) for i in ids):
+        return ids
+    index = {s.id: n for n, s in enumerate(sentences)}
+    last = index[ids[-1]]
+    extra: list[str] = []
+    for nxt in sentences[last + 1 : last + 1 + settings.extract_tail_lookahead]:
+        if nxt.section != sentences[last].section or nxt.id in ids or instruction(nxt.text) is None:
+            break
+        extra.append(nxt.id)
+        if leaf <= content_terms(nxt.text):
+            return [*ids, *extra]
+    return ids
+
+
+# When the model chose no instruction at all, only a question survives: it asks the reader to check
+# something ("Did you drop your phone and smash the screen?"). A sentence that only explains ("Using
+# Safe mode helps identify...", "Terms and Conditions apply.", "your device may require service") is
+# never a step.
+_QUESTION = re.compile(
+    r"^\s*(?:did|do|does|is|are|has|have|was|were|can|could|will|would)\s+(?:you|your|the|it|this|there)\b"
+    r"|\?\s*$",
+    re.IGNORECASE,
+)
+
+
 _NAME_VERB = {"enable": "Enable", "disable": "Disable", "set": "Adjust", "check": "Check"}
 
 
@@ -494,6 +717,92 @@ def _consistent_name(
     return f"{_NAME_VERB.get(verb or '', 'Open')} {leaf}" if leaf else name
 
 
+_PURPOSE = re.compile(r"^\s*to\s+(?P<what>[^,:]{3,40})[,:]", re.IGNORECASE)
+
+
+def _split_procedures(ids: list[str], sentences: list[SiisSentence]) -> list[list[str]]:
+    """The chosen ids as one or more procedures. A model can hang a second procedure on the end of an
+    action: "Enter Safe Mode" citing the four entering steps and, five sentences on, "To exit Safe mode,
+    restart your phone normally." A later run of ids that begins with its own purpose ("To exit Safe
+    mode, ...") after a gap of at least `settings.extract_split_gap` sentences becomes an action of its
+    own, so the orderer can put it where it belongs."""
+    index = {s.id: n for n, s in enumerate(sentences)}
+    ordered = sorted(dict.fromkeys(ids), key=lambda i: index[i])
+    runs: list[list[str]] = []
+    for sid in ordered:
+        close = bool(runs) and index[sid] - index[runs[-1][-1]] - 1 < settings.extract_split_gap
+        if runs and (close or not _PURPOSE.match(sentences[index[sid]].text)):
+            runs[-1].append(sid)
+        else:
+            runs.append([sid])
+    return runs if len(runs) > 1 else [ids]  # one procedure: the model's own order stands
+
+
+def _steps_of(ids: list[str], by_id: dict[str, SiisSentence]) -> list[DraftStep]:
+    """Steps from the chosen sentences: their instructions, multi-instruction sentences split. When
+    none of them instructs, only a question survives: it asks the reader to check something."""
+    steps: list[DraftStep] = []
+    for sid in dict.fromkeys(ids):
+        steps += [DraftStep(text=t, src_ids=[sid]) for t in sentence_steps(by_id[sid].text)]
+    if steps:
+        return steps
+    return [
+        DraftStep(text=by_id[sid].text, src_ids=[sid])
+        for sid in dict.fromkeys(ids)
+        if _QUESTION.match(by_id[sid].text) and not _NOTE.match(by_id[sid].text)
+    ]
+
+
+def _purpose_name(text: str) -> str | None:
+    """ "Exit Safe Mode" from "To exit Safe mode, restart your phone normally." """
+    match = _PURPOSE.match(text)
+    if not match:
+        return None
+    return " ".join(w[:1].upper() + w[1:] for w in match.group("what").split())
+
+
+def _step_ids(action: DraftAction) -> list[str]:
+    return list(dict.fromkeys(i for step in action.steps for i in step.src_ids))
+
+
+def _merge_overlaps(actions: list[DraftAction], sentences: list[SiisSentence]) -> list[DraftAction]:
+    """One goal's actions without repeats. Picking ids, a model can cite the same sentences twice:
+    "Exit Safe Mode" over the very steps that enter it, or "Access Edge Panel" and "Edit Shortcuts"
+    both opening the panel, which reads as a duplicate step. An action whose sentences all belong to
+    another is dropped; two that share at least `settings.extract_merge_overlap` of the smaller one's
+    sentences become one, in article order, under the first one's name. Actions that only repeat a
+    sentence's wording from another part of the article (another procedure) are left alone."""
+    position = {s.id: n for n, s in enumerate(sentences)}
+    kept: list[DraftAction] = []
+    for action in actions:
+        ids = set(_step_ids(action))
+        target = None
+        for n, other in enumerate(kept):
+            theirs = set(_step_ids(other))
+            shared = ids & theirs
+            if not shared:
+                continue
+            if ids <= theirs:
+                target = -1  # nothing new in it
+                break
+            if theirs <= ids or len(shared) / min(len(ids), len(theirs)) >= settings.extract_merge_overlap:
+                target = n
+                break
+        if target == -1:
+            continue
+        if target is None:
+            kept.append(action)
+            continue
+        base = kept[target]
+        seen = {(s.text, tuple(s.src_ids)) for s in base.steps}
+        steps = [*base.steps, *(s for s in action.steps if (s.text, tuple(s.src_ids)) not in seen)]
+        steps.sort(key=lambda s: min((position.get(i, 10**6) for i in s.src_ids), default=10**6))
+        kept[target] = base.model_copy(
+            update={"steps": steps, "screen_path": base.screen_path or action.screen_path}
+        )
+    return kept
+
+
 def actions_from_selection(
     answer: dict, sentences: list[SiisSentence]
 ) -> tuple[list[DraftAction], list[str], list[Intent]]:
@@ -508,32 +817,35 @@ def actions_from_selection(
     for goal in (answer.get("goals") or [])[: settings.max_intents]:
         goal_actions = []
         for raw in goal.get("actions") or []:
-            ids = [i for i in raw.get("src_ids") or [] if isinstance(i, str) and i in by_id]
-            ids = _with_lead_in(list(dict.fromkeys(ids)), sentences)
-            steps: list[DraftStep] = []
-            for sid in dict.fromkeys(ids):
-                steps += [DraftStep(text=t, src_ids=[sid]) for t in sentence_steps(by_id[sid].text)]
-            if not steps:  # the model chose only non-instruction sentences: keep them, bar side notes
-                steps = [
-                    DraftStep(text=by_id[sid].text, src_ids=[sid])
-                    for sid in dict.fromkeys(ids)
-                    if not _NOTE.match(by_id[sid].text)
-                ]
-            if not steps:
-                continue
             verb = raw.get("intent_verb") if raw.get("intent_verb") in VERBS else "none"
             path = " ".join(str(raw.get("screen_path") or "").split()) or None
             name = " ".join(str(raw.get("name") or "").split()) or None
-            goal_actions.append(
-                DraftAction(
-                    steps=steps,
-                    screen_path=path,
-                    intent_verb=None if verb == "none" else verb,
-                    name=_consistent_name(name, steps, path, None if verb == "none" else verb),
-                    description=" ".join(str(raw.get("description") or "").split()) or None,
-                    intent_index=len(intents),
+            ids = [i for i in raw.get("src_ids") or [] if isinstance(i, str) and i in by_id]
+            ids = _with_introduced(list(dict.fromkeys(ids)), sentences)
+            ids = _with_lead_in(ids, sentences)
+            ids = _with_procedure_start(ids, sentences, name, path)
+            ids = _with_tail(ids, sentences, path, name)
+            ids = _with_alternatives(ids, sentences)
+            description = " ".join(str(raw.get("description") or "").split()) or None
+            for n, run in enumerate(_split_procedures(ids, sentences)):
+                if n:  # a second procedure the model hung on this action: named after its own purpose
+                    name = _purpose_name(by_id[run[0]].text)
+                    path, verb = None, "none"
+                    description = f"It will {name.lower()}" if name else None
+                steps = _steps_of(run, by_id)
+                if not steps:
+                    continue
+                goal_actions.append(
+                    DraftAction(
+                        steps=steps,
+                        screen_path=path,
+                        intent_verb=None if verb == "none" else verb,
+                        name=_consistent_name(name, steps, path, None if verb == "none" else verb),
+                        description=description,
+                        intent_index=len(intents),
+                    )
                 )
-            )
+        goal_actions = _merge_overlaps(goal_actions, sentences)
         if not goal_actions:
             continue
         problem = " ".join(str(goal.get("problem") or "").split())
@@ -543,6 +855,54 @@ def actions_from_selection(
         topics.append(" ".join(str(goal.get("topic") or "").split()) or title)
         actions += goal_actions
     return actions, topics, intents
+
+
+def complete_procedure(
+    actions: list[DraftAction], sentences: list[SiisSentence], sections: list[dict] | None
+) -> tuple[list[DraftAction], list[str]]:
+    """(actions, headings added): the steps of a numbered procedure the model followed but skipped.
+
+    Most kit articles are one troubleshooting procedure in numbered sections ("Step 1: Check for
+    Physical Damage", "Step 2: Force a Restart" ...). A model that follows two or more of them and
+    leaves others out is the judge's most common complaint ("missing an article fix", 16 of 20 kit
+    plans on 2026-09-26): 8B skipped the physical damage check of the black-screen article and the
+    first three steps of the email one. Each skipped numbered section that holds an instruction and
+    clears the relevance floor becomes an action of the goal that follows the procedure, built by the
+    rules extractor (the article's own sentences, grounded by construction), up to
+    `settings.extract_complete_max_actions` actions in that goal. Section relevance alone cannot make
+    this call (skipped fixes and off-topic sections both score 0.5-0.7): the article's own numbering
+    does.
+    """
+    if not actions or not sections:
+        return actions, []
+    numbered = [row for row in sections if _HEADING_NUMBER.match(row.get("heading") or "")]
+    if len(numbered) < settings.extract_complete_min_sections:
+        return actions, []
+    cited: dict[str, int] = {}
+    for action in actions:
+        for step in action.steps:
+            for sid in step.src_ids:
+                cited.setdefault(sid, action.intent_index)
+    followed = [row for row in numbered if any(i in cited for i in row["sentence_ids"])]
+    if len(followed) < settings.extract_complete_min_followed:
+        return actions, []
+    goals = [cited[i] for row in followed for i in row["sentence_ids"] if i in cited]
+    goal = max(set(goals), key=goals.count)
+    room = settings.extract_complete_max_actions - sum(1 for a in actions if a.intent_index == goal)
+    added: list[DraftAction] = []
+    headings: list[str] = []
+    for row in numbered:
+        if room <= 0:
+            break
+        if any(i in cited for i in row["sentence_ids"]):
+            continue
+        if max(row.get("relevance") or [0.0]) < settings.section_relevance_floor:
+            continue
+        for action in _rules_actions([Intent(text="")], sentences, [row]):
+            added.append(action.model_copy(update={"intent_index": goal}))
+            headings.append(row["heading"])
+            room -= 1
+    return [*actions, *added], headings
 
 
 def extract_select_llm(
@@ -578,8 +938,14 @@ def extract_select_llm(
     actions, topics, intents = actions_from_selection(_long_keys(answer), sentences)
     if not actions:
         raise ValueError("the extraction answer has no usable action")
+    actions, completed = complete_procedure(actions, sentences, sections)
     keys = ("model", "tokens_in", "tokens_out", "cost_usd", "attempts", "prompt")
-    detail = {"source": "llm", "mode": "select", "intents": [i.model_dump(mode="json") for i in intents]}
+    detail = {
+        "source": "llm",
+        "mode": "select",
+        "intents": [i.model_dump(mode="json") for i in intents],
+        "completed_sections": completed,
+    }
     return actions, topics, detail | {k: info.get(k) for k in keys}
 
 

@@ -92,7 +92,7 @@ until your Screen Graph build defines them.
 ## Vishaal
 
 Compiler tests: feed `draft_actions.json` to `compile_with_report` and compare to `plan.json`.
-`segment_with_sections` reproduces the `segment` event's `sentences` from the article: drop everything before the first `#`,
+`segment_with_sections` reproduces the `segment` event's `sentences` from the article: drop the listing's breadcrumb before the first `#` (any article text after it is a first section of its own; the three fixture articles have none),
 split on `#` headers, split each remaining line into sentences on `[.!?]` followed by whitespace and a capital,
 number them `S1..Sn` across the article. If you choose a different rule, change the fixtures, not just the code.
 

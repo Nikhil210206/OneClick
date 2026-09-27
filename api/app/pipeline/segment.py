@@ -18,14 +18,46 @@ _HEADER = re.compile(r"^(#{1,6})\s*(.*?)\s*#*\s*$")
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+(?=[A-Z])")
 
 
-def split_sections(siis_clean: str) -> list[dict]:
-    """[{id, heading, level, sentences: [text]}] in article order. Text before the first header is
-    the listing's breadcrumb, not the article, and is dropped."""
+# The listing's breadcrumb that opens a kit article: "<categories> <Title> (<categories>): ". The
+# categories repeat inside the brackets; whatever follows the colon is already the article.
+_BREADCRUMB = re.compile(r"^\s*(?P<head>[^\n()]{1,600}?)\(\s*(?P<cats>[^()\n]{1,600}?)\s*\)\s*:\s*")
+
+
+def _squash(text: str) -> str:
+    return re.sub(r"\s+", "", text).lower()
+
+
+def split_preamble(siis_clean: str) -> tuple[str, str, str]:
+    """(title, intro, rest): the text before the first `#` without its breadcrumb, and the article from
+    the first `#` on. Most kit articles have nothing between the breadcrumb and their first header, but
+    some open with the fixes themselves (row 3: the USB mouse, the damage check, the force restart), so
+    the intro is kept as a section of its own, titled after the breadcrumb."""
     start = siis_clean.find("#")
-    if start < 0:
-        body, sections = siis_clean, [{"id": "sec1", "heading": "", "level": 1, "sentences": []}]
-    else:
-        body, sections = siis_clean[start:], []
+    preamble, rest = (siis_clean, "") if start < 0 else (siis_clean[:start], siis_clean[start:])
+    title = ""
+    crumb = _BREADCRUMB.match(preamble)
+    if crumb and _squash(crumb.group("head")).startswith(_squash(crumb.group("cats"))):
+        cats = _squash(crumb.group("cats"))
+        head = crumb.group("head").strip()
+        # the title is the head minus the leading category list (compared without spaces)
+        consumed, i = 0, 0
+        while i < len(head) and consumed < len(cats):
+            if not head[i].isspace():
+                consumed += 1
+            i += 1
+        title = head[i:].strip(" ,:")
+        preamble = preamble[crumb.end() :]
+    elif start >= 0 and "\n" not in preamble.strip() and not re.search(r"[.!?]\s", preamble):
+        preamble = ""  # a one-line label with no sentence in it: a breadcrumb in some other shape
+    return title, preamble.strip(), rest
+
+
+def split_sections(siis_clean: str) -> list[dict]:
+    """[{id, heading, level, sentences: [text]}] in article order. The listing's breadcrumb before the
+    first header is dropped; any article text after it is the first section (split_preamble)."""
+    title, intro, body = split_preamble(siis_clean)
+    sections = [{"id": "sec1", "heading": title, "level": 1, "sentences": []}] if intro or not body else []
+    body = f"{intro}\n{body}" if intro else body
     for line in body.split("\n"):
         line = line.strip()
         if not line:

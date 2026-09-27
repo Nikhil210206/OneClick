@@ -21,6 +21,14 @@ def _key(text: str) -> str:
     return " ".join(re.findall(r"\w+", text.lower()))
 
 
+def verbatim(step: str, cited: list[str]) -> bool:
+    """The step is the article's own words: a cited sentence, or a run of whole words inside one
+    ("Tap OK." from "Tap Clear data, and then tap OK."). Nothing in it can be invented, so it is
+    grounded without the embedding and shared-term tests, which a two-word clause cannot pass."""
+    key = _key(step)
+    return bool(key) and any(f" {key} " in f" {_key(text)} " for text in cited)
+
+
 def _clauses(text: str) -> list[str]:
     parts = [p.strip() for p in _CLAUSE_BREAK.split(text) if len(p.strip().split()) >= 2]
     return [text, *parts] if len(parts) > 1 else [text]
@@ -35,8 +43,8 @@ def _similarities(actions: list[DraftAction], by_id: dict[str, SiisSentence]) ->
             cited = [by_id[i].text for i in step.src_ids if i in by_id]
             if not cited:
                 continue
-            if _key(step.text) in {_key(text) for text in cited}:
-                out[(ai, si)] = 1.0  # the step is the sentence itself: nothing to embed
+            if verbatim(step.text, cited):
+                out[(ai, si)] = 1.0  # the article's own words: nothing to embed
                 continue
             steps.append(((ai, si), step.text, [c for text in cited for c in _clauses(text)]))
     if not steps:
@@ -90,6 +98,8 @@ def ground_with_report(
             reasons = []
             if not valid_ids:
                 reasons.append("unknown_source")
+            elif verbatim(step.text, [by_id[i].text for i in valid_ids]):
+                pass
             else:
                 if score < threshold:
                     reasons.append("below_threshold")

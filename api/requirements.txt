@@ -6,6 +6,9 @@ httpx>=0.27
 pytest>=8.0
 ruff>=0.4
 
+# Normalize (component 1): English word frequencies to put back the spaces a scraped article lost
+wordninja==2.0.0
+
 # Retrieval (Karur): keyword + dense search over the deeplink catalog
 rank-bm25>=0.2.2
 fastembed>=0.4

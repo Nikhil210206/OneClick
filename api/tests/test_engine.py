@@ -133,7 +133,8 @@ def test_kit_articles_are_clean_after_normalize_and_keep_their_words():
         assert clean and len(digest) == 16 and not has_leak(clean) and not LEAK.search(clean)
     glued = next(r for r in KIT if "kidshome" in r["siis_response"]["content"])
     clean, _ = clean_siis(glued["siis_response"])
-    assert "kidshome" not in clean and "usingyourregisteredemailaddress" in clean  # only the address goes
+    # only the address goes, and the glued words around it get their spaces back
+    assert "kidshome" not in clean and "using your registered email address" in clean
 
 
 @pytest.mark.parametrize("name", SCENARIOS)

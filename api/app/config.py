@@ -25,15 +25,21 @@ class Settings(BaseModel):
     extract_model: str = "ministral-14b-latest"
     extract_fast_model: str = "ministral-8b-latest"  # raced with extract_model; "" disables the race
     extract_thinking: str = "low"  # Gemini models only
-    # The quality answer wins if it is back by then. 5.0 since extract v3: 14B answered every kit
-    # article within 5.3 s (median 2.3 s), so waiting to 6.0 only held 8B's answer back.
-    extract_prefer_deadline_s: float = 5.0
+    # The quality answer wins if it is back by then. 6.0 (the primary's own timeout) since 2026-09-27:
+    # measured alone on the 20 kit articles that day, 14B took median 3.9 s, p90 5.9 s, max 7.9 s,
+    # so at 5.0 a third of the cold answers were 8B's, which skips more of the article's fixes (judge,
+    # 2026-09-27). The other stages add ~0.6 s, so a cold answer still lands near 7 s at worst.
+    extract_prefer_deadline_s: float = 6.0
     # Call A (enrich). Free tier: intents come from call B and the 8-10 variations from a small model
     # that runs alongside extraction, so no LLM sits on the critical path before extraction.
     enrich_llm_on_critical_path: bool = False
     enrich_model: str = "gemini-3.1-flash-lite"  # used only when enrich_llm_on_critical_path is on
     enrich_thinking: str = "minimal"
-    variations_model: str = "ministral-14b-latest"  # background, so quality over speed
+    # Background, and on 8B because the free plan limits requests per model per minute (measured
+    # 2026-09-27 from the x-ratelimit headers: ministral-14b 30/min, ministral-8b 188/min). With
+    # variations on 14B every cold request spent two of its 30, and a run of 20 kit rows put 14B on
+    # cooldown for the last 9: extraction then fell to 8B for all of them.
+    variations_model: str = "ministral-8b-latest"
     variations_budget_s: float = 10.0  # background: never delays a response
     # Last resort for every call. A model answering 429 or 5xx is skipped for llm_cooldown_s.
     fallback_model: str = "gemini-3-flash-preview"
@@ -87,11 +93,42 @@ class Settings(BaseModel):
     # empty answer is trusted only when this many models gave one and none chose anything: 14B has
     # answered empty once for an article that did fit, while 8B answered it fully.
     extract_empty_votes: int = 2
+    # A selected action whose steps never reach its own setting ("... Tap Storage." for a Clear cache
+    # path) takes up to this many following instruction sentences of its section, up to the one that does.
+    extract_tail_lookahead: int = 2
+    # ...and one that chose only the end of a procedure the article introduces ("To enter Safe mode:")
+    # takes the instructions between that line and the chosen ones, at most this many.
+    extract_lead_lookback: int = 8
+    # ...and one whose chosen sentences hold a second procedure ("To exit Safe mode, ...") this many
+    # sentences or more after the first is split in two.
+    extract_split_gap: int = 2
+    # An article written as one numbered procedure ("Step 1: ..." / "1. ..."), with at least this many
+    # numbered sections, of which the model followed at least this many: each skipped numbered section
+    # with an instruction becomes an action (the rules extractor's), up to this many actions per goal.
+    # Deterministic, so it costs no model time; the cap is above extract_max_actions for that reason.
+    extract_complete_min_sections: int = 3
+    extract_complete_min_followed: int = 2
+    extract_complete_max_actions: int = 10
+    # Two actions of one goal citing this share of the smaller one's sentences are one action.
+    extract_merge_overlap: float = 0.5
     # Rules-only extraction (no model answered) takes the article's own instructions, so it must not
     # run on an article about something else. Best section relevance on the kit: 0.59-0.80; a washing
     # machine article sent with a phone complaint: 0.52.
     rules_min_relevance: float = 0.55
+    # ...and keeps the actions of its most relevant sections only, this many at most.
+    rules_max_actions: int = 4
     variations_max_tokens: int = 600
+
+    # Normalize (component 1): spaces a scraped article lost (pipeline/deglue.py). One kit article has
+    # whole paragraphs run together ("restartyourdeviceandensure..."); only letter runs no dictionary
+    # knows are split, and only in an article that has lost its spaces (a clean article's rare words,
+    # "foldable" or "SmartThings", are never touched).
+    deglue_glued_run: int = 16  # an unknown letter run this long counts as glued text...
+    deglue_glued_runs: int = 3  # ...and an article with this many of them is repaired
+    deglue_min_run: int = 8  # inside a glued article, unknown runs from this length are split
+    deglue_max_run: int = 400  # longer runs are left alone (keeps a hostile input linear)
+    deglue_article_rank: int = 100  # the article's own words cost like the 100th English word
+    deglue_corpus_rank_divisor: int = 10  # support-corpus words count as 10x more frequent
 
     # Segmenting and grounding (components 4, 6)
     section_relevance_floor: float = 0.5  # below this a section is greyed out for that intent

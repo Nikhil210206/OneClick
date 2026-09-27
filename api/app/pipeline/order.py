@@ -5,10 +5,29 @@ factory reset, unless a dependency needs something after them ("uninstall in saf
 safe mode restart).
 """
 
+import re
+
 from app.models import DraftAction
-from app.pipeline.categorize import _headline, _words, critical_rank, dependency_edges
+from app.pipeline.categorize import (
+    _headline,
+    _words,
+    action_text,
+    critical_kind,
+    critical_rank,
+    dependency_edges,
+)
 
 _NO_SOURCE = 10**6
+_EXITS_SAFE_MODE = re.compile(
+    r"\bexit(?:s|ing)? (?:the )?safe mode\b|\bleave safe mode\b|"
+    r"\brestart (?:your |the )?(?:phone|device|tablet) normally\b",
+    re.IGNORECASE,
+)
+_ENTERS_SAFE_MODE = re.compile(
+    r"\btap safe mode\b|\b(?:enter|boot|restart|reboot|start)\w* (?:(?:in|into|to) )?(?:the )?safe mode\b",
+    re.IGNORECASE,
+)
+_IN_SAFE_MODE = re.compile(r"\b(?:while |when )?in safe mode\b", re.IGNORECASE)
 
 
 def _siis_position(action: DraftAction) -> int:
@@ -50,4 +69,43 @@ def order(actions: list[DraftAction]) -> list[DraftAction]:
                 break
         if not moved:
             break
-    return result
+    return _safe_mode_sequence(result)
+
+
+def _safe_mode_sequence(actions: list[DraftAction]) -> list[DraftAction]:
+    """Enter Safe mode, do what the article says to do in it, then leave it. Word-set dependencies
+    cannot say this: "Check Gmail In Safe Mode" names safe mode as much as the restart into it does,
+    and an "Exit Safe Mode" action is a restart, which ranks before safe mode."""
+    enter = next(
+        (
+            n
+            for n, a in enumerate(actions)
+            if critical_kind(a) == "safe mode"
+            and _ENTERS_SAFE_MODE.search(action_text(a))
+            and not _EXITS_SAFE_MODE.search(_headline(a))
+        ),
+        None,
+    )
+    if enter is None:
+        return actions
+    entering = actions[enter]
+    during, leaving, rest = [], [], []
+    for n, action in enumerate(actions):
+        if n == enter:
+            continue
+        text = action_text(action)
+        # "Restart Device Normally" is a plain restart: leaving Safe mode names Safe mode
+        if (
+            _EXITS_SAFE_MODE.search(text)
+            and "safe mode" in text.lower()
+            and not _ENTERS_SAFE_MODE.search(text)
+        ):
+            leaving.append(action)
+        elif _IN_SAFE_MODE.search(text) and not _ENTERS_SAFE_MODE.search(text):
+            during.append(action)
+        else:
+            rest.append(action)
+    if not during and not leaving:
+        return actions
+    at = sum(1 for a in actions[:enter] if a in rest)
+    return [*rest[:at], entering, *during, *leaving, *rest[at:]]

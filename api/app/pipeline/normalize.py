@@ -4,6 +4,7 @@ import hashlib
 import re
 
 from app.compiler.scrub import scrub
+from app.pipeline.deglue import deglue
 
 _LIST_NUMBER = re.compile(r"^\s*\d+[.)]\s*")
 _FIRST_ITEM = re.compile(r"\s*1[.)]\s")
@@ -78,10 +79,17 @@ def siis_title(siis: dict | str | None) -> str | None:
 def clean_siis(siis: dict | str | None) -> tuple[str, str | None]:
     """Return (siis_clean, siis_hash).
 
-    The scrub runs here, before any LLM sees the article (the kit carries a real-looking address).
-    The hash is over the cleaned text, so the same article always keys the same cache entries.
+    The scrub runs here, before any LLM sees the article (the kit carries a real-looking address), and
+    lost spaces are put back (pipeline/deglue.py), so a glued address is scrubbed first and the
+    repaired text is scrubbed again. The hash is over the cleaned text, so the same article always
+    keys the same cache entries.
     """
     text = scrub(siis_text(siis).replace("\r\n", "\n"))
+    try:
+        repaired = scrub(deglue(text))
+    except Exception:  # noqa: BLE001 - a repair that fails leaves the article as it came
+        repaired = text
+    text = repaired
     if not text.strip():
         return "", None
     return text, hashlib.sha256(text.encode("utf-8")).hexdigest()[:_HASH_LENGTH]

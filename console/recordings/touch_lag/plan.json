@@ -1,16 +1,16 @@
 {
   "contexts": [
     {
-      "goal": "Follow these steps to perform this Touchscreen Performance Issues Troubleshooting.",
-      "title": "Touchscreen input lag",
+      "goal": "Follow these steps to perform this Touchscreen Responsiveness Problems Troubleshooting.",
+      "title": "Touchscreen lag issues",
       "actions": [
         {
-          "actionName": "Remove Screen Protector",
-          "description": "It will improve touch responsiveness",
+          "actionName": "Remove Damaged Screen Protector",
+          "description": "It will improve touch accuracy",
           "stepGroups": [
             {
               "steps": [
-                "If your screen protector is peeling or has debris under it, please remove it."
+                "If your screen protector is peeling or has debris under it, remove it."
               ],
               "actionableDeeplink": null,
               "validationDeeplink": null
@@ -20,10 +20,11 @@
         },
         {
           "actionName": "Enable Touch Sensitivity",
-          "description": "It will enhance touchscreen accuracy",
+          "description": "It will adjust sensitivity levels",
           "stepGroups": [
             {
               "steps": [
+                "If you wish to keep your screen protector on, try enabling the \"Touch sensitivity\" option.",
                 "Go to Settings.",
                 "Tap Display.",
                 "Tap the switch next to Touch sensitivity."
@@ -46,30 +47,48 @@
           "category": "auto"
         },
         {
-          "actionName": "Disable Full Screen Gestures",
-          "description": "It will prevent misinterpretation of inputs",
+          "actionName": "Check Charger Issues",
+          "description": "It will check charger issues",
           "stepGroups": [
             {
               "steps": [
+                "If you suspect this is the case, try using a different, undamaged charger."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        },
+        {
+          "actionName": "Disable Full Screen Gestures",
+          "description": "It will switch to navigation buttons",
+          "stepGroups": [
+            {
+              "steps": [
+                "To prevent this, disable the full screen gesture function.",
                 "Go to Settings.",
                 "Tap Display.",
                 "Tap Navigation bar.",
                 "Select Buttons to turn off full screen gestures."
               ],
               "actionableDeeplink": {
-                "deeplink": "bixby://dummy_positive",
-                "description": "Opens the navigation bar buttons settings page",
-                "message": "Open navigation bar buttons screen",
-                "originalType": "placeholder"
+                "deeplink": "bixby://masked/act/2f3dd95259",
+                "description": "Opens the navigation bar settings page in device Settings on the device.",
+                "message": "View Navigation bar",
+                "originalType": "onClickURL"
               },
-              "validationDeeplink": null
+              "validationDeeplink": {
+                "deeplink": "bixby://masked/val/d8310c1b7d",
+                "key": "Navigation bar"
+              }
             }
           ],
           "category": "auto"
         },
         {
           "actionName": "Disable Touch Sensitivity",
-          "description": "It will reduce overly sensitive touch",
+          "description": "It will reduce oversensitivity issues",
           "stepGroups": [
             {
               "steps": [
@@ -90,8 +109,22 @@
           "category": "auto"
         },
         {
-          "actionName": "Restart Device",
-          "description": "It will resolve minor touchscreen issues",
+          "actionName": "Contact Samsung Support",
+          "description": "It will get expert assistance",
+          "stepGroups": [
+            {
+              "steps": [
+                "If the issue persists after trying all these steps, reach out to Samsung Support for further assistance."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        },
+        {
+          "actionName": "Restart Device Normally",
+          "description": "It will clear minor software glitches",
           "stepGroups": [
             {
               "steps": [
@@ -105,26 +138,13 @@
           "category": "critical"
         },
         {
-          "actionName": "Force Restart Device",
-          "description": "It will reboot unresponsive touchscreen",
-          "stepGroups": [
-            {
-              "steps": [
-                "Once the device turns off, press the Power button or Side button again to turn it back on."
-              ],
-              "actionableDeeplink": null,
-              "validationDeeplink": null
-            }
-          ],
-          "category": "critical"
-        },
-        {
           "actionName": "Enter Safe Mode",
-          "description": "It will check for third-party app conflicts",
+          "description": "It will isolate third-party app issues",
           "stepGroups": [
             {
               "steps": [
                 "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
+                "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
                 "Touch and hold Power off.",
                 "Tap Safe mode."
               ],
@@ -135,8 +155,22 @@
           "category": "critical"
         },
         {
+          "actionName": "Software Updates",
+          "description": "It will check for the latest updates",
+          "stepGroups": [
+            {
+              "steps": [
+                "Check for updates for any third-party apps you use, as these can sometimes affect gesture customization."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
           "actionName": "Factory Data Reset",
-          "description": "It will restore default settings",
+          "description": "It will restore the factory settings",
           "stepGroups": [
             {
               "steps": [
@@ -145,7 +179,8 @@
                 "Tap Reset.",
                 "Tap Factory data reset.",
                 "Swipe to and tap Reset.",
-                "Tap Delete all."
+                "Tap Delete all.",
+                "Enter your Samsung account credentials to complete the reset."
               ],
               "actionableDeeplink": null,
               "validationDeeplink": null
@@ -154,16 +189,16 @@
           "category": "critical"
         }
       ],
-      "score": 0.81
+      "score": 0.86
     }
   ],
   "meta": {
-    "latency_ms": 5263.9,
+    "latency_ms": 5221.4,
     "cache_hit": false,
     "cache_tier": null,
-    "model": "ministral-8b-latest",
+    "model": "ministral-14b-latest",
     "cost_usd": 0.0,
-    "trace_id": "t_1425756014",
+    "trace_id": "t_6f2172332e",
     "fallback": null,
     "source": null
   }

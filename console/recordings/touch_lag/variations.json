@@ -1,31 +1,31 @@
 {
   "kept": [
-    "I’m having trouble with my Galaxy S22—every tap feels delayed like there’s a lag between my finger and the screen’s response.",
-    "My S22 screen is so slow it’s driving me nuts. Every time I try to press something, it takes forever to register.",
-    "Galaxy S22 touchscreen is acting weird—like it’s stuck in slow motion. Can’t even open apps without waiting.",
-    "My phone’s touch is all messed up. I press the screen, but nothing happens for ages. Super annoying!",
-    "Screen on my S22 is laggin’ like crazy. Every click feels delayed, and it’s making basic tasks impossible.",
-    "Galaxy S22 touch not working properly. There’s a noticeable delay when I try to tap anything—it’s frustrating.",
-    "Scrn on my S22 is laggy as heck. I hit the screen, but it takes forever to do anything. What’s going on?",
-    "Galaxy S22 touch delay issue—every time I try to interact, there’s a huge lag. Can’t even type this message fast.",
-    "Galaxy S22 screen is so laggy I can’t even use it properly. Every input feels delayed, and it’s not fun.",
-    "s22 screen inputs delayed responsiveness"
+    "Formal: I’ve noticed a significant delay in touch response on my Galaxy S22, making interactions sluggish and unresponsive.",
+    "Casual: Ugh, my Galaxy S22 is so slow—tapping feels like it’s stuck in slow motion, it’s annoying!",
+    "Keyword-only: Galaxy S22 touch lag delay unresponsive screen",
+    "Frustrated: This Galaxy S22 is useless! Every tap feels like it’s taking forever—what’s wrong with it?!",
+    "Typo-inclusive: My samsung s22 is super laggy when i try 2 touch stuff, it’s like a ghost phone!",
+    "Formal: The Galaxy S22 exhibits delayed input processing, resulting in poor touch responsiveness and operational inefficiency.",
+    "Casual: My phone’s screen is acting up—presses don’t register right, feels like I’m playing a glitchy game.",
+    "Frustrated: Why is my Galaxy S22 acting like a brick?! Every swipe is delayed—this is ridiculous!",
+    "Typo-inclusive: My gxlxy s22 is so slow, can’t even click buttons fast, it’s a mess!",
+    "Casual: My S22 is being extra—taps feel delayed, like it’s stuck in a time warp, what’s the deal?"
   ],
   "dropped": [
     {
-      "text": "My S22’s touchscreen is so unresponsive it’s like it’s not even listening. Every input feels like it’s stuck.",
-      "reason": "changes_the_problem",
-      "jaccard": 0.08
+      "text": "Formal: My Galaxy S22 suffers from noticeable input latency, impairing its usability and responsiveness.",
+      "reason": "over_limit",
+      "jaccard": 0.19
     },
     {
-      "text": "My phone’s screen is acting weird. I press it, but it’s like it’s not responding right away—super slow.",
-      "reason": "changes_the_problem",
+      "text": "Frustrated: This phone is a joke! Every touch feels like it’s fighting me—when will Samsung fix this?!",
+      "reason": "over_limit",
       "jaccard": 0.14
     },
     {
-      "text": "S22 touchscreen is broken. Every tap has a delay, and it’s making everything take forever. Needs fixing.",
-      "reason": "changes_the_problem",
-      "jaccard": 0.14
+      "text": "s22 screen inputs delayed responsiveness",
+      "reason": "over_limit",
+      "jaccard": 0.21
     },
     {
       "text": "screen slow fix",
@@ -84,9 +84,9 @@
     }
   ],
   "candidates": 12,
-  "model": "ministral-14b-latest",
+  "model": "ministral-8b-latest",
   "tokens_in": 208,
-  "tokens_out": 364,
+  "tokens_out": 348,
   "cost_usd": 0.0,
   "prompt": "variations.v1"
 }

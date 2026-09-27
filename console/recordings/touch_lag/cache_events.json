@@ -2,7 +2,7 @@
   "exact": {
     "event": {
       "stage": "cache",
-      "ms": 7.1,
+      "ms": 8.5,
       "summary": "Exact hit from the cache",
       "detail": {
         "hit": true,
@@ -31,12 +31,12 @@
       }
     },
     "meta": {
-      "latency_ms": 7.3,
+      "latency_ms": 8.6,
       "cache_hit": true,
       "cache_tier": "exact",
       "model": null,
       "cost_usd": 0.0,
-      "trace_id": "t_88e1fad0e4",
+      "trace_id": "t_13f981878c",
       "fallback": null,
       "source": null
     }
@@ -44,7 +44,7 @@
   "semantic": {
     "event": {
       "stage": "cache",
-      "ms": 31.0,
+      "ms": 17.6,
       "summary": "Semantic hit from the cache",
       "detail": {
         "hit": true,
@@ -73,12 +73,12 @@
       }
     },
     "meta": {
-      "latency_ms": 31.1,
+      "latency_ms": 17.6,
       "cache_hit": true,
       "cache_tier": "semantic",
       "model": null,
       "cost_usd": 0.0,
-      "trace_id": "t_4d2b46432d",
+      "trace_id": "t_1283e235ca",
       "fallback": null,
       "source": null
     },

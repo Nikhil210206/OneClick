@@ -1,7 +1,7 @@
 [
   {
     "stage": "cache",
-    "ms": 32.3,
+    "ms": 25.1,
     "summary": "Cache miss (no exact key, no semantic match)",
     "detail": {
       "hit": false,
@@ -12,7 +12,7 @@
       "slots": {
         "component": "screen",
         "symptom": null,
-        "intent": "fault"
+        "intent": "configure"
       },
       "key": "b20055771e5506c7",
       "siis_hash": "aa71c2c2cb988681",
@@ -21,8 +21,8 @@
   },
   {
     "stage": "enrich",
-    "ms": 71.9,
-    "summary": "1 intent(s), 10 variations kept (2 dropped)",
+    "ms": 0.1,
+    "summary": "1 intent(s), variations in the background",
     "detail": {
       "canonical_query": "My Galaxy S22 touchscreen lags behind my taps, and I also want to switch the navigation back to buttons instead of swipe gestures.",
       "intents": [
@@ -33,31 +33,9 @@
           "relevance": 0.0
         }
       ],
-      "variations": [
-        "s22 touchscreen lags behind taps",
-        "screen touchscreen fix",
-        "Why is my screen touchscreen?",
-        "How can I repair a touchscreen screen on my Galaxy?",
-        "Help, my screen keeps being touchscreen!",
-        "Samsung screen problem: s22, touchscreen",
-        "I am experiencing an issue where the device screen is touchscreen.",
-        "ugh screen touchscreen again, so annoying",
-        "s22 touchscrene screne not wroking",
-        "What causes s22 and lags on a Galaxy?"
-      ],
-      "dropped_variations": [
-        {
-          "text": "Troubleshooting a touchscreen screen",
-          "reason": "over_limit",
-          "jaccard": 0.04
-        },
-        {
-          "text": "screen touchscreen after update, what should I do",
-          "reason": "over_limit",
-          "jaccard": 0.07
-        }
-      ],
-      "candidates": 12,
+      "variations": [],
+      "dropped_variations": [],
+      "candidates": 0,
       "model": null,
       "source": "rules",
       "tokens_in": 0,
@@ -67,7 +45,7 @@
   },
   {
     "stage": "segment",
-    "ms": 7.8,
+    "ms": 10.2,
     "summary": "10 sections, 56 sentences, 10 relevant",
     "detail": {
       "sections": [
@@ -584,8 +562,8 @@
   },
   {
     "stage": "extract",
-    "ms": 4851.5,
-    "summary": "6 actions, 14 steps proposed (llm)",
+    "ms": 4443.2,
+    "summary": "11 actions, 29 steps proposed (llm)",
     "detail": {
       "topics": [
         "Touchscreen Performance Issues",
@@ -595,23 +573,7 @@
         {
           "steps": [
             {
-              "text": "Screen Protectors and Accessories: If you have a third-party screen protector or accessory attached, it might interfere with the touchscreen.",
-              "src_ids": [
-                "S5"
-              ],
-              "grounded": false,
-              "grounding_score": 0.0
-            },
-            {
-              "text": "This is especially true if there's dust or air trapped under the protector, if you have more than one protective film on the screen, or if the film is peeling at the edges.",
-              "src_ids": [
-                "S6"
-              ],
-              "grounded": false,
-              "grounding_score": 0.0
-            },
-            {
-              "text": "If your screen protector is peeling or has debris under it, please remove it.",
+              "text": "If your screen protector is peeling or has debris under it, remove it.",
               "src_ids": [
                 "S7"
               ],
@@ -631,6 +593,14 @@
         },
         {
           "steps": [
+            {
+              "text": "If you wish to keep your screen protector on, try enabling the \"Touch sensitivity\" option.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
             {
               "text": "Go to Settings.",
               "src_ids": [
@@ -698,6 +668,14 @@
         {
           "steps": [
             {
+              "text": "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
+              "src_ids": [
+                "S24"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
               "text": "Once the device turns off, press the Power button or Side button again to turn it back on.",
               "src_ids": [
                 "S25"
@@ -740,6 +718,59 @@
         {
           "steps": [
             {
+              "text": "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
+              "src_ids": [
+                "S39"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
+              "src_ids": [
+                "S40"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Touch and hold Power off.",
+              "src_ids": [
+                "S41"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Safe mode.",
+              "src_ids": [
+                "S41"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will isolate third-party app issues",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Enter Safe Mode"
+        },
+        {
+          "steps": [
+            {
+              "text": "To prevent this, disable the full screen gesture function.",
+              "src_ids": [
+                "S30"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
               "text": "Go to Settings.",
               "src_ids": [
                 "S31"
@@ -781,6 +812,138 @@
           "link": null,
           "intent_index": 1,
           "name": "Disable Full Screen Gestures"
+        },
+        {
+          "steps": [
+            {
+              "text": "If you suspect this is the case, try using a different, undamaged charger.",
+              "src_ids": [
+                "S27"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will check Charger Issues",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Check Charger Issues"
+        },
+        {
+          "steps": [
+            {
+              "text": "Check for updates for any third-party apps you use, as these can sometimes affect gesture customization.",
+              "src_ids": [
+                "S36"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will check for the latest updates",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Software Updates"
+        },
+        {
+          "steps": [
+            {
+              "text": "Navigate to and open Settings.",
+              "src_ids": [
+                "S48"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap General management.",
+              "src_ids": [
+                "S49"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Reset.",
+              "src_ids": [
+                "S50"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Factory data reset.",
+              "src_ids": [
+                "S51"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Swipe to and tap Reset.",
+              "src_ids": [
+                "S52"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Delete all.",
+              "src_ids": [
+                "S53"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Enter your Samsung account credentials to complete the reset.",
+              "src_ids": [
+                "S54"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": "Settings > General management > Reset > Factory data reset",
+          "intent_verb": "reset",
+          "description": "It will restore the factory settings",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Factory Data Reset"
+        },
+        {
+          "steps": [
+            {
+              "text": "If the issue persists after trying all these steps, reach out to Samsung Support for further assistance.",
+              "src_ids": [
+                "S56"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "visit",
+          "description": "It will get help from Samsung Support",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Get Further Assistance"
         }
       ],
       "source": "llm",
@@ -793,22 +956,34 @@
           "relevance": 0.0
         },
         {
-          "text": "The navigation uses swipe gestures instead of buttons, which the user prefers to switch back.",
+          "text": "The navigation gestures are not preferred; buttons are desired instead of swipe gestures.",
           "domain": "Display",
-          "title": "Navigation gesture customization",
+          "title": "Navigation gesture issues",
           "relevance": 0.0
         }
       ],
+      "completed_sections": [
+        "3. Charger Issues",
+        "6. Software Updates",
+        "8. Factory Data Reset",
+        "9. Further Assistance"
+      ],
       "model": "ministral-14b-latest",
       "tokens_in": 2021,
-      "tokens_out": 332,
+      "tokens_out": 381,
       "cost_usd": 0.0,
       "attempts": [
+        {
+          "model": "ministral-8b-latest",
+          "ok": true,
+          "error": null,
+          "ms": 3529.3
+        },
         {
           "model": "ministral-14b-latest",
           "ok": true,
           "error": null,
-          "ms": 4827.7
+          "ms": 4420.1
         }
       ],
       "prompt": "extract.v3"
@@ -816,12 +991,12 @@
   },
   {
     "stage": "ground",
-    "ms": 58.4,
-    "summary": "14 of 14 steps grounded, 0 dropped",
+    "ms": 255.5,
+    "summary": "29 of 29 steps grounded, 0 dropped",
     "detail": {
       "threshold": 0.75,
-      "proposed_steps": 14,
-      "kept_steps": 14,
+      "proposed_steps": 29,
+      "kept_steps": 29,
       "coverage": 1.0,
       "coverage_by_intent": {
         "0": 1.0,
@@ -833,28 +1008,12 @@
         {
           "steps": [
             {
-              "text": "Screen Protectors and Accessories: If you have a third-party screen protector or accessory attached, it might interfere with the touchscreen.",
-              "src_ids": [
-                "S5"
-              ],
-              "grounded": true,
-              "grounding_score": 1.0
-            },
-            {
-              "text": "This is especially true if there's dust or air trapped under the protector, if you have more than one protective film on the screen, or if the film is peeling at the edges.",
-              "src_ids": [
-                "S6"
-              ],
-              "grounded": true,
-              "grounding_score": 1.0
-            },
-            {
-              "text": "If your screen protector is peeling or has debris under it, please remove it.",
+              "text": "If your screen protector is peeling or has debris under it, remove it.",
               "src_ids": [
                 "S7"
               ],
               "grounded": true,
-              "grounding_score": 1.0
+              "grounding_score": 0.98
             }
           ],
           "screen_path": null,
@@ -870,12 +1029,20 @@
         {
           "steps": [
             {
+              "text": "If you wish to keep your screen protector on, try enabling the \"Touch sensitivity\" option.",
+              "src_ids": [
+                "S8"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
               "text": "Go to Settings.",
               "src_ids": [
                 "S9"
               ],
               "grounded": true,
-              "grounding_score": 0.95
+              "grounding_score": 1.0
             },
             {
               "text": "Tap Display.",
@@ -883,7 +1050,7 @@
                 "S9"
               ],
               "grounded": true,
-              "grounding_score": 0.97
+              "grounding_score": 1.0
             },
             {
               "text": "Tap the switch next to Touch sensitivity.",
@@ -936,6 +1103,14 @@
         {
           "steps": [
             {
+              "text": "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
+              "src_ids": [
+                "S24"
+              ],
+              "grounded": true,
+              "grounding_score": 0.99
+            },
+            {
               "text": "Once the device turns off, press the Power button or Side button again to turn it back on.",
               "src_ids": [
                 "S25"
@@ -978,12 +1153,65 @@
         {
           "steps": [
             {
+              "text": "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
+              "src_ids": [
+                "S39"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
+              "src_ids": [
+                "S40"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Touch and hold Power off.",
+              "src_ids": [
+                "S41"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Safe mode.",
+              "src_ids": [
+                "S41"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will isolate third-party app issues",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Enter Safe Mode"
+        },
+        {
+          "steps": [
+            {
+              "text": "To prevent this, disable the full screen gesture function.",
+              "src_ids": [
+                "S30"
+              ],
+              "grounded": true,
+              "grounding_score": 0.98
+            },
+            {
               "text": "Go to Settings.",
               "src_ids": [
                 "S31"
               ],
               "grounded": true,
-              "grounding_score": 0.95
+              "grounding_score": 1.0
             },
             {
               "text": "Tap Display.",
@@ -991,7 +1219,7 @@
                 "S31"
               ],
               "grounded": true,
-              "grounding_score": 0.97
+              "grounding_score": 1.0
             },
             {
               "text": "Tap Navigation bar.",
@@ -1019,14 +1247,146 @@
           "link": null,
           "intent_index": 1,
           "name": "Disable Full Screen Gestures"
+        },
+        {
+          "steps": [
+            {
+              "text": "If you suspect this is the case, try using a different, undamaged charger.",
+              "src_ids": [
+                "S27"
+              ],
+              "grounded": true,
+              "grounding_score": 0.99
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will check Charger Issues",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Check Charger Issues"
+        },
+        {
+          "steps": [
+            {
+              "text": "Check for updates for any third-party apps you use, as these can sometimes affect gesture customization.",
+              "src_ids": [
+                "S36"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": null,
+          "description": "It will check for the latest updates",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Software Updates"
+        },
+        {
+          "steps": [
+            {
+              "text": "Navigate to and open Settings.",
+              "src_ids": [
+                "S48"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap General management.",
+              "src_ids": [
+                "S49"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Reset.",
+              "src_ids": [
+                "S50"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Factory data reset.",
+              "src_ids": [
+                "S51"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Swipe to and tap Reset.",
+              "src_ids": [
+                "S52"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Delete all.",
+              "src_ids": [
+                "S53"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Enter your Samsung account credentials to complete the reset.",
+              "src_ids": [
+                "S54"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            }
+          ],
+          "screen_path": "Settings > General management > Reset > Factory data reset",
+          "intent_verb": "reset",
+          "description": "It will restore the factory settings",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Factory Data Reset"
+        },
+        {
+          "steps": [
+            {
+              "text": "If the issue persists after trying all these steps, reach out to Samsung Support for further assistance.",
+              "src_ids": [
+                "S56"
+              ],
+              "grounded": true,
+              "grounding_score": 0.99
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "visit",
+          "description": "It will get help from Samsung Support",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Get Further Assistance"
         }
       ]
     }
   },
   {
     "stage": "resolve",
-    "ms": 27.4,
-    "summary": "3 catalog, 0 dummy, 3 manual",
+    "ms": 68.9,
+    "summary": "3 catalog, 1 dummy, 7 manual",
     "detail": {
       "links": [
         {
@@ -1106,6 +1466,16 @@
           ]
         },
         {
+          "action": "Enter Safe Mode",
+          "screen_path": null,
+          "intent_verb": null,
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
+        },
+        {
           "action": "Disable Full Screen Gestures",
           "screen_path": "Settings > Display > Navigation bar",
           "intent_verb": "disable",
@@ -1127,34 +1497,87 @@
               "score": 1.3
             }
           ]
+        },
+        {
+          "action": "Check Charger Issues",
+          "screen_path": null,
+          "intent_verb": null,
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
+        },
+        {
+          "action": "Software Updates",
+          "screen_path": null,
+          "intent_verb": null,
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
+        },
+        {
+          "action": "Factory Data Reset",
+          "screen_path": "Settings > General management > Reset > Factory data reset",
+          "intent_verb": "reset",
+          "tier": "dummy",
+          "node_id": null,
+          "entry_id": "DL-DUMMY",
+          "confidence": 0.7,
+          "candidates": [
+            {
+              "entry_id": "DL-0022",
+              "score": 1.3
+            },
+            {
+              "entry_id": "DL-0080",
+              "score": 1.06
+            },
+            {
+              "entry_id": "DL-0079",
+              "score": 1.05
+            }
+          ]
+        },
+        {
+          "action": "Get Further Assistance",
+          "screen_path": null,
+          "intent_verb": "visit",
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
         }
       ],
       "counts": {
         "catalog": 3,
-        "dummy": 0,
-        "manual": 3
+        "dummy": 1,
+        "manual": 7
       }
     }
   },
   {
     "stage": "compile",
-    "ms": 2.1,
-    "summary": "2 goal(s), 6 actions, 0 URL leaks, schema valid",
+    "ms": 9.6,
+    "summary": "2 goal(s), 11 actions, 0 URL leaks, schema valid",
     "detail": {
       "score_inputs": [
         {
           "intent_index": 1,
-          "title": "Navigation gesture customization",
-          "score": 0.89,
-          "relevance": 0.72,
+          "title": "Navigation gesture issues",
+          "score": 0.88,
+          "relevance": 0.71,
           "grounding_coverage": 1.0,
           "link_coverage": 1.0
         },
         {
           "intent_index": 0,
           "title": "Touchscreen input lag",
-          "score": 0.87,
-          "relevance": 0.67,
+          "score": 0.86,
+          "relevance": 0.65,
           "grounding_coverage": 1.0,
           "link_coverage": 1.0
         }
@@ -1163,7 +1586,7 @@
       "merged": [],
       "dropped_intents": [],
       "goals": 2,
-      "actions": 6,
+      "actions": 11,
       "deduped": [],
       "url_leaks": 0,
       "schema_valid": true,
@@ -1173,13 +1596,13 @@
   },
   {
     "stage": "done",
-    "ms": 5051.7,
-    "summary": "2 goal(s), 6 action(s) in 5051.7 ms (cold)",
+    "ms": 4813.1,
+    "summary": "2 goal(s), 11 action(s) in 4813.1 ms (cold)",
     "detail": {
       "contexts": [
         {
           "goal": "Follow these steps to perform this Display Navigation Settings Troubleshooting.",
-          "title": "Navigation gesture customization",
+          "title": "Navigation gesture issues",
           "actions": [
             {
               "actionName": "Disable Full Screen Gestures",
@@ -1187,6 +1610,7 @@
               "stepGroups": [
                 {
                   "steps": [
+                    "To prevent this, disable the full screen gesture function.",
                     "Go to Settings.",
                     "Tap Display.",
                     "Tap Navigation bar.",
@@ -1207,7 +1631,7 @@
               "category": "auto"
             }
           ],
-          "score": 0.89
+          "score": 0.88
         },
         {
           "goal": "Follow these steps to perform this Touchscreen Performance Issues Troubleshooting.",
@@ -1219,9 +1643,7 @@
               "stepGroups": [
                 {
                   "steps": [
-                    "Screen Protectors and Accessories: If you have a third-party screen protector or accessory attached, it might interfere with the touchscreen.",
-                    "This is especially true if there's dust or air trapped under the protector, if you have more than one protective film on the screen, or if the film is peeling at the edges.",
-                    "If your screen protector is peeling or has debris under it, please remove it."
+                    "If your screen protector is peeling or has debris under it, remove it."
                   ],
                   "actionableDeeplink": null,
                   "validationDeeplink": null
@@ -1235,6 +1657,7 @@
               "stepGroups": [
                 {
                   "steps": [
+                    "If you wish to keep your screen protector on, try enabling the \"Touch sensitivity\" option.",
                     "Go to Settings.",
                     "Tap Display.",
                     "Tap the switch next to Touch sensitivity."
@@ -1255,6 +1678,20 @@
                 }
               ],
               "category": "auto"
+            },
+            {
+              "actionName": "Check Charger Issues",
+              "description": "It will check charger issues",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "If you suspect this is the case, try using a different, undamaged charger."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "manual"
             },
             {
               "actionName": "Disable Touch Sensitivity",
@@ -1279,6 +1716,20 @@
               "category": "auto"
             },
             {
+              "actionName": "Get Further Assistance",
+              "description": "It will get help from Samsung Support",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "If the issue persists after trying all these steps, reach out to Samsung Support for further assistance."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "manual"
+            },
+            {
               "actionName": "Restart Device Normally",
               "description": "It will clear minor software glitches",
               "stepGroups": [
@@ -1299,7 +1750,59 @@
               "stepGroups": [
                 {
                   "steps": [
+                    "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
                     "Once the device turns off, press the Power button or Side button again to turn it back on."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "critical"
+            },
+            {
+              "actionName": "Enter Safe Mode",
+              "description": "It will isolate third-party app issues",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
+                    "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
+                    "Touch and hold Power off.",
+                    "Tap Safe mode."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "critical"
+            },
+            {
+              "actionName": "Software Updates",
+              "description": "It will check for the latest updates",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Check for updates for any third-party apps you use, as these can sometimes affect gesture customization."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "critical"
+            },
+            {
+              "actionName": "Factory Data Reset",
+              "description": "It will restore the factory settings",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Navigate to and open Settings.",
+                    "Tap General management.",
+                    "Tap Reset.",
+                    "Tap Factory data reset.",
+                    "Swipe to and tap Reset.",
+                    "Tap Delete all.",
+                    "Enter your Samsung account credentials to complete the reset."
                   ],
                   "actionableDeeplink": null,
                   "validationDeeplink": null
@@ -1308,16 +1811,16 @@
               "category": "critical"
             }
           ],
-          "score": 0.87
+          "score": 0.86
         }
       ],
       "meta": {
-        "latency_ms": 5051.7,
+        "latency_ms": 4813.1,
         "cache_hit": false,
         "cache_tier": null,
         "model": "ministral-14b-latest",
         "cost_usd": 0.0,
-        "trace_id": "t_35e65804d4",
+        "trace_id": "t_7b3b2eba23",
         "fallback": null,
         "source": null
       }

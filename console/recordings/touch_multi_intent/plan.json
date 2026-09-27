@@ -2,7 +2,7 @@
   "contexts": [
     {
       "goal": "Follow these steps to perform this Display Navigation Settings Troubleshooting.",
-      "title": "Navigation gesture customization",
+      "title": "Navigation gesture issues",
       "actions": [
         {
           "actionName": "Disable Full Screen Gestures",
@@ -10,6 +10,7 @@
           "stepGroups": [
             {
               "steps": [
+                "To prevent this, disable the full screen gesture function.",
                 "Go to Settings.",
                 "Tap Display.",
                 "Tap Navigation bar.",
@@ -30,7 +31,7 @@
           "category": "auto"
         }
       ],
-      "score": 0.89
+      "score": 0.88
     },
     {
       "goal": "Follow these steps to perform this Touchscreen Performance Issues Troubleshooting.",
@@ -42,9 +43,7 @@
           "stepGroups": [
             {
               "steps": [
-                "Screen Protectors and Accessories: If you have a third-party screen protector or accessory attached, it might interfere with the touchscreen.",
-                "This is especially true if there's dust or air trapped under the protector, if you have more than one protective film on the screen, or if the film is peeling at the edges.",
-                "If your screen protector is peeling or has debris under it, please remove it."
+                "If your screen protector is peeling or has debris under it, remove it."
               ],
               "actionableDeeplink": null,
               "validationDeeplink": null
@@ -58,6 +57,7 @@
           "stepGroups": [
             {
               "steps": [
+                "If you wish to keep your screen protector on, try enabling the \"Touch sensitivity\" option.",
                 "Go to Settings.",
                 "Tap Display.",
                 "Tap the switch next to Touch sensitivity."
@@ -78,6 +78,20 @@
             }
           ],
           "category": "auto"
+        },
+        {
+          "actionName": "Check Charger Issues",
+          "description": "It will check charger issues",
+          "stepGroups": [
+            {
+              "steps": [
+                "If you suspect this is the case, try using a different, undamaged charger."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
         },
         {
           "actionName": "Disable Touch Sensitivity",
@@ -102,6 +116,20 @@
           "category": "auto"
         },
         {
+          "actionName": "Get Further Assistance",
+          "description": "It will get help from Samsung Support",
+          "stepGroups": [
+            {
+              "steps": [
+                "If the issue persists after trying all these steps, reach out to Samsung Support for further assistance."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "manual"
+        },
+        {
           "actionName": "Restart Device Normally",
           "description": "It will clear minor software glitches",
           "stepGroups": [
@@ -122,7 +150,59 @@
           "stepGroups": [
             {
               "steps": [
+                "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
                 "Once the device turns off, press the Power button or Side button again to turn it back on."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Enter Safe Mode",
+          "description": "It will isolate third-party app issues",
+          "stepGroups": [
+            {
+              "steps": [
+                "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
+                "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
+                "Touch and hold Power off.",
+                "Tap Safe mode."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Software Updates",
+          "description": "It will check for the latest updates",
+          "stepGroups": [
+            {
+              "steps": [
+                "Check for updates for any third-party apps you use, as these can sometimes affect gesture customization."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Factory Data Reset",
+          "description": "It will restore the factory settings",
+          "stepGroups": [
+            {
+              "steps": [
+                "Navigate to and open Settings.",
+                "Tap General management.",
+                "Tap Reset.",
+                "Tap Factory data reset.",
+                "Swipe to and tap Reset.",
+                "Tap Delete all.",
+                "Enter your Samsung account credentials to complete the reset."
               ],
               "actionableDeeplink": null,
               "validationDeeplink": null
@@ -131,16 +211,16 @@
           "category": "critical"
         }
       ],
-      "score": 0.87
+      "score": 0.86
     }
   ],
   "meta": {
-    "latency_ms": 5051.7,
+    "latency_ms": 4813.1,
     "cache_hit": false,
     "cache_tier": null,
     "model": "ministral-14b-latest",
     "cost_usd": 0.0,
-    "trace_id": "t_35e65804d4",
+    "trace_id": "t_7b3b2eba23",
     "fallback": null,
     "source": null
   }

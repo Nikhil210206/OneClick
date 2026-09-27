@@ -62,6 +62,29 @@ def _haystack(action: DraftAction) -> str:
     return f"{action.screen_path or ''} {steps}".lower()
 
 
+def _page_is_on_the_path(entry_id: str, screen_path: str) -> bool:
+    """True when the entry's Screen Graph screen is one the step's path names.
+
+    The page search covers the whole catalog, so a page can win on one shared word: "Settings >
+    Sounds and vibration > Volume > Alarm" drew "alarms in Do Not Disturb". Any segment counts, not
+    only the last: extract v3 writes the path down to the setting ("Navigation bar > Buttons"), and
+    the page that holds it is the parent screen. The node's path is compared, not its synonyms,
+    which come from the entry's message and drop the context ("View Alarm Settings").
+    """
+    node_id = node_of(entry_id)
+    if not node_id:
+        return False
+    name = set(retrieval.bm25.tokenize(get_node(node_id).path))
+    for segment in screen_path.split(">"):
+        if segment.strip().lower() == "settings":
+            continue
+        words = set(retrieval.bm25.tokenize(segment))
+        both = words | name
+        if both and len(words & name) / len(both) >= settings.link_page_min_name_overlap:
+            return True
+    return False
+
+
 def offscreen_tier(action: DraftAction) -> LinkTier | None:
     """LinkTier.manual when the step cannot be a Settings screen, else None (go on and search).
 
@@ -104,9 +127,10 @@ def resolve(action: DraftAction) -> LinkDecision:
     if score < settings.link_catalog_min_score and (action.intent_verb or "").lower() in _CHANGE_VERBS:
         # No on/off entry for this change, but the screen that holds it may still have a page link
         # ("Select Buttons to turn off full screen gestures" -> View Navigation bar). Opening the
-        # exact screen is the right one tap; the floor below still has to be cleared.
+        # exact screen is the right one tap; the floor below still has to be cleared, and the page
+        # has to be a screen the path names.
         page = retrieval.search(action.screen_path, "open", k=1)
-        if page and page[0][1] > score:
+        if page and page[0][1] > score and _page_is_on_the_path(page[0][0], action.screen_path):
             results, score = page, page[0][1]
     confidence = min(score / settings.link_max_score, 1.0)
 

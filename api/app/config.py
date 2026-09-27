@@ -177,6 +177,11 @@ class Settings(BaseModel):
     # leaf-name match and polarity bonus, so a confident screen sits near the top of the range.
     link_catalog_min_score: float = 1.60  # below this no catalog entry is trusted
     link_max_score: float = 1.85  # full marks, used to normalise confidence to 0-1
+    # A change verb with no entry above the floor may take a page link instead (resolver.py), but only
+    # one whose Screen Graph name matches a segment of the step's path, by word Jaccard. The page search
+    # covers the whole catalog: "Volume > Alarm" drew "alarms in Do Not Disturb" (0.0), while the
+    # right pages score 1.0 ("Navigation bar") and 0.67 ("battery percentage display").
+    link_page_min_name_overlap: float = 0.5
     rrf_k: int = 60  # reciprocal rank fusion constant
     # BM25 field weights: a field's tokens are repeated this many times in the indexed document
     bm25_field_weights: dict[str, int] = {

@@ -79,7 +79,21 @@ class _Stage:
     def __init__(self, stage: str):
         self.fast_model: str | None = None
         self.prefer_deadline: float | None = None
-        if stage == "enrich":
+        self.fallback_model: str | None = settings.fallback_model  # answers when the stage's own do not
+        self.cools = True  # a 429/5xx here puts the model on cooldown for every stage
+        if stage == "coverage":
+            # An extra, never the answer. Its fallback is the fast model, never the slow last resort,
+            # and it moves there before the primary's per-minute request limit is near: the primary
+            # is kept for call B (settings.coverage_leave_primary).
+            self.model, self.thinking = settings.coverage_model, None
+            limit = settings.llm_requests_per_minute.get(self.model)
+            if limit and calls_last_minute(self.model) >= limit - settings.coverage_leave_primary:
+                self.model = settings.coverage_fallback_model
+            self.primary_timeout = self.budget = settings.coverage_budget_s
+            self.max_tokens = settings.coverage_max_tokens
+            self.fallback_model = settings.coverage_fallback_model  # never the slow last resort
+            self.cools = False  # its 429 must not cost call B the primary for a minute
+        elif stage == "enrich":
             self.model, self.thinking = settings.enrich_model, settings.enrich_thinking
             self.primary_timeout, self.budget = settings.enrich_primary_timeout_s, settings.enrich_budget_s
             self.max_tokens = settings.enrich_max_tokens
@@ -117,9 +131,27 @@ def _cool(model: str, kind: str) -> None:
             _cooldown_until[model] = time.monotonic() + settings.llm_cooldown_s
 
 
+_recent_calls: dict[str, list[float]] = {}
+
+
+def _count_call(model: str) -> None:
+    now = time.monotonic()
+    with _cooldown_lock:
+        calls = [t for t in _recent_calls.get(model, []) if now - t < 60.0]
+        calls.append(now)
+        _recent_calls[model] = calls
+
+
+def calls_last_minute(model: str) -> int:
+    now = time.monotonic()
+    with _cooldown_lock:
+        return sum(1 for t in _recent_calls.get(model, []) if now - t < 60.0)
+
+
 def reset_cooldowns() -> None:
     with _cooldown_lock:
         _cooldown_until.clear()
+        _recent_calls.clear()
 
 
 def complete_json(
@@ -150,6 +182,7 @@ def complete_json(
         if cooling_down(model):
             error = "cooldown"
         else:
+            _count_call(model)
             try:
                 if provider(model) == "gemini":
                     result = gemini.call(
@@ -174,7 +207,8 @@ def complete_json(
                     error, result = "rejected", None
             except LLMCallError as exc:
                 error = exc.kind
-                _cool(model, exc.kind)
+                if plan.cools:
+                    _cool(model, exc.kind)
         with lock:
             attempts.append({"model": model, "ok": error is None, "error": error, "ms": _ms(t)})
         return result
@@ -183,13 +217,13 @@ def complete_json(
         result = _race(plan, attempt, started)
     else:
         result = attempt(plan.model, min(plan.primary_timeout, plan.budget))
-    if result is None:
+    if result is None and plan.fallback_model:
         remaining = plan.budget - (time.perf_counter() - started)
-        if remaining >= settings.llm_min_fallback_s and settings.fallback_model not in (
+        if remaining >= settings.llm_min_fallback_s and plan.fallback_model not in (
             plan.model,
             plan.fast_model,
         ):
-            result = attempt(settings.fallback_model, remaining)
+            result = attempt(plan.fallback_model, remaining)
     if info is not None:
         with lock:
             info["attempts"] = list(attempts)

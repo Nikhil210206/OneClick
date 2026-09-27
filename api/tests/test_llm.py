@@ -248,6 +248,7 @@ def test_prompts_render_every_placeholder(monkeypatch, mode, extract_version):
         ("enrich", {"query": "q"}),
         ("extract", {"query": "q", "intents": "i", "sentences": "s", "max_actions": 8}),
         ("variations", {"query": "q"}),
+        ("coverage", {"query": "q", "paragraphs": "p"}),
     ):
         text = router.render(router.load_prompt(name, router.prompt_version(name)), variables)
         assert "{{" not in text and "TODO" not in text
@@ -302,7 +303,7 @@ def fake_llm(monkeypatch, keys):
 
     def complete_json(prompt_name, variables, schema, *, stage=None, info=None, clients=None, accept=None):
         calls.append(prompt_name)
-        answer = {"variations": VARIATIONS} if prompt_name == "variations" else SELECT_ANSWER
+        answer = {"variations": {"variations": VARIATIONS}, "coverage": {"fixes": []}}.get(prompt_name, SELECT_ANSWER)
         if accept is not None:
             assert accept(answer)
         if info is not None:
@@ -322,8 +323,12 @@ def test_select_mode_uses_the_articles_own_steps_and_the_models_intents(fake_llm
     (goal,) = body["contexts"]
     assert goal["goal"] == "Follow these steps to perform this Touchscreen Issues Troubleshooting."
     assert goal["title"] == "Touchscreen input lag"
-    (action,) = goal["actions"]
-    assert action["actionName"] == "Turn Off Full Screen Gestures" and action["category"] == "auto"
+    by_name = {a["actionName"]: a for a in goal["actions"]}
+    action = by_name["Turn Off Full Screen Gestures"]
+    assert action["category"] == "auto"
+    # the rest are the article's own numbered general-fix steps (restart, charger, updates, support...)
+    added = events["extract"]["completed_sections"]
+    assert set(by_name) - {"Turn Off Full Screen Gestures"} == set(added)
     assert action["stepGroups"][0]["steps"] == [
         "Go to Settings.",
         "Tap Display.",
@@ -331,7 +336,7 @@ def test_select_mode_uses_the_articles_own_steps_and_the_models_intents(fake_llm
         "Select Buttons to turn off full screen gestures.",
     ]
     assert body["meta"]["model"] == "fake-extract"
-    assert sorted(fake_llm) == ["extract", "variations"]
+    assert sorted(fake_llm) == ["coverage", "extract", "variations"]
     cache.clear()
 
 

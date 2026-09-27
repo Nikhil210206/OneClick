@@ -53,10 +53,16 @@ def split_preamble(siis_clean: str) -> tuple[str, str, str]:
 
 
 def split_sections(siis_clean: str) -> list[dict]:
-    """[{id, heading, level, sentences: [text]}] in article order. The listing's breadcrumb before the
-    first header is dropped; any article text after it is the first section (split_preamble)."""
+    """[{id, heading, level, sentences: [text], paragraphs: [sentence count per line]}] in article
+    order. The listing's breadcrumb before the first header is dropped; any article text after it is
+    the first section (split_preamble). A paragraph is one line of the article: its lines group what
+    belongs together ("Turn off ... Insert the ejector tool ... Shine a flashlight ...")."""
     title, intro, body = split_preamble(siis_clean)
-    sections = [{"id": "sec1", "heading": title, "level": 1, "sentences": []}] if intro or not body else []
+    sections = (
+        [{"id": "sec1", "heading": title, "level": 1, "sentences": [], "paragraphs": []}]
+        if intro or not body
+        else []
+    )
     body = f"{intro}\n{body}" if intro else body
     for line in body.split("\n"):
         line = line.strip()
@@ -70,10 +76,14 @@ def split_sections(siis_clean: str) -> list[dict]:
                     "heading": header.group(2),
                     "level": len(header.group(1)),
                     "sentences": [],
+                    "paragraphs": [],
                 }
             )
             continue
-        sections[-1]["sentences"].extend(s.strip() for s in _SENTENCE_BREAK.split(line) if s.strip())
+        parts = [s.strip() for s in _SENTENCE_BREAK.split(line) if s.strip()]
+        if parts:
+            sections[-1]["sentences"].extend(parts)
+            sections[-1]["paragraphs"].append(len(parts))
     return [s for s in sections if s["sentences"] or s["heading"]]
 
 
@@ -151,12 +161,17 @@ def segment_with_sections(siis_clean: str, intents: list[Intent]) -> tuple[list[
             sid = f"S{len(sentences) + 1}"
             ids.append(sid)
             sentences.append(SiisSentence(id=sid, section=section["heading"], text=text, relevance=best))
+        paragraphs, at = [], 0
+        for count in section.get("paragraphs") or [len(ids)]:
+            paragraphs.append(ids[at : at + count])
+            at += count
         table.append(
             {
                 "id": section["id"],
                 "heading": section["heading"],
                 "level": section["level"],
                 "sentence_ids": ids,
+                "paragraphs": [p for p in paragraphs if p],
                 "relevance": scores,
                 "relevant": best >= settings.section_relevance_floor,
             }

@@ -5,6 +5,8 @@ behind it says "not measured" and the reason.
 
     gates.json     gate_replica.py   section 1 (schema, rules, leaks, catalog validity)
     judge.json     judge.py          section 2 (step accuracy)
+    judge_runs/    judge.py --out    section 2: further independent runs (results regenerated cold and
+                                     judged again); with two or more, step accuracy is their mean
     ablation.json  ablation.py       sections 2 and 5 (deeplink relevance, mapping ablation)
     loadtest.json  loadtest.py       sections 3 and 4 (latency, cache hit rate, cost)
 
@@ -62,6 +64,17 @@ MULTI_INTENT_CACHE = (
 def load(name: str, results_dir: Path) -> dict | None:
     path = results_dir / name
     return json.loads(path.read_text()) if path.exists() else None
+
+
+def judge_runs(results_dir: Path, judge: dict | None) -> list[dict]:
+    """Independent end-to-end runs judged with the same prompt as judge.json: each run regenerates the
+    kit plans cold (the free-tier models answer a little differently every time) and judges them, so
+    their spread is the engine's run-to-run variance, which one run cannot show."""
+    folder = results_dir / "judge_runs"
+    if not judge or not folder.is_dir():
+        return []
+    runs = [json.loads(p.read_text()) for p in sorted(folder.glob("*.json"))]
+    return [r for r in runs if r.get("prompt_version") == judge.get("prompt_version") and r.get("judged")]
 
 
 def pct(value: float | None) -> str:
@@ -197,8 +210,12 @@ def judge_note(judge: dict) -> str:
     return "_" + ". ".join(p for p in parts if p) + "._"
 
 
-def section2(judge: dict | None, ablation: dict | None) -> list[str]:
+def section2(judge: dict | None, ablation: dict | None, runs: list[dict] | None = None) -> list[str]:
     step = NM if not judge else f"{judge['step_accuracy_mean']:.2f}"
+    runs = runs or []
+    if len(runs) >= 2:
+        means = [r["step_accuracy_mean"] for r in runs]
+        step = f"{sum(means) / len(means):.2f}"
     link = ours(ablation)
     rel = NM if not link else f"{link['all']['relevance_mean']:.2f}"
     out = [
@@ -214,6 +231,15 @@ def section2(judge: dict | None, ablation: dict | None) -> list[str]:
     if not judge:
         out.append("_Step accuracy: not measured yet — `eval/judge.py` needs the engine's extracted steps._")
     else:
+        if len(runs) >= 2:
+            means = [r["step_accuracy_mean"] for r in runs]
+            out.append(
+                f"_Step accuracy is the mean of {len(runs)} independent end-to-end runs, each regenerating "
+                f"the kit plans cold and judging them ({', '.join(f'{m:.2f}' for m in means)}; range "
+                f"{min(means):.2f}-{max(means):.2f}). The free-tier models answer a little differently each "
+                "time, and the judge's verdict on the mismatched kit pairs (section 6) swings with them. "
+                "The details below are for the run committed as results.jsonl._"
+            )
         out.append(judge_note(judge))
     if link:
         a, by = link["all"], link["by_owner"]
@@ -438,9 +464,11 @@ def section6(ablation: dict | None, load: dict | None, gates: dict | None, judge
     if judge:
         items.append(
             f"**Completeness.** The model picks at most `extract_max_actions` (8) actions per goal so a "
-            f"cold answer stays inside the 8 s budget on the free tier; in an article written as numbered "
-            f"steps the ones it skipped are added by rule (up to `extract_complete_max_actions`, 10), but a "
-            f"fix outside that structure can still be left out: the judge marked a missing article fix on "
+            f"cold answer stays inside the 8 s budget on the free tier; a second, parallel call (coverage) "
+            f"marks the article paragraphs that help, and the ones the model skipped are added from the "
+            f"article's own sentences, with a numbered procedure's general-fix steps (up to "
+            f"`extract_complete_max_actions`, 12). Under load that call moves from 14B to 8B, which judges "
+            f"relevance less well. The judge marked a missing article fix on "
             f"{judge.get('plans_missing_a_fix')} of {judge.get('n')} plans. "
             f"Critical actions come last as the spec requires, after contacting support; "
             f"{judge.get('order_problems')} plans were still marked with an ordering problem."
@@ -480,7 +508,7 @@ def build(args) -> str:
     ]
     body = [
         *section1(gates),
-        *section2(judge, ablation),
+        *section2(judge, ablation, judge_runs(rd, judge)),
         *section3(load_),
         *section4(load_),
         *section5(ablation),

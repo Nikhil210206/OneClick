@@ -160,6 +160,19 @@ def test_judge_fills_step_accuracy(tmp_path):
     assert "step accuracy (`judge.py`)" not in md
 
 
+def test_several_judged_runs_report_their_mean_and_range(tmp_path):
+    runs = tmp_path / "judge_runs"
+    runs.mkdir()
+    for n, mean in enumerate((2.65, 2.55, 2.45)):
+        (runs / f"run{n}.json").write_text(json.dumps({**JUDGE, "step_accuracy_mean": mean}))
+    (runs / "other_prompt.json").write_text(
+        json.dumps({**JUDGE, "prompt_version": "judge-v0", "step_accuracy_mean": 0.1})
+    )
+    md = render(tmp_path, judge=JUDGE)
+    assert "| 2.55 |" in row(md, "Step accuracy")  # the mean of the three same-prompt runs
+    assert "mean of 3 independent end-to-end runs" in md and "range 2.45-2.65" in md
+
+
 def test_api_cold_cost_and_models(tmp_path):
     cold = {"n": 35, "hits": 0, "hit_rate": 0.0, "p50_ms": 3900.0, "p95_ms": 6400.0, "mean_cost_usd": 0.0}
     cold["models"] = {"ministral-14b-latest": 30, "rules": 5}

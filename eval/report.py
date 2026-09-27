@@ -437,9 +437,11 @@ def section6(ablation: dict | None, load: dict | None, gates: dict | None, judge
         )
     if judge:
         items.append(
-            f"**Completeness.** Plans hold at most `extract_max_actions` (8) actions per goal so a cold "
-            f"answer stays inside the 8 s budget on the free tier; the judge's most common complaint is a "
-            f"missing article fix ({judge.get('plans_missing_a_fix')} of {judge.get('n')} plans). "
+            f"**Completeness.** The model picks at most `extract_max_actions` (8) actions per goal so a "
+            f"cold answer stays inside the 8 s budget on the free tier; in an article written as numbered "
+            f"steps the ones it skipped are added by rule (up to `extract_complete_max_actions`, 10), but a "
+            f"fix outside that structure can still be left out: the judge marked a missing article fix on "
+            f"{judge.get('plans_missing_a_fix')} of {judge.get('n')} plans. "
             f"Critical actions come last as the spec requires, after contacting support; "
             f"{judge.get('order_problems')} plans were still marked with an ordering problem."
         )

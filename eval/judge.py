@@ -54,8 +54,8 @@ from app.pipeline.normalize import clean_siis, siis_title
 
 # v2 adds the organisers' ordering rule (critical actions last, after contacting support); v1 marked
 # that order as a problem on plans the spec requires it of.
-PROMPT_PATH = Path(__file__).resolve().parent / "prompts" / "judge.v2.md"
-PROMPT_VERSION = "judge-v2"
+PROMPT_PATH = Path(__file__).resolve().parent / "prompts" / "judge.v3.md"
+PROMPT_VERSION = "judge-v3"
 OUT_PATH = RESULTS_DIR / "judge.json"
 CACHE_PATH = RESULTS_DIR / "judge_cache.json"
 DUMMY_URI = "bixby://dummy_positive"

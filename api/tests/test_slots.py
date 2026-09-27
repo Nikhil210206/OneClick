@@ -118,3 +118,21 @@ def test_an_entry_cached_before_intent_existed_is_a_wildcard():
     assert compatible(
         Slots(component="screen", symptom="black", intent="fault"), Slots(component="screen", symptom="black")
     )
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "touch lags, and i also want buttons back",
+        "the screen flickers and i'd also like the old navigation bar",
+        "my phone is slow, i would also like bigger icons",
+    ],
+)
+def test_a_request_added_to_a_fault_reads_as_configure(query):
+    """A fault plus a request is not the single-fault plan, so the cache must not serve it one."""
+    assert extract_slots(query).intent == "configure"
+
+
+def test_also_inside_a_word_is_not_a_request():
+    """Phrases match whole words: "wifi also wants" is not "i also want"."""
+    assert extract_slots("my wifi also wants a password every time").intent == "fault"

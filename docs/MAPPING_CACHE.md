@@ -54,7 +54,13 @@ deeplink and the categorizer decides `manual` vs `critical`.
    - polarity +0.25 when the entry type matches the verb, -0.35 when it is the opposite toggle
    - surface -0.30 for TV / Samsung Members entries
 6. **Tier decision**: >= 1.60 (of 1.85) is a catalog link, otherwise a Settings path gets
-   `dummy`, anything vaguer gets `manual`.
+   `dummy`, anything vaguer gets `manual`. Before that, a change verb (enable / disable / set /
+   adjust) with nothing above the floor tries the screen's page link (`search(path, "open")`):
+   "Select Buttons to turn off full screen gestures" opens View Navigation bar (DL-0169). The page
+   has to clear the same floor, and its Screen Graph name has to match a segment of the path (word
+   Jaccard >= `link_page_min_name_overlap`, 0.5); without that, "Volume > Alarm" opened alarms in
+   Do Not Disturb (DL-0319). On the 123 gold steps: 2 placeholders become right links, relevance
+   1.80 -> 1.84, precision@1 88% -> 91% (`eval/ablation.py --only screengraph`).
 7. **Screen Graph** corrects the on/off choice inside the matched screen.
 
 What each part is worth, on the 87 gold steps that have a catalog answer
@@ -112,6 +118,13 @@ Tier 1  semantic  cosine over every stored phrasing (original + variations)     
   stale plan.
 - SQLite snapshot for restarts, single-flight lock so identical concurrent misses compute once.
 - The SIIS cache **ships empty**: the scorer's first call has to be genuinely cold.
+- **A degraded answer expires.** A rules-only plan given while a model is configured is stored
+  with `degraded: true` and served for `degraded_cache_ttl_s` (10 min), so repeats stay identical;
+  after that the question gets a cold run and the model's answer replaces it under the same key
+  (`pipeline/run.py`, `_lookup`). The no-article path (`lookup_any_article`) does not check it yet.
+- **Rewordings that change the problem are dropped.** A variation whose slots contradict the
+  query's (`changes_the_problem`) could never serve its own plan past the guard; 33 of 200 kit
+  rewordings did this. They come back only to fill the list to 8 (`enrich.filter_variations`).
 - **Prompt version**: only the exact key contains it. The semantic tier matches on similarity,
   slots and article hash, so after a prompt change an old snapshot would still serve old plans.
   Start from an empty cache after a prompt change (see Running it).
@@ -155,7 +168,7 @@ table, and an unrelated complaint comes back empty.
 
 ## Slots
 
-`data/slot_lexicon.json`: 10 components, 12 symptoms, 13 intent phrases. Phrase match only, no LLM.
+`data/slot_lexicon.json`: 10 components, 12 symptoms, 17 intent phrases. Phrase match only, no LLM.
 
 - **Earliest mention wins**, because a complaint names its subject first: "my screen went black
   ... cannot use Smart Switch" is a screen problem, not an app problem.
@@ -165,7 +178,11 @@ table, and an unrelated complaint comes back empty.
 - Longer phrase breaks a tie, so "touch screen" beats "screen".
 - **Intent** is `configure` when the query asks for a behaviour ("I want", "is there a way to",
   "how do I set / keep / turn / make") and `fault` otherwise. "How do I fix my black screen"
-  stays a fault.
+  stays a fault. "I also want" / "I'd also like" / "I would also like" make a fault plus a request
+  ("touch lags, and I also want buttons back") `configure`, so the cache does not serve it the
+  single-fault plan. Two limits: "battery drains and I also want to know why" reads as
+  `configure` too (a cold run instead of a hit, never a wrong plan), and "I also need" is not
+  covered. Phrases match whole words, so "wifi also wants" stays a fault.
 
 All 20 kit queries read as `screen`; 18 also get a symptom; 19 are `fault` and 1 is `configure`
 (row 12, "I want to remove it"). Grow the lexicon freely: it is data, not code.
@@ -252,3 +269,11 @@ it at boot: delete it before measuring cold numbers or after a prompt change.
 - **`data/appliance_exclusions.json`** is an empty list and `screengraph/clean.py` does not read
   it yet: only `DL-DUMMY` is dropped (578 -> 577), and TV entries are score-penalised instead.
 - **Prompt version on the semantic tier** (see Cache): handled by redeploying with an empty cache.
+- **A parent-menu path with a toggle verb** gets a sibling toggle at full confidence:
+  "Settings > Advanced features > Multi window" [enable] resolves to Show multi window menu
+  (DL-0247), while the step names Swipe for split screen (DL-0269 / DL-0270), which the full path
+  resolves to correctly. The tablet row of results.jsonl carries it. Idea: search the setting names
+  the step text quotes ("tap the switch next to X") when the path stops at a menu.
+- **Lexicon gaps**: "lags" (only "lag" and "laggy") and a bare "touch" are not read, so "touch
+  lags" has no slots. Adding symptoms changes the one-sided guard, so measure with
+  `scripts/eval_cache.py` first.

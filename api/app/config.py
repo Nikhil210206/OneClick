@@ -41,16 +41,42 @@ class Settings(BaseModel):
     # cooldown for the last 9: extraction then fell to 8B for all of them.
     variations_model: str = "ministral-8b-latest"
     variations_budget_s: float = 10.0  # background: never delays a response
+    # Call C (coverage), free tier: 8B marks which instruction paragraphs of the article help with the
+    # complaint, next to call B. Paragraphs call B skipped that it marks become actions (the article's
+    # own sentences). The model chooses nothing but paragraph ids and a 2-5 word name. It is waited for
+    # until coverage_wait_s after extraction started, or coverage_grace_s after extraction answered,
+    # whichever is later, and never past the extract budget. Without its answer the numbered-procedure
+    # completion (complete_procedure) stands in.
+    # 14B as the classifier: on the kit it skipped none of what the judge counts as a fix and added
+    # none of 8B's off-topic paragraphs (8B: "Restart Device Connect Network" on a black screen). It is
+    # 14B's second call of a cold request; when 14B is busy or rate-limited 8B answers instead.
+    coverage_model: str = "ministral-14b-latest"
+    coverage_fallback_model: str = "ministral-8b-latest"
+    coverage_budget_s: float = 6.0
+    coverage_wait_s: float = 4.5
+    coverage_grace_s: float = 0.4
+    coverage_max_tokens: int = 500
+    coverage_max_fixes: int = 12
+    # Requests per minute the free plan allows per model (x-ratelimit-limit-req-minute, 2026-09-27).
+    # Call C uses the primary only while it has made fewer than (limit - coverage_leave_primary) requests
+    # in the minute, so call B keeps 14B to itself under load: a burst of cold requests with call C on
+    # 14B each time drew 429s after ~16 requests in 30 s, and extraction fell to 8B. Idle (a demo, a
+    # paced run) call C gets 14B.
+    llm_requests_per_minute: dict[str, int] = {"ministral-14b-latest": 30, "ministral-8b-latest": 188}
+    coverage_leave_primary: int = 20
     # Last resort for every call. A model answering 429 or 5xx is skipped for llm_cooldown_s.
     fallback_model: str = "gemini-3-flash-preview"
     fallback_reasoning: str = "none"  # reasoning_effort on every Mistral call; "" leaves it out
-    llm_cooldown_s: float = 60.0
+    # 20 s since 2026-09-27: the free plan's limit behaves like a refilling bucket (a burst of ~16 14B
+    # requests in 30 s drew 429s), so a minute's cooldown threw 14B away long after it had capacity
+    # again; a retry that still fails costs ~0.6 s while the fast model's answer is on its way.
+    llm_cooldown_s: float = 20.0
     # Gemini 3 guidance: keep temperature at 1.0 (lower values can loop). Repeatability comes from
     # the cache and the compiler, not from temperature.
     llm_temperature_gemini: float = 1.0
     llm_temperature_mistral: float = 0.0
     # Cache-key tag (with prompt_versions below): change it whenever a prompt changes.
-    prompt_version: str = "enrich-v1+extract-v3+variations-v1"
+    prompt_version: str = "enrich-v1+extract-v3+variations-v1+coverage-v1"
     prompt_versions: dict[str, str] = {
         "enrich": "v1",
         # select mode. v3 (2026-09-26) asks for compact JSON and the exact setting in screen_path. On
@@ -60,6 +86,7 @@ class Settings(BaseModel):
         "extract": "v3",
         "extract_rewrite": "v1",  # rewrite mode
         "variations": "v1",
+        "coverage": "v1",
     }
     # USD per 1M tokens (input, output) for meta.cost_usd and /v1/metrics. Models not listed cost
     # $0 here: the Ministral models run on Mistral's free plan.
@@ -106,9 +133,17 @@ class Settings(BaseModel):
     # numbered sections, of which the model followed at least this many: each skipped numbered section
     # with an instruction becomes an action (the rules extractor's), up to this many actions per goal.
     # Deterministic, so it costs no model time; the cap is above extract_max_actions for that reason.
+    # 12 since call C: the touch-lag article (9 numbered steps, two restart methods) needs 11.
+    # Goals call B found that the complaint does not state are folded into the one that matches it
+    # (merge_unstated_goals). Kept: cosine to the complaint >= goal_stated_similarity (stated problems
+    # 0.76-0.86 on the kit and the multi-intent demo) or this share of its words in the complaint
+    # (row 19's "lines on the display": 0.63, 2 of 3 words). Invented ones: 0.60-0.62, 0-1 of 5.
+    goal_stated_similarity: float = 0.70
+    goal_stated_overlap: float = 0.34
+    goal_duplicate_similarity: float = 0.80  # two goals this alike are one (8B: 0.84; distinct 0.57-0.70)
     extract_complete_min_sections: int = 3
     extract_complete_min_followed: int = 2
-    extract_complete_max_actions: int = 10
+    extract_complete_max_actions: int = 12
     # Two actions of one goal citing this share of the smaller one's sentences are one action.
     extract_merge_overlap: float = 0.5
     # Rules-only extraction (no model answered) takes the article's own instructions, so it must not

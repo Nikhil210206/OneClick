@@ -323,6 +323,8 @@ def _cold(
         actions, topics = extract_rules(intents, sentences, sections)
         info = {"source": "rules", "model": None, "tokens_in": 0, "tokens_out": 0}
     run.add_llm(info)
+    if (info.get("coverage") or {}).get("model"):
+        run.add_llm(info["coverage"], answer_model=False)  # call C: tokens and cost, never meta.model
     if info.get("degraded"):
         run.degraded.append("extract:llm_failed")
     rules_only = info.get("source") == "rules"

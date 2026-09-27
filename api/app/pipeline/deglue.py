@@ -2,12 +2,13 @@
 
 One kit article (rows 3, 11 and 17) arrives with whole paragraphs run together:
 "To unlockyourdevicelockedduetosecurityreasons.restartyourdevice...". Left like that, a model cannot
-read it and a step made from it is unreadable. Two repairs, both adding only spaces (and a capital
-after a restored full stop), so every step is still the article's own words:
+read it and a step made from it is unreadable. Two repairs, both adding only spaces, so every step is
+still the article's own words:
 
-  punctuation  a sentence mark with a word glued to each side gets its space back ("reasons.restart"
-               -> "reasons. Restart", "biometrics,and" -> "biometrics, and"); in a clean article only
-               a lost sentence break ("view.Once" -> "view. Once")
+  punctuation  a sentence mark with a word glued to each side gets its space back ("biometrics,and"
+               -> "biometrics, and", "reasons.restart" -> "reasons. restart": a lowercase word after a
+               full stop is a typo for a comma, so no sentence starts there); in a clean article only a
+               lost sentence break ("view.Once" -> "view. Once")
   words        in an article that is glued (several long runs of letters no dictionary knows), each
                such run is split into the cheapest sequence of words: unigram costs from wordninja's
                English list, the article's own words and our support corpus's counted as common, and a
@@ -167,8 +168,10 @@ def _repair_run(run: str, costs: _Costs) -> str:
 
 
 def _mark_space(match: re.Match) -> str:
-    mark, letter = match.group(1), match.group(2)
-    return f"{mark} {letter.upper() if mark in '.!?' else letter}"
+    """Only the space: a lowercase word after a glued full stop ("reasons.restartyour") is the writer's
+    typo for a comma, not a new sentence, so it stays lowercase and the sentence stays whole ("To unlock
+    your device locked due to security reasons. restart your device ..."), with its purpose attached."""
+    return f"{match.group(1)} {match.group(2)}"
 
 
 def is_glued(text: str) -> bool:

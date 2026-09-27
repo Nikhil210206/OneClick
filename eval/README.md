@@ -107,7 +107,7 @@ python eval/judge.py --api http://localhost:8000   # kit + the 15 unseen scenari
 
 The judge should not grade its own work: it uses Gemini when `GEMINI_API_KEY` is set and Mistral otherwise (`--provider`, `--model` override), and any plan written by the judge's model family is counted as self-graded in the output and the report. A plan with no steps scores 0 without a call. Judgments are cached in `results/judge_cache.json`, so a re-run after an engine change only pays for the plans that changed. Failed calls are retried with backoff and then reported as unjudged, never scored.
 
-**`report.py`** fills only what a run measured. An empty plan passes every format rule trivially, so section 1 stays "not measured" until the engine returns non-empty plans.
+**`report.py`** fills only what a run measured. An empty plan passes every format rule trivially, so section 1 stays "not measured" until the engine returns non-empty plans. One run's step accuracy moves with the free-tier models (they answer a little differently each time, and the judge's verdict on the mismatched kit pairs swings with them), so independent runs can be judged into `results/judge_runs/` (`api/scripts/make_results.py --out <file>`, then `judge.py --results <file> --out results/judge_runs/<name>.json`); with two or more, section 2 publishes their mean and range.
 
 ## CI
 

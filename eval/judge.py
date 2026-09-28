@@ -19,6 +19,7 @@ Usage (from the repo root; keys are read from .env):
     python eval/judge.py --dry-run                            # print the first prompt, no key needed
     python eval/judge.py                                      # judge results.jsonl
     python eval/judge.py --api http://localhost:8000          # kit + unseen, live
+    python eval/judge.py --api http://localhost:8000 --sets unseen --out eval/results/judge_unseen.json
     python eval/judge.py --provider mistral --model ministral-14b-latest --limit 5
 Writes eval/results/judge.json.
 """
@@ -62,6 +63,8 @@ DUMMY_URI = "bixby://dummy_positive"
 DEFAULT_MODELS = {"gemini": "gemini-3.5-flash-lite", "mistral": "ministral-14b-latest"}
 KEY_ENV = {"gemini": "GEMINI_API_KEY", "mistral": "MISTRAL_API_KEY"}
 MAX_ARTICLE_CHARS = 14000
+# Every kit complaint is about the screen; the unseen set carries its own domain per scenario.
+KIT_DOMAIN = "Display"
 
 VERDICTS = ("correct", "partial", "wrong")
 VERDICT_CREDIT = {"correct": 1.0, "partial": 0.5, "wrong": 0.0}
@@ -122,6 +125,7 @@ class Item:
     article: str
     contexts: list
     engine_model: str | None = None
+    domain: str | None = None
 
 
 @dataclass
@@ -194,23 +198,30 @@ def items_from_results(path: Path) -> tuple[list[Item], list[str]]:
                 article_text(row.siis),
                 response.get("contexts") or [],
                 meta.get("model"),
+                KIT_DOMAIN,
             )
         )
     return items, notes
 
 
-def items_from_api(base_url: str) -> list[Item]:
+def items_from_api(base_url: str, sets: tuple[str, ...] = ("kit", "unseen")) -> list[Item]:
     from evalkit.client import ApiClient
 
     client = ApiClient(base_url, timeout_s=60.0)
-    requests = [(r.row_id, "kit", r.query, r.siis) for r in load_kit()]
-    requests += [(u["id"], "unseen", u["query"], u.get("siis_response")) for u in load_set("unseen")]
+    requests = []
+    if "kit" in sets:
+        requests += [(r.row_id, "kit", r.query, r.siis, KIT_DOMAIN) for r in load_kit()]
+    if "unseen" in sets:
+        requests += [
+            (u["id"], "unseen", u["query"], u.get("siis_response"), u.get("domain"))
+            for u in load_set("unseen")
+        ]
     items = []
-    for item_id, source, query, siis in requests:
+    for item_id, source, query, siis, domain in requests:
         call = client.troubleshoot(query, siis)
         meta = call.body.get("meta") if isinstance(call.body, dict) else None
         model = meta.get("model") if isinstance(meta, dict) else None
-        items.append(Item(item_id, source, query, article_text(siis), call.contexts, model))
+        items.append(Item(item_id, source, query, article_text(siis), call.contexts, model, domain))
     client.close()
     return items
 
@@ -362,6 +373,7 @@ def judge_items(
             "source": item.source,
             "query": item.query,
             "engine_model": item.engine_model,
+            "domain": item.domain,
             "self_graded": judge_family is not None and family(item.engine_model) == judge_family,
             "n_steps": len(plan.step_ids),
         }
@@ -406,6 +418,10 @@ def summarise(rows: list[dict]) -> dict:
     for source in sorted({r["source"] for r in judged}):
         scores = [r["score"] for r in judged if r["source"] == source]
         by_source[source] = {"n": len(scores), "step_accuracy_mean": _mean(scores)}
+    by_domain = {}
+    for domain in sorted({r.get("domain") or "unknown" for r in judged}):
+        scores = [r["score"] for r in judged if (r.get("domain") or "unknown") == domain]
+        by_domain[domain] = {"n": len(scores), "step_accuracy_mean": _mean(scores)}
     return {
         "n": len(rows),
         "judged": len(judged),
@@ -415,6 +431,7 @@ def summarise(rows: list[dict]) -> dict:
         "step_accuracy_mean": _mean([r["score"] for r in judged]),
         "score_histogram": {str(k): sum(1 for r in judged if r["score"] == k) for k in range(4)},
         "by_source": by_source,
+        "by_domain": by_domain,
         "steps": {
             "n": len(steps),
             "credit": _mean([VERDICT_CREDIT[s["verdict"]] for s in steps]),
@@ -437,7 +454,10 @@ def main(argv: list[str] | None = None, client=None) -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--results", type=Path, default=RESULTS_JSONL, help="results.jsonl to judge")
-    parser.add_argument("--api", help="judge live answers from this API (kit + unseen) instead")
+    parser.add_argument("--api", help="judge live answers from this API instead of results.jsonl")
+    parser.add_argument(
+        "--sets", default="kit,unseen", help="with --api: which sets to ask it (comma-separated: kit, unseen)"
+    )
     parser.add_argument("--provider", choices=["gemini", "mistral"], help="default: gemini if its key is set")
     parser.add_argument("--model", help=f"default: {DEFAULT_MODELS}")
     parser.add_argument("--temperature", type=float, default=0.0)
@@ -459,7 +479,8 @@ def main(argv: list[str] | None = None, client=None) -> int:
     template = PROMPT_PATH.read_text()
     notes: list[str] = []
     if args.api:
-        items, source = items_from_api(args.api), f"HTTP against {args.api} (kit + unseen)"
+        sets = tuple(s.strip() for s in args.sets.split(",") if s.strip())
+        items, source = items_from_api(args.api, sets), f"a local API ({' + '.join(sets)})"
     else:
         items, notes = items_from_results(args.results)
         source = str(

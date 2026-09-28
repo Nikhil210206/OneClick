@@ -43,7 +43,10 @@ are the payload. Every case asserts the same two invariants whatever else happen
 - `expect.url_leaks` is always 0 (hard rule 3: no exception)
 
 `expect.contexts` is `any`, `empty` or `non_empty` depending on whether declining is defensible.
-The kinds cover heavy typos, Hinglish, three intents in one, URLs / addresses / markdown / HTML in
+Where the spec names the fallback, `expect.fallback` holds it: `no_match` for the off-topic article
+and the nonsense complaint (spec 4.2 rule 3: no viable solution, empty contexts), `no_siis_context`
+for the `{}` and missing articles (spec section 5). `gate_replica.py --api` sends every case and
+checks all of these. The kinds cover heavy typos, Hinglish, three intents in one, URLs / addresses / markdown / HTML in
 the article, a prompt injection, the SIIS arriving as a bare string, as `{}` and not at all, an
 off-topic article, an empty query, nonsense, and an article far past a normal context budget.
 
@@ -51,5 +54,7 @@ off-topic article, an empty query, nonsense, and an article far past a normal co
 
 Beyond field types and counts it checks the properties that make the sets useful rather than merely
 well formed: paraphrases and near misses are genuinely held out, near misses really are closer to
-the row than paraphrases are, unseen articles have sections to segment, and no set except
-`adversarial` carries a URL — while `adversarial` must carry at least one.
+the row than paraphrases are, unseen articles have sections to segment, no set except
+`adversarial` carries a URL — while `adversarial` must carry at least one — and an adversarial
+`expect.fallback` is consistent: `no_match` only with empty contexts, `no_siis_context` only when
+the article is missing or empty.

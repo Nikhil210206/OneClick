@@ -75,7 +75,9 @@ def test_live_against_api_in_process(tmp_path, monkeypatch):
     from app.main import app
     from fastapi.testclient import TestClient
 
-    monkeypatch.setattr(gate_replica, "load_set", lambda name: [])
+    monkeypatch.setattr(
+        gate_replica, "load_set", lambda name: sets.load_set(name) if name == "adversarial" else []
+    )
     monkeypatch.setattr(
         gate_replica, "ApiClient", lambda url, timeout: ApiClient(url, http=TestClient(app, base_url=url))
     )
@@ -86,3 +88,35 @@ def test_live_against_api_in_process(tmp_path, monkeypatch):
     assert report["hygiene"]["always_200"]["pass"] and report["hygiene"]["pure_json"]["pass"]
     assert report["latency"]["repeat"]["n"] == 20
     assert report["gates"]["G4"]["pass"] and report["gates"]["G5"]["pass"]
+    # Hostile inputs, rules-only: always 200, schema-valid, no leak, and every fallback the spec names.
+    adv = report["adversarial"]
+    assert adv["n"] == len(sets.load_set("adversarial"))
+    hard = [p for x in adv["failures"] for p in x["problems"] if not p.startswith("returned")]
+    assert hard == []
+
+
+def _call(contexts, fallback=None, status=200):
+    from evalkit.client import CallResult
+
+    body = {"contexts": contexts, "meta": {"fallback": fallback}}
+    return CallResult(status, 1.0, body=body, pure_json=True)
+
+
+def test_adversarial_expectations():
+    from evalkit.checks import Finding
+
+    case = {"id": "a", "expect": {"status": 200, "url_leaks": 0, "contexts": "empty", "fallback": "no_match"}}
+    assert gate_replica.adversarial_problems(case, _call([], "no_match"), []) == []
+    assert gate_replica.adversarial_problems(case, _call([{"goal": "x"}], None), []) == [
+        "returned a plan, expected empty contexts",
+        "fallback None, expected 'no_match'",
+    ]
+    leak = Finding("URL_LEAK", "fail", "p", "m")
+    schema = Finding("SCHEMA", "fail", "p", "m")
+    assert gate_replica.adversarial_problems(case, _call([], "no_match", status=500), [leak, schema]) == [
+        "HTTP 500",
+        "not schema-valid",
+        "1 URL leak(s)",
+    ]
+    lenient = {"id": "b", "expect": {"contexts": "any"}}
+    assert gate_replica.adversarial_problems(lenient, _call([{"goal": "x"}]), []) == []

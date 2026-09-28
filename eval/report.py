@@ -5,6 +5,10 @@ behind it says "not measured" and the reason.
 
     gates.json     gate_replica.py   section 1 (schema, rules, leaks, catalog validity)
     judge.json     judge.py          section 2 (step accuracy)
+    judge_unseen.json  judge.py --api --sets unseen   section 2: the unseen Battery, Camera and
+                                     Performance scenarios, joined to the kit score by plan count
+    judge_calibration.json  judge.py --out   section 2: the kit plans graded by the unseen set's judge,
+                                     when that differs from judge.json's (judges grade on different curves)
     judge_runs/    judge.py --out    section 2: further independent runs (results regenerated cold and
                                      judged again); with two or more, step accuracy is their mean
     ablation.json  ablation.py       sections 2 and 5 (deeplink relevance, mapping ablation)
@@ -33,7 +37,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from evalkit.paths import API_DIR, REPO_ROOT, RESULTS_DIR
+from evalkit.paths import API_DIR, REPO_ROOT, RESULTS_DIR, RESULTS_JSONL
 
 OUT_PATH = REPO_ROOT / "docs" / "metrics.md"
 NM = "not measured"
@@ -66,15 +70,36 @@ def load(name: str, results_dir: Path) -> dict | None:
     return json.loads(path.read_text()) if path.exists() else None
 
 
-def judge_runs(results_dir: Path, judge: dict | None) -> list[dict]:
+def _kit_scores(judged: dict) -> list[tuple]:
+    return sorted(
+        (r.get("id"), r.get("score")) for r in judged.get("items") or [] if r.get("source") == "kit"
+    )
+
+
+def _kit_plans(judged: dict) -> list[tuple]:
+    """Which kit plans were judged, by step count: two judges of the same results.jsonl agree on it."""
+    return sorted(
+        (r.get("id"), r.get("n_steps")) for r in judged.get("items") or [] if r.get("source") == "kit"
+    )
+
+
+def judge_runs(results_dir: Path, judge: dict | None) -> tuple[list[dict], int]:
     """Independent end-to-end runs judged with the same prompt as judge.json: each run regenerates the
     kit plans cold (the free-tier models answer a little differently every time) and judges them, so
-    their spread is the engine's run-to-run variance, which one run cannot show."""
+    their spread is the engine's run-to-run variance, which one run cannot show.
+
+    The runs count only while judge.json is one of them (same kit plans, same scores): after an engine
+    change judge.json is re-judged, and runs of the old engine must not stand in for it. Returns the
+    runs to use and how many were set aside as stale."""
     folder = results_dir / "judge_runs"
     if not judge or not folder.is_dir():
-        return []
+        return [], 0
     runs = [json.loads(p.read_text()) for p in sorted(folder.glob("*.json"))]
-    return [r for r in runs if r.get("prompt_version") == judge.get("prompt_version") and r.get("judged")]
+    runs = [r for r in runs if r.get("prompt_version") == judge.get("prompt_version") and r.get("judged")]
+    mine = _kit_scores(judge)
+    if runs and not any(_kit_scores(r) == mine for r in runs):
+        return [], len(runs)
+    return runs, 0
 
 
 def pct(value: float | None) -> str:
@@ -98,7 +123,10 @@ def commit_sha() -> str:
 def engine_models(load: dict | None) -> str | None:
     """The models that answered the cold pass of `loadtest.py --mode api`, most used first."""
     models = (((load or {}).get("api") or {}).get("cold") or {}).get("models") or {}
-    return ", ".join(f"{m} ({n} cold {'query' if n == 1 else 'queries'})" for m, n in models.items()) or None
+    return (
+        ", ".join(f"{model_name(m)} ({n} cold {'query' if n == 1 else 'queries'})" for m, n in models.items())
+        or None
+    )
 
 
 def embed_model() -> str:
@@ -106,6 +134,18 @@ def embed_model() -> str:
     text = (API_DIR / "app" / "config.py").read_text()
     match = re.search(r'embed_model:\s*str\s*=\s*"([^"]+)"', text)
     return f"{match.group(1)} (ONNX via fastembed)" if match else NM
+
+
+def llm_cooldown_s() -> str:
+    """How long a model answering 429/5xx is skipped, read from config.py without importing the engine."""
+    text = (API_DIR / "app" / "config.py").read_text()
+    match = re.search(r"llm_cooldown_s:\s*float\s*=\s*([\d.]+)", text)
+    return f"{float(match.group(1)):g} s" if match else "a short"
+
+
+def model_name(model: str) -> str:
+    """A cold answer with no model is a decline (`no_match`), not an unnamed model."""
+    return "no model (declined, no_match)" if model == "none" else model
 
 
 def local_env() -> str:
@@ -165,7 +205,48 @@ def section1(gates: dict | None) -> list[str]:
         "| :--- | :--- | :--- |",
     ]
     out += [f"| {name} | {target} | {value} |" for (name, target), value in zip(rows, values, strict=True)]
-    return [*out, "", f"_{note}_", ""]
+    return [*out, "", f"_{note}_", *(f"_{n}_" for n in hygiene_notes(gates)), ""]
+
+
+def hygiene_notes(gates: dict | None) -> list[str]:
+    """The spec's section 6 robustness checks that the template's table has no row for: determinism,
+    hostile inputs, fallback reasons and one action per screen (spec 4.1)."""
+    if not gates:
+        return []
+    out = []
+    hygiene = gates.get("hygiene") or {}
+    parts = [
+        x["detail"]
+        for name in ("deterministic_repeat", "always_200", "pure_json")
+        if (x := hygiene.get(name)) and x.get("detail")
+    ]
+    if parts:
+        out.append("Deterministic execution and hygiene (live gate replica): " + "; ".join(parts) + ".")
+    adv = gates.get("adversarial")
+    if adv:
+        failed = "; ".join(
+            f"{x['id']} ({x.get('kind')}): {', '.join(x['problems'])}" for x in adv["failures"]
+        )
+        out.append(
+            f"Adversarial inputs (`eval/sets/adversarial.jsonl`: typos, Hinglish, three problems in one, URLs, "
+            f"emails, markdown and HTML in the article, a prompt injection, a missing, empty or string article, "
+            f"an off-topic article, empty and nonsense complaints, an 18k-character article): {adv['passed']} of "
+            f"{adv['n']} returned what the case expects (HTTP 200, schema-valid, no URL, a plan or none, and the "
+            "fallback the spec names)" + (f". Failed: {failed}." if failed else ".")
+        )
+    counts = (gates.get("findings") or {}).get("counts") or {}
+    warned = [
+        f"{counts[code]['n']} {label}"
+        for code, label in (
+            ("FALLBACK_MISSING", "empty plans without a fallback reason"),
+            ("SAME_SCREEN_SPLIT", "actions opening the same catalog entry as another action of their goal"),
+            ("CRITICAL_NOT_LAST", "actions after a critical one"),
+        )
+        if code in counts
+    ]
+    if warned:
+        out.append("Warnings on rules the table has no row for: " + "; ".join(warned) + ".")
+    return out
 
 
 def ours(ablation: dict | None) -> dict | None:
@@ -183,12 +264,18 @@ def judge_note(judge: dict) -> str:
         for src, v in (judge.get("by_source") or {}).items()
         if v.get("step_accuracy_mean") is not None
     )
+    by_domain = "; ".join(
+        f"{d} {v['step_accuracy_mean']:.2f} (n={v['n']})"
+        for d, v in (judge.get("by_domain") or {}).items()
+        if v.get("step_accuracy_mean") is not None
+    )
     parts = [
         (
             f"Step accuracy: {judge.get('judge_model')} as judge (`eval/judge.py`, "
             f"{judge.get('prompt_version')}) over {judge['judged']} plans from {judge.get('source')}"
         ),
         f"by set: {by_source}" if by_source else "",
+        f"by domain: {by_domain}" if by_domain else "",
         (
             f"{steps.get('n', 0)} steps: {verdicts.get('correct', 0)} correct, {verdicts.get('partial', 0)} "
             f"partial, {verdicts.get('wrong', 0)} wrong" + (f" (main issues: {issues})" if issues else "")
@@ -207,15 +294,95 @@ def judge_note(judge: dict) -> str:
         parts.append(f"{judge['failed']} plans could not be judged and are left out")
     if judge.get("self_graded"):
         parts.append(f"{judge['self_graded']} plans were written by the judge's own model family")
+    parts.append(
+        "The kit ships no reference plans (the spec's `samples/` folder is not in it), so the judge grades "
+        "each plan against its own SIIS article, the only ground truth the engine is allowed to use"
+    )
     return "_" + ". ".join(p for p in parts if p) + "._"
 
 
-def section2(judge: dict | None, ablation: dict | None, runs: list[dict] | None = None) -> list[str]:
-    step = NM if not judge else f"{judge['step_accuracy_mean']:.2f}"
+def kit_score(judge: dict | None, runs: list[dict] | None = None) -> float | None:
+    """The kit's step accuracy: the mean of the independent runs when there are two or more."""
     runs = runs or []
     if len(runs) >= 2:
-        means = [r["step_accuracy_mean"] for r in runs]
-        step = f"{sum(means) / len(means):.2f}"
+        return sum(r["step_accuracy_mean"] for r in runs) / len(runs)
+    if not judge:
+        return None
+    kit = (judge.get("by_source") or {}).get("kit")
+    return kit["step_accuracy_mean"] if kit else judge["step_accuracy_mean"]
+
+
+def all_domains(
+    judge: dict | None,
+    runs: list[dict] | None = None,
+    unseen_judge: dict | None = None,
+    calibration: dict | None = None,
+) -> tuple[float | None, str] | None:
+    """Kit (Display) and unseen (Battery, Camera, Performance), with a note. The unseen plans come from
+    `judge_unseen.json` when it exists. Judges grade on different curves, so the two are averaged into
+    one headline (weighted by plans) only when the same model judged both; otherwise the score is None
+    and the note compares them under one judge using `judge_calibration.json` (the kit plans graded by
+    the unseen set's judge), when that exists."""
+    kit = ((judge or {}).get("by_source") or {}).get("kit")
+    source = unseen_judge or judge or {}
+    unseen = (source.get("by_source") or {}).get("unseen")
+    if not kit or not unseen or unseen.get("step_accuracy_mean") is None:
+        return None
+    k, u = kit_score(judge, runs), unseen["step_accuracy_mean"]
+    domains = "; ".join(
+        f"{d} {v['step_accuracy_mean']:.2f} (n={v['n']})"
+        for d, v in (source.get("by_domain") or {}).items()
+        if d != "Display" and v.get("step_accuracy_mean") is not None
+    )
+    unseen_part = (
+        f"the {unseen['n']} held-out unseen scenarios (`eval/sets/unseen.jsonl`, answered cold by a local API "
+        f"on an empty cache) score {u:.2f}" + (f" ({domains})" if domains else "")
+    )
+    kit_part = f"the kit's {kit['n']} Display complaints score {k:.2f}" + (
+        " (mean of the independent runs below)" if len(runs or []) >= 2 else ""
+    )
+    same_judge = source.get("judge_model") == (judge or {}).get("judge_model")
+    if same_judge:
+        score = (k * kit["n"] + u * unseen["n"]) / (kit["n"] + unseen["n"])
+        return score, (
+            f"_Across all four domains: {kit_part} and {unseen_part}; the headline is their mean weighted "
+            f"by plans ({kit['n'] + unseen['n']})._"
+        )
+    note = (
+        f"_Battery, Camera and Performance: {unseen_part}, judged by {source.get('judge_model')}, not "
+        f"{(judge or {}).get('judge_model')}. Judges grade on different curves, so this is not averaged into "
+        "the headline, which stays the kit's score"
+    )
+    cal = (calibration or {}).get("step_accuracy_mean")
+    same_plans = calibration and _kit_plans(calibration) == _kit_plans(judge or {})
+    if cal is not None and same_plans and calibration.get("judge_model") == source.get("judge_model"):
+        verdict = "at least as well as" if u >= cal else "less well than"
+        note += (
+            f". Under the same judge the kit's {calibration.get('judged')} plans score {cal:.2f} "
+            f"(`judge_calibration.json`) against {u:.2f} unseen, so the engine handles the unseen domains "
+            f"{verdict} the kit"
+        )
+    if source.get("self_graded"):
+        note += (
+            f". {source['self_graded']} of the unseen plans were written by the judge's own model family, so "
+            "their score may be optimistic"
+        )
+    return None, note + "._"
+
+
+def section2(
+    judge: dict | None,
+    ablation: dict | None,
+    runs: list[dict] | None = None,
+    unseen: dict | None = None,
+    calibration: dict | None = None,
+    stale_runs: int = 0,
+) -> list[str]:
+    runs = runs or []
+    kit = kit_score(judge, runs)
+    combined = all_domains(judge, runs, unseen, calibration)
+    headline = combined[0] if combined and combined[0] is not None else kit
+    step = NM if headline is None else f"{headline:.2f}"
     link = ours(ablation)
     rel = NM if not link else f"{link['all']['relevance_mean']:.2f}"
     out = [
@@ -231,10 +398,17 @@ def section2(judge: dict | None, ablation: dict | None, runs: list[dict] | None 
     if not judge:
         out.append("_Step accuracy: not measured yet — `eval/judge.py` needs the engine's extracted steps._")
     else:
+        if combined:
+            out.append(combined[1])
+        if stale_runs:
+            out.append(
+                f"_{stale_runs} earlier runs in `eval/results/judge_runs/` were left out: judge.json is not one "
+                "of them, so they judged other plans (an older engine or results.jsonl)._"
+            )
         if len(runs) >= 2:
             means = [r["step_accuracy_mean"] for r in runs]
             out.append(
-                f"_Step accuracy is the mean of {len(runs)} independent end-to-end runs, each regenerating "
+                f"_Kit step accuracy is the mean of {len(runs)} independent end-to-end runs, each regenerating "
                 f"the kit plans cold and judging them ({', '.join(f'{m:.2f}' for m in means)}; range "
                 f"{min(means):.2f}-{max(means):.2f}). The free-tier models answer a little differently each "
                 "time, and the judge's verdict on the mismatched kit pairs (section 6) swings with them. "
@@ -273,10 +447,12 @@ def _latency_rows(load: dict | None) -> tuple[list[tuple[str, str, str, str]], l
             continue
         out.append((name, target, ms(s["p50_ms"]), ms(s["p95_ms"])))
     if api:
+        pooled = bool((api.get("cold") or {}).get("sources"))
         notes.append(
             f"Measured over HTTP against {_where(api['source'])}, server-side `X-Latency-Ms` where the API "
             "sends it. "
-            "Cache rows are timed on the calls that hit, the cold row on the calls that missed."
+            "Cache rows are timed on the calls that hit, the cold row on the calls that missed"
+            + (" the cache in any pass, since each of those ran the full pipeline." if pooled else ".")
         )
     elif cache:
         notes.append(
@@ -296,6 +472,7 @@ def section3(load: dict | None) -> list[str]:
     rows, notes = _latency_rows(load)
     sections = [s for s in ((load or {}).get("api"), (load or {}).get("cache")) if s]
     ns = []
+    small = []
     for s in sections[:1]:
         ns = [
             f"{p} n={s[p].get('timed_n', s[p]['n'])}"
@@ -303,7 +480,25 @@ def section3(load: dict | None) -> list[str]:
             for p in ("repeat", "paraphrase", "cold")
             if s.get(p)
         ]
-        notes += list(s.get("notes") or [])
+        small = [
+            p for p in ("repeat", "paraphrase", "cold") if s.get(p) and s[p].get("timed_n", s[p]["n"]) < 30
+        ]
+        notes += [n if n.rstrip().endswith(".") else n.rstrip() + "." for n in s.get("notes") or []]
+        cold = s.get("cold") or {}
+        if cold.get("sources"):
+            src = cold["sources"]
+            cp = cold.get("cold_pass") or {}
+            notes.append(
+                f"The cold row pools every full-pipeline run: {src.get('cold_pass', 0)} from the cold pass "
+                f"(kit + unseen), {src.get('paraphrase_misses', 0)} paraphrases and "
+                f"{src.get('near_miss_misses', 0)} near misses the cache missed"
+                + (
+                    f"; the cold pass alone: p50 {ms(cp.get('p50_ms'))} ms, p95 {ms(cp.get('p95_ms'))} ms "
+                    f"(n={cp.get('timed_n')})."
+                    if cp.get("timed_n")
+                    else "."
+                )
+            )
     out = [
         "## 3. Latency Benchmarks (N >= 30 requests per path)",
         "",
@@ -314,6 +509,10 @@ def section3(load: dict | None) -> list[str]:
     out.append("")
     if ns:
         notes.append("Samples: " + ", ".join(ns) + ".")
+    if small:
+        notes.append(
+            f"Below the template's N >= 30: {', '.join(small)}. Treat those percentiles as indicative."
+        )
     return [*out, *(f"_{n}_" for n in notes), ""]
 
 
@@ -334,18 +533,44 @@ def section4(load: dict | None) -> list[str]:
     ]
     cold = ((load or {}).get("api") or {}).get("cold") or {}
     if cold_cost is not None:
-        models = ", ".join(f"{m} {n}" for m, n in (cold.get("models") or {}).items())
+        models = ", ".join(f"{model_name(m)} {n}" for m, n in (cold.get("models") or {}).items())
+        tokens = (
+            f" Token use is tracked per request (`/v1/trace`): {cold['mean_tokens_in']:.0f} prompt + "
+            f"{cold['mean_tokens_out']:.0f} completion tokens per cold query on average "
+            f"(n={cold['tokens_measured']})."
+            if cold.get("tokens_measured")
+            else ""
+        )
         out.append(
-            f"_Mean `meta.cost_usd` over {cold['n']} cold queries, priced from the token counts at the rates in "
-            f"`api/app/config.py` (`llm_prices`); models that answered: {models}. Models without a listed rate run "
-            "on a free plan and cost $0._"
+            f"_Mean `meta.cost_usd` over {cold.get('timed_n', cold['n'])} cold queries, priced from the token "
+            f"counts at the rates in `api/app/config.py` (`llm_prices`); models that answered: {models}. Models "
+            f"without a listed rate run on a free plan and cost $0.{tokens}_"
         )
     if para:
+        if "wrong_plan" in para:
+            by = para.get("hits_by_source") or {}
+            again = by.get("same_complaint_paraphrase", 0)
+            second = (
+                f"; {again} served the plan of an earlier paraphrase of the same complaint (that one missed, "
+                "ran cold and was stored, so the complaint now has two plans)"
+                if again
+                else ""
+            )
+            same = (
+                f"; {para['same_plan']} of {para['n']} got exactly the plan their original query got"
+                if "same_plan" in para
+                else ""
+            )
+            plans = (
+                f"{para['wrong_plan']} hits served a plan solved for another complaint"
+                if by
+                else f"{para['wrong_plan']} hits served a plan other than their original query's"
+            ) + f"{second}{same}."
+        else:
+            plans = "whether each hit served the right plan was not checked in this run."
         out.append(
             f"_Hit rate over {para['n']} held-out paraphrases (`eval/sets/paraphrases.jsonl`, never used to warm "
-            f"the cache), {para.get('wrong_plan', 0)} served the wrong plan."
-            + (f" {src['warmed_with']}." if src.get("warmed_with") else "")
-            + "_"
+            f"the cache); {plans}" + (f" {src['warmed_with']}." if src.get("warmed_with") else "") + "_"
         )
     nm = src.get("near_miss")
     if nm:
@@ -367,7 +592,21 @@ def section4(load: dict | None) -> list[str]:
     return [*out, ""]
 
 
-def section5(ablation: dict | None) -> list[str]:
+def actions_per_plan(results: Path) -> float | None:
+    """Mean actions per plan in the submitted results file: one deeplink lookup per action."""
+    counts = []
+    if results.exists():
+        for line in results.read_text().splitlines():
+            if not line.strip():
+                continue
+            contexts = (json.loads(line).get("response") or {}).get("contexts") or []
+            n = sum(len(g.get("actions") or []) for g in contexts if isinstance(g, dict))
+            if n:
+                counts.append(n)
+    return sum(counts) / len(counts) if counts else None
+
+
+def section5(ablation: dict | None, shared: float | None = None, per_plan: float | None = None) -> list[str]:
     out = [
         "## 5. Architectural Ablation Analysis",
         "",
@@ -382,6 +621,7 @@ def section5(ablation: dict | None) -> list[str]:
         )
         out += [f"| {n} | {NM} | {NM} | {NM} | {NM} |" for n in names]
         return [*out, ""]
+    step_cell = NM if shared is None else f"{shared:.2f} (shared extraction)"
     for v in ablation["variants"]:
         if not v["measured"]:
             out.append(f"| {v['name']} | {NM} | {NM} | {NM} | {NM}: {v['reason']} |")
@@ -391,18 +631,29 @@ def section5(ablation: dict | None) -> list[str]:
             f"deeplink relevance {a['relevance_mean']:.2f}/2, P@1 {pct(a['p_at_1'])}, right tier "
             f"{pct(a['tier_accuracy'])}, wrong or unsafe link on {pct(a['wrong_link_rate'])} of steps"
         )
-        cost = f"${v['cost_per_step_usd']:.5f}" if v["cost_per_step_usd"] else "$0.00"
-        out.append(
-            f"| {v['name']} | held fixed (mapping-only) | {v['latency_ms']['p95']:.1f} ms / step | {cost} | {obs} |"
-        )
+        step_p95, step_cost = v["latency_ms"]["p95"], v["cost_per_step_usd"] or 0.0
+        if per_plan:
+            latency = f"{step_p95 * per_plan:.1f} ms / query ({step_p95:.1f} ms / action)"
+            cost = f"${step_cost * per_plan:.5f}" if step_cost else "$0.00"
+        else:
+            latency = f"{step_p95:.1f} ms / action"
+            cost = f"${step_cost:.5f} / action" if step_cost else "$0.00"
+        out.append(f"| {v['name']} | {step_cell} | {latency} | {cost} | {obs} |")
     g = ablation["gold"]
     tiers = ", ".join(f"{n} {t}" for t, n in g["by_tier"].items())
+    per_query = (
+        f"Per-query latency and cost are the per-action p95 and cost times the {per_plan:.1f} actions of the "
+        "mean submitted plan, one lookup per action, so the latency is an upper bound. "
+        if per_plan
+        else ""
+    )
     out += [
         "",
         (
-            f"_Mapping-only ablation: every variant maps the same {g['n']} gold steps ({tiers}), so "
-            "extraction and therefore step accuracy are held fixed; the variants differ in deeplink "
-            "relevance (0-2 rubric in `eval/evalkit/relevance.py`), precision@1 and safety. "
+            f"_Mapping-only ablation: every variant maps the same {g['n']} gold steps ({tiers}). The "
+            "variants only choose links, so they share one extraction and one step-accuracy score (the "
+            "kit's score from section 2); they differ in deeplink relevance (0-2 rubric in "
+            f"`eval/evalkit/relevance.py`), precision@1 and safety. {per_query}"
             f"Commit `{ablation.get('commit')}`._"
         ),
         "",
@@ -446,20 +697,42 @@ def section6(ablation: dict | None, load: dict | None, gates: dict | None, judge
     if para and para.get("by_register"):
         weak = {k: v for k, v in para["by_register"].items() if v < 0.8}
         if weak:
+            warmed = (
+                "over HTTP, with the cache holding each kit query and its generated variations"
+                if (load or {}).get("api")
+                else "with the cache warmed on the original phrasing only"
+            )
             items.append(
                 "**Weak paraphrase registers.** "
                 + ", ".join(f"{k} {v * 100:.0f}%" for k, v in weak.items())
-                + " hit rate with the cache warmed on the original phrasing only."
+                + f" hit rate {warmed}."
             )
+    if para and para.get("wrong"):
+        wrong, hits = para["wrong"], para.get("hits") or para.get("timed_n") or para["n"]
+        again = (para.get("hits_by_source") or {}).get("same_complaint_paraphrase", 0)
+        items.append(
+            f"**Paraphrases served another complaint's plan.** {len(wrong)} of {hits} paraphrase hits: "
+            + "; ".join(f'"{w["query"]}" ({w["row_id"]})' for w in wrong[:3])
+            + (f"; and {len(wrong) - 3} more" if len(wrong) > 3 else "")
+            + ". The full list is in `eval/results/loadtest.json` (`paraphrase.wrong`)."
+            + (
+                f" {again} more hit a second plan for the same complaint, made when an earlier paraphrase "
+                "missed and ran cold."
+                if again
+                else ""
+            )
+        )
     items.append(f"**Mismatched kit pairs.** {KIT_MISMATCH}")
     cold = cache.get("cold") or {}
     if cold.get("models"):
-        answered = ", ".join(f"{m} {n}" for m, n in sorted(cold["models"].items(), key=lambda kv: -kv[1]))
+        answered = ", ".join(
+            f"{model_name(m)} {n}" for m, n in sorted(cold["models"].items(), key=lambda kv: -kv[1])
+        )
         items.append(
             f"**Free-tier variance.** Cold answers in the load test came from {answered}. Which model "
-            "answers depends on the free tier's load (a 429 puts a model on a 60 s cooldown, and past the "
-            "prefer deadline the faster model's answer is taken), so the same complaint can get a "
-            "different plan on another run; the cache then serves the first one identically."
+            f"answers depends on the free tier's load (a 429 puts a model on a {llm_cooldown_s()} cooldown, "
+            "and past the prefer deadline the faster model's answer is taken), so the same complaint can get "
+            "a different plan on another run; the cache then serves the first one identically."
         )
     if judge:
         items.append(
@@ -492,6 +765,7 @@ def build(args) -> str:
     rd = args.results_dir
     gates, judge = load("gates.json", rd), load("judge.json", rd)
     ablation, load_ = load("ablation.json", rd), load("loadtest.json", rd)
+    runs, stale_runs = judge_runs(rd, judge)
     header = [
         "# System Performance Metrics & Evaluation Report",
         f"**Model(s):** {args.model or engine_models(load_) or NM}",
@@ -508,10 +782,21 @@ def build(args) -> str:
     ]
     body = [
         *section1(gates),
-        *section2(judge, ablation, judge_runs(rd, judge)),
+        *section2(
+            judge,
+            ablation,
+            runs,
+            load("judge_unseen.json", rd),
+            load("judge_calibration.json", rd),
+            stale_runs,
+        ),
         *section3(load_),
         *section4(load_),
-        *section5(ablation),
+        *section5(
+            ablation,
+            kit_score(judge, runs),
+            actions_per_plan(getattr(args, "results", RESULTS_JSONL)),
+        ),
         *section6(ablation, load_, gates, judge),
     ]
     return "\n".join([*header, *body]).rstrip() + "\n"
@@ -525,6 +810,7 @@ def main() -> None:
     parser.add_argument("--embeddings", help="embedding model id (default: read from api/app/config.py)")
     parser.add_argument("--env", help="vCPU / RAM / OS of the serving machine (default: this machine)")
     parser.add_argument("--results-dir", type=Path, default=RESULTS_DIR)
+    parser.add_argument("--results", type=Path, default=RESULTS_JSONL, help="plans for actions per query")
     parser.add_argument("--out", type=Path, default=OUT_PATH)
     args = parser.parse_args()
     args.out.write_text(build(args))

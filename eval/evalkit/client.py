@@ -19,6 +19,8 @@ class CallResult:
     body: object = None
     pure_json: bool = False
     error: str | None = None
+    tokens_in: int | None = None  # from GET /v1/trace/{meta.trace_id}, when fetched
+    tokens_out: int | None = None
 
     @property
     def ok(self) -> bool:
@@ -80,3 +82,15 @@ class ApiClient:
         if siis is not None:
             payload["siis_response"] = siis
         return self._call("POST", "/v1/troubleshoot", payload)
+
+    def add_tokens(self, result: CallResult) -> CallResult:
+        """Fill the request's token counts from its trace (`meta.trace_id`); left None when unavailable."""
+        meta = result.body.get("meta") if isinstance(result.body, dict) else None
+        trace_id = meta.get("trace_id") if isinstance(meta, dict) else None
+        if isinstance(trace_id, str) and trace_id:
+            trace = self._call("GET", f"/v1/trace/{trace_id}")
+            if trace.status_code == 200 and isinstance(trace.body, dict):
+                t_in, t_out = trace.body.get("tokens_in"), trace.body.get("tokens_out")
+                if isinstance(t_in, int) and isinstance(t_out, int):
+                    result.tokens_in, result.tokens_out = t_in, t_out
+        return result

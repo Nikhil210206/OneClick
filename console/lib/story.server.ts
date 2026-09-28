@@ -131,7 +131,7 @@ function readMetrics(): Metrics {
       bm25Top1: num(match(/P@1 ([\d.]+)%/, bm25)),
       wrongLink: num(match(/wrong or unsafe link on ([\d.]+)%/, ours)),
       llmTop1: num(match(/P@1 ([\d.]+)%/, llm[4] ?? "")),
-      llmP95: num(match(/^([\d.]+) ms/, llm[2] ?? "")),
+      llmP95: num(match(/\(([\d.]+) ms \/ action\)/, llm[2] ?? "") ?? match(/^([\d.]+) ms/, llm[2] ?? "")),
     },
     latency: {
       exactP95: num(exact[3]),

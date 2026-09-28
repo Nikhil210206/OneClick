@@ -30,7 +30,7 @@ python eval/gate_replica.py --api http://localhost:8000
 python eval/gate_replica.py --api http://localhost:8000 --results results.jsonl --enforce G2,G3,G4,G5
 ```
 
-In live mode, each kit query is sent twice, first cold and then as a repeat, with its own SIIS article. Up to 60 paraphrases from `sets/paraphrases.jsonl` are sent with the same article, and every `sets/unseen.jsonl` scenario is sent once. The report is printed and written to `eval/results/gates.json`.
+In live mode, each kit query is sent twice, first cold and then as a repeat, with its own SIIS article. Up to 60 paraphrases from `sets/paraphrases.jsonl` are sent with the same article, every `sets/unseen.jsonl` scenario is sent once, and so is every `sets/adversarial.jsonl` case, which is then checked against its own `expect` block: HTTP 200, schema-valid, no URL, a plan or none, and the fallback the spec names (`no_match` for an article with no answer, spec 4.2 rule 3; `no_siis_context` for a missing or empty one, section 5). The report is printed and written to `eval/results/gates.json`.
 
 | Check | Rule (source) | Enforced as |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ In live mode, each kit query is sent twice, first cold and then as a repeat, wit
 
 The points are **our estimate**. The organisers publish the blocks and targets, but not the weighting inside each block.
 
-Also reported: always-200, pure JSON, identical plans on a repeat call, warnings for style rules, and whether the cache was warm before the "cold" call.
+Also reported: always-200, pure JSON, identical plans on a repeat call, the adversarial cases, warnings for style rules, and whether the cache was warm before the "cold" call. Two warnings cover spec rules the scorer blocks do not: `SAME_SCREEN_SPLIT`, two actions of one goal opening the same catalog entry (spec 4.1 and pitfall 2, one action per screen; the dummy placeholder is not compared), and `FALLBACK_MISSING`, an empty plan whose `meta.fallback` names no reason. A manual action carrying a link only warns: the spec says it cannot, but FAQ Q7 makes the deeplink optional for manual and critical actions.
 
 ### Goal regex: `--goal-mode`
 
@@ -81,6 +81,8 @@ python eval/report.py                   # rewrites docs/metrics.md in the Append
 
 For honest cold numbers, start the API on an empty cache: `ONECLICK_SQLITE=/tmp/cold.sqlite uvicorn app.main:app` from `api/`, with the LLM keys in `.env`. The API mode waits `--settle` seconds (default 12) after the cold pass, because each answer's 8–10 variations are generated in the background and paraphrase hits depend on them.
 
+The API mode's cold row is timed on every call that missed the cache in any pass (the cold pass, the paraphrases and the near misses the cache missed), since each ran the full pipeline: the cold pass alone falls short of the template's N ≥ 30, because kit rows share articles and some hit a plan solved moments earlier. The cold pass's own percentiles are kept in `cold.cold_pass`. Each of those calls also has its token counts read from `/v1/trace/{meta.trace_id}` (spec 6.3, token utilization per query). Every paraphrase is checked against the plan its own kit query got in the cold pass: a hit serving another plan is a `wrong_plan`, and `same_plan` counts the paraphrases that got exactly the original's plan (spec 6.1, consistent plans for semantically identical inputs). Hit rates are also split by register (formal, casual, keyword, frustrated, typo).
+
 In the API mode's near-miss pass, the engine caches every answer it computes, so a near miss that misses runs cold and a later near miss on the same article can hit *that* answer. Each hit is therefore classified by the plan it served, compared with the plans from earlier in the run: a kit answer (the row's own, or another row's with the same article), an earlier near miss's answer, or a paraphrase's cold answer. Only kit answers count toward the ≤ 2% false-hit target; the others are reported in `near_miss.hits_by_source` and `leaked`. The in-process `--mode cache` pass never stores near misses, so it needs no such split.
 
 **`ablation.py`** maps every gold step with each variant and scores them the same way:
@@ -103,11 +105,27 @@ Deeplink relevance (0–2) follows `evalkit/relevance.py`: 2 for the exact entry
 python eval/judge.py --dry-run                     # print the first prompt; no key needed
 python eval/judge.py                               # the 20 plans in results.jsonl
 python eval/judge.py --api http://localhost:8000   # kit + the 15 unseen scenarios, live
+python eval/judge.py --api http://localhost:8000 --sets unseen --out eval/results/judge_unseen.json
 ```
 
-The judge should not grade its own work: it uses Gemini when `GEMINI_API_KEY` is set and Mistral otherwise (`--provider`, `--model` override), and any plan written by the judge's model family is counted as self-graded in the output and the report. A plan with no steps scores 0 without a call. Judgments are cached in `results/judge_cache.json`, so a re-run after an engine change only pays for the plans that changed. Failed calls are retried with backoff and then reported as unjudged, never scored.
+The judge should not grade its own work: it uses Gemini when `GEMINI_API_KEY` is set and Mistral otherwise (`--provider`, `--model` override), and any plan written by the judge's model family is counted as self-graded in the output and the report. A plan with no steps scores 0 without a call. Judgments are cached in `results/judge_cache.json`, so a re-run after an engine change only pays for the plans that changed. Failed calls are retried with backoff and then reported as unjudged, never scored. Every judgment also carries its domain (the kit is all Display; the unseen set is Battery, Camera and Performance), and the output breaks the score down `by_source` and `by_domain`.
 
-**`report.py`** fills only what a run measured. An empty plan passes every format rule trivially, so section 1 stays "not measured" until the engine returns non-empty plans. One run's step accuracy moves with the free-tier models (they answer a little differently each time, and the judge's verdict on the mismatched kit pairs swings with them), so independent runs can be judged into `results/judge_runs/` (`api/scripts/make_results.py --out <file>`, then `judge.py --results <file> --out results/judge_runs/<name>.json`); with two or more, section 2 publishes their mean and range.
+**`report.py`** fills only what a run measured. An empty plan passes every format rule trivially, so section 1 stays "not measured" until the engine returns non-empty plans. One run's step accuracy moves with the free-tier models (they answer a little differently each time, and the judge's verdict on the mismatched kit pairs swings with them), so independent runs can be judged into `results/judge_runs/` (`api/scripts/make_results.py --out <file>`, then `judge.py --results <file> --out results/judge_runs/<name>.json`); with two or more, section 2 publishes their mean and range. The runs count only while `judge.json` is one of them (same kit plans, same scores), so runs of an older engine are set aside, with a note, rather than published as the current score.
+
+The spec evaluates step accuracy across Battery, Display, Camera and Performance, and the kit is all Display, so section 2 adds the 15 unseen scenarios from `results/judge_unseen.json`. Judges grade on different curves (on the same 20 kit plans, gemini-3.5-flash-lite gave 2.60 and ministral-14b-latest 1.60), so the unseen score joins the headline, weighted by plans, only when the same model judged both sets. Otherwise the headline stays the kit's score, and the unseen score is compared under one judge when `results/judge_calibration.json` (the same kit plans graded by the unseen set's judge: `judge.py --provider <p> --out eval/results/judge_calibration.json`) exists.
+
+**After an engine change**, from the repo root, with both keys in `.env`. Start the API on an empty cache (`ONECLICK_SQLITE` set to a fresh file) before each of the three live runs, since each needs its first calls to be cold:
+
+```bash
+(cd api && python scripts/make_results.py)         # new results.jsonl, the submission run
+python eval/judge.py                               # kit -> results/judge.json
+python eval/judge.py --api http://localhost:8000 --sets unseen --out eval/results/judge_unseen.json
+python eval/gate_replica.py --api http://localhost:8000 --results results.jsonl   # restart the API first
+python eval/loadtest.py --mode api --api http://localhost:8000                    # restart the API first
+python eval/report.py                              # docs/metrics.md
+```
+
+Delete `results/judge_calibration.json` once both sets have the same judge; it only matters when they don't. For a mean over independent runs, judge each run into `results/judge_runs/` as above, and make `judge.json` one of them.
 
 ## CI
 

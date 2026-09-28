@@ -12,7 +12,9 @@ Two modes:
 
     api    Against a running API. Cold pass first (kit + unseen, so the SIIS cache must start
            empty), then repeat, paraphrase and near-miss passes. Reports the server's
-           X-Latency-Ms and the client-side time.
+           X-Latency-Ms and the client-side time. The cold path is timed on every call that
+           missed the cache in any pass (each ran the full pipeline), with its tokens read from
+           /v1/trace; paraphrase hits are checked for serving their own kit query's plan.
 
 Usage (from the repo root):
     python eval/loadtest.py --mode cache                 # needs data/build (see evalkit/engine.py)
@@ -220,6 +222,45 @@ def classify_near_misses(
     return leaked, dict(counts)
 
 
+def classify_paraphrases(
+    paraphrases: list[dict], para: list, kit_rows: list[KitRow], kit_cold: list
+) -> tuple[dict, list[dict], int]:
+    """Where each paraphrase hit's plan came from (spec 6.1: semantically identical input, same plan).
+
+    The plan its own kit query got in the cold pass is the right answer. The live pass also stores every
+    answer it computes, so a paraphrase the cache missed runs cold, and a later paraphrase of the same
+    complaint can hit that answer: the right problem, but not the original's plan, reported on its own.
+    A plan solved for another complaint (another kit query's, or another complaint's paraphrase) is a
+    wrong plan. Returns the hit counts by source, the wrong hits, and how many paraphrases got exactly
+    their original's plan.
+    """
+    own = {row.row_id: _plan_key(r) for row, r in zip(kit_rows, kit_cold, strict=False)}
+    kit_plans = {key for key in own.values() if key is not None}
+    earlier: dict[str, set[str]] = {}  # plan -> rows whose paraphrase missed and produced it
+    served, wrong, same = Counter(), [], 0
+    for p, r in zip(paraphrases, para, strict=True):
+        key, row = _plan_key(r), p["row_id"]
+        same += key is not None and key == own.get(row)
+        if not r.cache_hit:
+            if key is not None:
+                earlier.setdefault(key, set()).add(row)
+            continue
+        if key is not None and key == own.get(row):
+            source = "own_kit_answer"
+        elif key is not None and row in earlier.get(key, set()):
+            source = "same_complaint_paraphrase"
+        elif key is not None and key in kit_plans:
+            source = "other_kit_answer"
+        elif key is not None and key in earlier:
+            source = "other_complaint_paraphrase"
+        else:
+            source = "unidentified"
+        served[source] += 1
+        if source not in ("own_kit_answer", "same_complaint_paraphrase"):
+            wrong.append({"id": p.get("id"), "row_id": row, "query": p["query"], "source": source})
+    return dict(served), wrong, same
+
+
 def _meta(result) -> dict:
     meta = result.body.get("meta") if isinstance(result.body, dict) else None
     return meta if isinstance(meta, dict) else {}
@@ -267,25 +308,34 @@ def run_api(
         costs = [c for c in (_meta(r).get("cost_usd") for r in timed_on) if isinstance(c, (int, float))]
         if costs:
             out["mean_cost_usd"] = round(sum(costs) / len(costs), 6)
+        counted = [r for r in timed_on if r.tokens_in is not None]
+        if counted:
+            out["tokens_measured"] = len(counted)
+            out["mean_tokens_in"] = round(sum(r.tokens_in for r in counted) / len(counted), 1)
+            out["mean_tokens_out"] = round(sum(r.tokens_out for r in counted) / len(counted), 1)
         out["models"] = dict(Counter(str(_meta(r).get("model") or "none") for r in timed_on).most_common())
         return out
 
-    cold = [client.troubleshoot(row.query, row.siis) for row in kit]
-    cold += [client.troubleshoot(u["query"], u.get("siis_response")) for u in unseen]
+    def ask(query: str, article):
+        # A miss ran the full pipeline: its trace holds the tokens spent on the answer (spec 6.3).
+        result = client.troubleshoot(query, article)
+        return result if result.cache_hit else client.add_tokens(result)
+
+    cold = [ask(row.query, row.siis) for row in kit]
+    cold += [ask(u["query"], u.get("siis_response")) for u in unseen]
     warm = sum(bool(r.cache_hit) for r in cold)
     if warm:
         notes.append(
             f"{warm} of {len(cold)} cold-pass calls were answered from the cache (another request with the "
-            "same article had just been solved, or the API did not start empty); cold latency is timed on "
-            "the misses only"
+            "same article had just been solved, or the API did not start empty)."
         )
     if settle_s > 0:
         # The 8-10 variations are generated in the background after each answer; paraphrase hits
         # depend on them being indexed, so let the last cold calls' variations land first.
         time.sleep(settle_s)
     repeat = [client.troubleshoot(row.query, row.siis) for _ in range(2) for row in kit]
-    para = [client.troubleshoot(p["query"], siis[p["row_id"]]) for p in paraphrases]
-    near = [client.troubleshoot(m["query"], siis[m["row_id"]]) for m in near_misses]
+    para = [ask(p["query"], siis[p["row_id"]]) for p in paraphrases]
+    near = [ask(m["query"], siis[m["row_id"]]) for m in near_misses]
     client.close()
     leaked, by_source = classify_near_misses(
         near_misses,
@@ -303,11 +353,35 @@ def run_api(
         hits_by_source=by_source,
         leaked=leaked,
     )
+
+    served, wrong_list, same = classify_paraphrases(paraphrases, para, kit, cold[: len(kit)])
+    registers: dict[str, list[int]] = {}
+    for p, r in zip(paraphrases, para, strict=True):
+        reg = registers.setdefault(p.get("register") or "?", [0, 0])
+        reg[0] += bool(r.cache_hit)
+        reg[1] += 1
+    para_section = timed(para, True)
+    para_section.update(
+        wrong_plan=len(wrong_list),
+        same_plan=same,
+        hits_by_source=served,
+        wrong=wrong_list,
+        by_register={k: round(h / t, 3) for k, (h, t) in sorted(registers.items())},
+    )
+
+    # Every call that missed the cache ran the full pipeline, whichever pass sent it: the cold pass
+    # alone has fewer misses than the N >= 30 the template asks for, because kit rows share articles.
+    passes = {"cold_pass": cold, "paraphrase_misses": para, "near_miss_misses": near}
+    misses = {name: [r for r in calls if not r.cache_hit] for name, calls in passes.items()}
+    cold_section = timed([r for calls in misses.values() for r in calls], None)
+    cold_section["sources"] = {name: len(calls) for name, calls in misses.items()}
+    cold_pass = timed(cold, None)
+    cold_section["cold_pass"] = {k: cold_pass[k] for k in ("n", "timed_n", "p50_ms", "p95_ms")}
     return {
         "source": f"HTTP against {base_url}",
-        "cold": timed(cold, None),
+        "cold": cold_section,
         "repeat": timed(repeat, True),
-        "paraphrase": timed(para, True),
+        "paraphrase": para_section,
         "near_miss": near_section,
         "notes": notes,
     }

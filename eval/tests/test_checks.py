@@ -69,7 +69,11 @@ def test_compliant_fixture_has_no_findings(good, catalog):
 
 def test_empty_contexts_is_schema_valid():
     assert check_response({"contexts": []}) == []
-    assert check_response({"contexts": [], "meta": {"latency_ms": 3, "cache_hit": False}}) == []
+    meta = {"latency_ms": 3, "cache_hit": False, "fallback": "no_match"}
+    assert check_response({"contexts": [], "meta": meta}) == []
+    # Without a fallback reason it is still schema-valid; it only draws the fallback warning.
+    found = check_response({"contexts": [], "meta": {"latency_ms": 3, "cache_hit": False}})
+    assert codes(found) == {"FALLBACK_MISSING"} and codes(found, FAIL) == set()
 
 
 # --------------------------------------------------------------------------- schema
@@ -184,6 +188,28 @@ def test_manual_with_link_warns(good):
     link = good["contexts"][0]["actions"][0]["stepGroups"][0]["actionableDeeplink"]
     good["contexts"][0]["actions"][1]["stepGroups"][0]["actionableDeeplink"] = link
     assert "MANUAL_HAS_LINK" in codes(check_response(good), WARN)
+
+
+def test_two_actions_on_one_catalog_entry_warn(good):
+    actions = good["contexts"][0]["actions"]
+    link = actions[0]["stepGroups"][0]["actionableDeeplink"]
+    twin = copy.deepcopy(actions[0])
+    twin["actionName"] = "Another Action On That Screen"
+    actions.insert(1, twin)
+    found = [x for x in check_response(good) if x.code == "SAME_SCREEN_SPLIT"]
+    assert [x.path for x in found] == ["contexts[0].actions[1]"] and found[0].severity == WARN
+    for action in actions[:2]:  # the placeholder stands for many screens: never compared
+        action["stepGroups"][0]["actionableDeeplink"] = {**link, "deeplink": "bixby://dummy_positive"}
+    assert "SAME_SCREEN_SPLIT" not in codes(check_response(good))
+
+
+def test_empty_plan_must_name_its_fallback():
+    assert "FALLBACK_MISSING" in codes(check_response({"contexts": [], "meta": {"fallback": None}}), WARN)
+    for reason in ("no_match", "no_siis_context"):
+        assert "FALLBACK_MISSING" not in codes(check_response({"contexts": [], "meta": {"fallback": reason}}))
+    assert "FALLBACK_MISSING" not in codes(check_response({"contexts": []}))  # no meta: cannot be seen
+    line = {"query": "q", "query_variations": NINE, "response": {"contexts": []}, "meta": {"fallback": None}}
+    assert "FALLBACK_MISSING" in codes(check_results_line(line))
 
 
 def test_critical_must_be_last(good):

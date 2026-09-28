@@ -1,4 +1,4 @@
-"""G2-G5 + A1-A5 replica; sends each query twice with an empty SIIS cache.
+"""G2-G5 + A1-A5 replica; sends each query twice with an empty SIIS cache, then the held-out sets.
 
 Our own copy of the organisers' automated scorer (FAQ Theme 2 Q9-Q12, Q21). The points it prints are an
 estimate: the organisers publish the blocks and targets, not the weighting inside each block.
@@ -193,9 +193,9 @@ def run_live(api: ApiClient, kit: list[KitRow], audit: Audit, report: dict, n_pa
             nondeterministic += 1
     if warm_before_cold:
         report["notes"].append(
-            f"{warm_before_cold}/{len(kit)} first calls were already cache hits: "
-            "restart the API with an empty "
-            "SIIS cache for honest cold numbers"
+            f"{warm_before_cold}/{len(kit)} first calls were cache hits: kit rows share articles, so a row can "
+            "hit the plan solved for an earlier one (if the API did not start on an empty SIIS cache, restart "
+            "it); cold latency is timed on the misses"
         )
 
     by_row = {r.row_id: r for r in kit}
@@ -222,6 +222,22 @@ def run_live(api: ApiClient, kit: list[KitRow], audit: Audit, report: dict, n_pa
     if not unseen:
         report["notes"].append("eval/sets/unseen.jsonl is empty: A4 generalization not measured")
 
+    adversarial = load_set("adversarial")
+    adv_failures = []
+    for case in adversarial:
+        call = api.troubleshoot(case["query"], case.get("siis_response"))
+        all_calls.append(call)
+        found = audit.add_response(f"adversarial/{case['id']}", call.body)
+        problems = adversarial_problems(case, call, found)
+        if problems:
+            adv_failures.append({"id": case["id"], "kind": case.get("kind"), "problems": problems})
+    if adversarial:
+        report["adversarial"] = {
+            "n": len(adversarial),
+            "passed": len(adversarial) - len(adv_failures),
+            "failures": adv_failures,
+        }
+
     lat = {
         "cold": latency_summary(cold),
         "repeat": latency_summary(repeat),
@@ -240,6 +256,14 @@ def run_live(api: ApiClient, kit: list[KitRow], audit: Audit, report: dict, n_pa
             f"{nondeterministic}/{len(kit)} repeats returned a different plan",
         ),
     }
+    if adversarial:
+        report["hygiene"]["adversarial"] = gate(
+            not adv_failures,
+            len(adv_failures),
+            0,
+            f"{len(adversarial) - len(adv_failures)}/{len(adversarial)} adversarial cases behaved as expected"
+            + (f" (failed: {', '.join(x['id'] for x in adv_failures)})" if adv_failures else ""),
+        )
 
     r, p, c = lat["repeat"], lat["paraphrase"], lat["cold"]
     repeat_ok = _meets(r["p95_ms"], r["hit_rate"], TARGETS["A3_repeat_p95_ms"], TARGETS["A3_repeat_hit"])
@@ -265,6 +289,30 @@ def run_live(api: ApiClient, kit: list[KitRow], audit: Audit, report: dict, n_pa
 
 def _plan(call: CallResult) -> str:
     return json.dumps(call.contexts, sort_keys=True)
+
+
+def adversarial_problems(case: dict, call: CallResult, found: list[Finding]) -> list[str]:
+    """What a hostile input got wrong against its `expect` block (eval/sets/adversarial.jsonl): the
+    status, the schema, URL leaks, whether a plan came back, and the fallback reason when the case
+    names one (spec 4.2 rule 3: `no_match`; section 5: `no_siis_context`)."""
+    expect = case.get("expect") or {}
+    out = []
+    if call.status_code != expect.get("status", 200):
+        out.append(f"HTTP {call.status_code}" + (f" ({call.error})" if call.error else ""))
+    if expect.get("schema_valid", True) and any(x.code == "SCHEMA" for x in found):
+        out.append("not schema-valid")
+    leaks = sum(1 for x in found if x.code == "URL_LEAK")
+    if leaks > expect.get("url_leaks", 0):
+        out.append(f"{leaks} URL leak(s)")
+    want = expect.get("contexts", "any")
+    if want == "empty" and call.contexts:
+        out.append("returned a plan, expected empty contexts")
+    elif want == "non_empty" and not call.contexts:
+        out.append("returned empty contexts, expected a plan")
+    meta = call.body.get("meta") if isinstance(call.body, dict) else None
+    if expect.get("fallback") and isinstance(meta, dict) and meta.get("fallback") != expect["fallback"]:
+        out.append(f"fallback {meta.get('fallback')!r}, expected {expect['fallback']!r}")
+    return out
 
 
 def _meets(p95: float | None, hit: float | None, p95_max: float, hit_min: float) -> bool | None:

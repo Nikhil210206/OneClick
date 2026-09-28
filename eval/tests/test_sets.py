@@ -368,6 +368,27 @@ def test_validator_rejects_an_adversarial_case_that_tolerates_an_error(rep):
     assert any("hard rule 4" in f for f in rep.failures)
 
 
+@pytest.mark.parametrize(
+    ("expect", "siis", "message"),
+    [
+        ({"contexts": "empty", "fallback": "gave_up"}, {"content": "x"}, "not in"),
+        ({"contexts": "any", "fallback": "no_match"}, {"content": "x"}, "goes with empty contexts"),
+        ({"contexts": "any", "fallback": "no_siis_context"}, {"content": "x"}, "needs a missing or empty"),
+    ],
+)
+def test_validator_rejects_an_inconsistent_adversarial_fallback(rep, expect, siis, message):
+    row = {"id": "a1", "kind": "k", "query": "q", "note": "n", "siis_response": siis}
+    row["expect"] = {"status": 200, "url_leaks": 0, **expect}
+    vs.check_adversarial([row], rep)
+    assert any(message in f for f in rep.failures)
+
+
+def test_adversarial_fallbacks_follow_the_spec():
+    expected = {r["id"]: r["expect"].get("fallback") for r in load_set("adversarial")}
+    assert expected["adv_12"] == expected["adv_14"] == "no_match"  # spec 4.2 rule 3
+    assert expected["adv_10"] == expected["adv_11"] == "no_siis_context"  # spec 5
+
+
 def test_validator_rejects_a_gold_id_that_is_not_in_the_catalog(rep):
     rows = [
         {

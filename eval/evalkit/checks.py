@@ -49,6 +49,7 @@ CODE_BLOCK = {
     "VAL_WITHOUT_CATALOG_ACT": "A2",
     "DUMMY_TEXT": "A2",
     "DUMMY_WITH_VALIDATION": "A2",
+    "SAME_SCREEN_SPLIT": "A2",
     "VAR_COUNT": "A5",
     "VAR_UNIQUE": "A5",
     "VAR_EMPTY": "A5",
@@ -315,12 +316,64 @@ def check_categories(actions: list, path: str) -> list[Finding]:
     return out
 
 
+_DUMMY_URI = "bixby://dummy_positive"
+FALLBACKS = ("no_match", "no_siis_context")
+
+
+def check_one_screen(actions: list, path: str) -> list[Finding]:
+    """One action = one screen (spec 4.1 and pitfall 2): two actions of a goal that open the same catalog
+    entry split one screen's steps, or both fell back to the same parent menu. The dummy placeholder
+    stands for many screens, so it is not compared."""
+    out = []
+    first: dict[str, int] = {}
+    for ai, action in enumerate(actions):
+        if not isinstance(action, dict):
+            continue
+        uris = {
+            g["actionableDeeplink"].get("deeplink")
+            for g in action.get("stepGroups") or []
+            if _has_link(g) and isinstance(g["actionableDeeplink"].get("deeplink"), str)
+        }
+        for uri in sorted(uris - {_DUMMY_URI}):
+            if uri in first:
+                out.append(
+                    f(
+                        "SAME_SCREEN_SPLIT",
+                        WARN,
+                        f"{path}[{ai}]",
+                        f"opens the same catalog entry as actions[{first[uri]}] (spec 4.1: one action per screen)",
+                    )
+                )
+            else:
+                first[uri] = ai
+    return out
+
+
+def check_fallback(contexts: object, meta: object, path: str = "meta.fallback") -> list[Finding]:
+    """An empty plan says why (spec 4.2 rule 3 and section 5): `no_match` when the article holds no
+    grounded answer, `no_siis_context` when there was no article. Without a meta block it cannot be
+    seen, so nothing is reported."""
+    if contexts or not isinstance(meta, dict):
+        return []
+    if meta.get("fallback") in FALLBACKS:
+        return []
+    return [
+        f(
+            "FALLBACK_MISSING",
+            WARN,
+            path,
+            f"empty plan with fallback {meta.get('fallback')!r}, expected one of {', '.join(FALLBACKS)}",
+        )
+    ]
+
+
 def check_response(body: object, goal_mode: str = "strict") -> list[Finding]:
     """Every per-response rule except catalog validity (see evalkit.catalog)."""
     out = check_schema(body)
     out += check_url_leaks(body)
     if not isinstance(body, dict) or not isinstance(body.get("contexts", []), list):
         return out
+    out += check_fallback(body.get("contexts"), body.get("meta"))
     seen_actions: dict[str, str] = {}
     for gi, goal in enumerate(body.get("contexts", [])):
         gpath = f"contexts[{gi}]"
@@ -356,6 +409,7 @@ def check_response(body: object, goal_mode: str = "strict") -> list[Finding]:
             names_here.add(key)
             seen_actions.setdefault(key, gpath)
         out += check_categories(actions, f"{gpath}.actions")
+        out += check_one_screen(actions, f"{gpath}.actions")
     return out
 
 
@@ -368,8 +422,11 @@ def check_results_line(line: object) -> list[Finding]:
     if not isinstance(query, str) or not query.strip():
         out.append(f("QUERY_MISSING", FAIL, "query", "missing query"))
         query = ""
-    if not isinstance(line.get("response"), dict):
+    response = line.get("response")
+    if not isinstance(response, dict):
         out.append(f("SCHEMA", FAIL, "response", "missing response object"))
+    else:
+        out += check_fallback(response.get("contexts"), line.get("meta"))
     variations = line.get("query_variations")
     if not isinstance(variations, list):
         return out + [f("VAR_COUNT", FAIL, "query_variations", "missing query_variations list")]

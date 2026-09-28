@@ -29,7 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from evalkit.bm25 import load_entries
-from evalkit.checks import check_url_leaks
+from evalkit.checks import FALLBACKS, check_url_leaks
 from evalkit.paths import GOLD_PATH, REPO_ROOT, SETS_DIR
 from evalkit.sets import load_kit, read_jsonl
 from evalkit.stats import jaccard, mean_pairwise_jaccard, norm_query
@@ -225,6 +225,13 @@ def check_adversarial(rows: list[dict], rep: Report) -> None:
             rep.fail(where, "expect.url_leaks must be 0: hard rule 3 admits no exception")
         if expect.get("contexts") not in CONTEXTS_EXPECT:
             rep.fail(where, f"expect.contexts {expect.get('contexts')!r} not in {sorted(CONTEXTS_EXPECT)}")
+        fallback = expect.get("fallback")
+        if fallback is not None and fallback not in FALLBACKS:
+            rep.fail(where, f"expect.fallback {fallback!r} not in {list(FALLBACKS)}")
+        elif fallback == "no_match" and expect.get("contexts") != "empty":
+            rep.fail(where, "expect.fallback 'no_match' goes with empty contexts (spec 4.2 rule 3)")
+        elif fallback == "no_siis_context" and row.get("siis_response") not in (None, {}, ""):
+            rep.fail(where, "expect.fallback 'no_siis_context' needs a missing or empty article")
         if check_url_leaks(row):
             carries_payload += 1
 

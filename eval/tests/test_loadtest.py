@@ -72,10 +72,84 @@ def test_api_mode_times_cold_on_misses_and_hits_on_hits(monkeypatch):
     kit = [KitRow("r1", "q one", {"content": "a"}), KitRow("r2", "q two", {"content": "a"})]
     section = loadtest.run_api("http://x", kit, [], [], [])
     cold = section["cold"]
-    assert cold["n"] == 2 and cold["timed_n"] == 1 and cold["p95_ms"] == 5000.0
+    assert cold["timed_n"] == 1 and cold["p95_ms"] == 5000.0
+    assert cold["cold_pass"]["n"] == 2 and cold["cold_pass"]["timed_n"] == 1
     assert cold["models"] == {"ministral-14b-latest": 1}
     assert section["repeat"]["p95_ms"] == 2.0
-    assert any("cold latency is timed on the misses" in n for n in section["notes"])
+    assert any("answered from the cache" in n for n in section["notes"])
+
+
+def test_api_mode_pools_every_miss_checks_plans_and_reads_tokens(monkeypatch):
+    from evalkit import client as client_mod
+    from evalkit.client import CallResult
+    from evalkit.sets import KitRow
+
+    plans = {"q one": [{"title": "one"}], "q two": [{"title": "two"}]}
+    served = {"para right": "q one", "para wrong": "q two"}  # paraphrases of r1 that hit a plan
+    traces = []
+
+    def fake_call(self, method, path, payload=None):
+        if path == "/health":
+            return CallResult(200, 1.0, body={"status": "ok"}, pure_json=True)
+        if path.startswith("/v1/trace/"):
+            traces.append(path)
+            return CallResult(200, 1.0, body={"tokens_in": 900, "tokens_out": 100}, pure_json=True)
+        q = payload["query"]
+        hit = q in served
+        plan = plans.get(served.get(q, q), [{"title": q}])
+        body = {
+            "contexts": plan,
+            "meta": {"model": None if hit else "m", "cost_usd": 0.0, "trace_id": f"t_{q}"},
+        }
+        return CallResult(200, 5.0, server_ms=5.0, cache_hit=hit, body=body, pure_json=True)
+
+    monkeypatch.setattr(client_mod.ApiClient, "_call", fake_call)
+    kit = [KitRow("r1", "q one", {"content": "a"}), KitRow("r2", "q two", {"content": "a"})]
+    para = [
+        {"row_id": "r1", "query": "para right", "register": "casual"},
+        {"row_id": "r1", "query": "para wrong", "register": "casual"},
+        {"row_id": "r1", "query": "para miss", "register": "typo"},
+    ]
+    near = [{"id": "n1", "row_id": "r2", "query": "near miss", "differs_in": "intent"}]
+    section = loadtest.run_api("http://x", kit, [], para, near)
+    cold, p = section["cold"], section["paraphrase"]
+    assert cold["sources"] == {"cold_pass": 2, "paraphrase_misses": 1, "near_miss_misses": 1}
+    assert cold["timed_n"] == 4 and cold["tokens_measured"] == 4
+    assert cold["mean_tokens_in"] == 900.0 and cold["mean_tokens_out"] == 100.0
+    assert len(traces) == 4  # only misses are traced
+    assert p["wrong_plan"] == 1 and p["same_plan"] == 1
+    assert p["hits_by_source"] == {"own_kit_answer": 1, "other_kit_answer": 1}
+    assert p["wrong"] == [{"id": None, "row_id": "r1", "query": "para wrong", "source": "other_kit_answer"}]
+    assert p["by_register"] == {"casual": 1.0, "typo": 0.0}
+
+
+def test_paraphrase_hits_are_classified_by_the_plan_they_served():
+    from evalkit.sets import KitRow
+
+    kit = [KitRow("r1", "q1", {"content": "a"}), KitRow("r2", "q2", {"content": "a"})]
+    plan_r1, plan_r2 = [{"title": "one"}], [{"title": "two"}]
+    kit_cold = [_res(plan_r1, False), _res(plan_r2, False)]
+    paraphrases = [{"id": f"p{i}", "row_id": row, "query": f"q{i}"} for i, row in enumerate("1112221", 1)]
+    paraphrases = [{**p, "row_id": f"r{p['row_id']}"} for p in paraphrases]
+    para = [
+        _res(plan_r1, True),  # p1 r1: its own kit answer
+        _res([{"title": "p2"}], False),  # p2 r1: misses, runs cold, is stored
+        _res([{"title": "p2"}], True),  # p3 r1: hits p2's answer, same complaint
+        _res(plan_r1, True),  # p4 r2: r1's kit answer: wrong
+        _res([{"title": "p2"}], True),  # p5 r2: r1's paraphrase answer: wrong
+        _res([{"title": "?"}], True),  # p6 r2: nothing known served this: wrong
+        _res(plan_r1, False),  # p7 r1: missed but recomputed the same plan
+    ]
+    served, wrong, same = loadtest.classify_paraphrases(paraphrases, para, kit, kit_cold)
+    assert served == {
+        "own_kit_answer": 1,
+        "same_complaint_paraphrase": 1,
+        "other_kit_answer": 1,
+        "other_complaint_paraphrase": 1,
+        "unidentified": 1,
+    }
+    assert [w["id"] for w in wrong] == ["p4", "p5", "p6"]
+    assert same == 2  # p1 and p7
 
 
 def test_api_mode_lists_leaked_near_misses(monkeypatch):

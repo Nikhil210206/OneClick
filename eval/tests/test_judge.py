@@ -175,6 +175,28 @@ def test_main_judges_results_file_end_to_end(tmp_path):
     assert report["items"][0]["id"] == kit[0].row_id
     assert any("not in the kit" in n for n in report["notes"])
     assert json.loads((tmp_path / "c.json").read_text())
+    assert report["by_domain"] == {judge.KIT_DOMAIN: {"n": 1, "step_accuracy_mean": 2.0}}
+
+
+def test_api_judges_only_the_requested_sets_with_their_domains(tmp_path, monkeypatch):
+    seen = {}
+
+    def fake_api(url, sets):
+        seen["args"] = (url, sets)
+        return [
+            judge.Item(
+                "unseen_battery_1", "unseen", "battery drains", "Open Settings.", PLAN, None, "Battery"
+            )
+        ]
+
+    monkeypatch.setattr(judge, "items_from_api", fake_api)
+    out = tmp_path / "judge_unseen.json"
+    args = ["--api", "http://api", "--sets", "unseen", "--out", str(out), "--no-cache"]
+    assert judge.main(args, client=FakeClient(ANSWER)) == 0
+    report = json.loads(out.read_text())
+    assert seen["args"] == ("http://api", ("unseen",))
+    assert set(report["by_source"]) == {"unseen"}
+    assert report["by_domain"] == {"Battery": {"n": 1, "step_accuracy_mean": 2.0}}
 
 
 def test_dry_run_needs_no_key(tmp_path, capsys):  # conftest blanks both keys

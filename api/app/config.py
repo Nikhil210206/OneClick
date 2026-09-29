@@ -63,8 +63,27 @@ class Settings(BaseModel):
     coverage_budget_s: float = 6.0
     coverage_wait_s: float = 4.5
     coverage_grace_s: float = 0.4
+    # Call C races its two models like call B: the primary's answer is kept if it is back by this many
+    # seconds, else the fast model's (answering in ~2 s where the primary took 2-6 s). Inside coverage_wait_s.
+    coverage_prefer_deadline_s: float = 4.0
     coverage_max_tokens: int = 500
     coverage_max_fixes: int = 12
+    # Call C (coverage.v2) also says whether the article is `related` or `unrelated` to the complaint. An
+    # article is turned away (no_match) only when the model says `unrelated` AND the article shares no real
+    # word with the complaint (pipeline/mismatch.py): measured 2026-09-29, the model alone flags 16% of the
+    # paraphrases of well-matched kit rows (row 8: 10 of 10) and the word check alone flags typo-ridden
+    # ones, while together they act on none of the kit, unseen or near-miss data and on "phone is hot" against
+    # the touchscreen article. Embedding relevance cannot make this call ("phone is hot" scores 0.62, a
+    # real kit row 0.63).
+    #   "no_match"  turn such an article away (empty plan, fallback no_match)
+    #   "off"       ignore the verdict
+    # Without call C's answer in time there is no verdict and the plan is built as before.
+    coverage_mismatch: str = "no_match"
+    # The check compares words by their first mismatch_stem_chars letters ("charge" meets "charger"). A word
+    # can trigger it only if it is common English (rank in wordninja's list, 0 = most common): rarer
+    # words include misspellings that happen to be words ("blak"); any word can still add support.
+    mismatch_stem_chars: int = 5
+    mismatch_max_word_rank: int = 10_000
     # Requests per minute the free plan allows per model (x-ratelimit-limit-req-minute, 2026-09-27).
     # Call C uses the primary only while it has made fewer than (limit - coverage_leave_primary) requests
     # in the minute, so call B keeps 14B to itself under load: a burst of cold requests with call C on
@@ -135,7 +154,7 @@ class Settings(BaseModel):
     llm_temperature_gemini: float = 1.0
     llm_temperature_mistral: float = 0.0
     # Cache-key tag (with prompt_versions below): change it whenever a prompt changes.
-    prompt_version: str = "enrich-v1+extract-v3+variations-v1+coverage-v1"
+    prompt_version: str = "enrich-v1+extract-v3+variations-v1+coverage-v2"
     prompt_versions: dict[str, str] = {
         "enrich": "v1",
         # select mode. v3 (2026-09-26) asks for compact JSON and the exact setting in screen_path. On
@@ -145,7 +164,8 @@ class Settings(BaseModel):
         "extract": "v3",
         "extract_rewrite": "v1",  # rewrite mode
         "variations": "v1",
-        "coverage": "v1",
+        # v2 (2026-09-29) adds `match`, how well the article fits the complaint (coverage_mismatch).
+        "coverage": "v2",
     }
     # USD per 1M tokens (input, output) for meta.cost_usd and /v1/metrics. Models not listed cost
     # $0 here: the Ministral models run on Mistral's free plan.

@@ -234,6 +234,45 @@ def test_race_skips_a_rejected_quality_answer(race):
     assert result == {"ok": True} and info["model"] == "ministral-8b-latest"
 
 
+def _coverage(clients, info):
+    return router.complete_json(
+        "coverage", {"query": "q", "paragraphs": "p"}, SCHEMA, stage="coverage", info=info, clients=clients
+    )
+
+
+@pytest.fixture
+def coverage_race(monkeypatch, keys):
+    monkeypatch.setattr(settings, "coverage_prefer_deadline_s", 0.4)
+    monkeypatch.setattr(settings, "coverage_budget_s", 2.5)
+
+
+def test_call_c_takes_the_fast_model_when_the_primary_stalls(coverage_race):
+    """Measured 2026-09-29: 14B stalled to its 6 s timeout on 3 of 6 direct calls while 8B answered in
+    ~2 s. Call C once waited on 14B alone, so a stall meant no answer inside the pipeline's window."""
+    info = {}
+    answers = {"ministral-14b-latest": {"ok": True}, "ministral-8b-latest": {"ok": False}}
+    started = time.perf_counter()
+    assert _coverage(_race_clients({"ministral-14b-latest": 1.5}, answers), info) == {"ok": False}
+    assert info["model"] == "ministral-8b-latest" and time.perf_counter() - started < 1.2
+
+
+def test_call_c_keeps_the_primary_answer_when_it_is_back_by_the_deadline(coverage_race):
+    info = {}
+    answers = {"ministral-14b-latest": {"ok": True}, "ministral-8b-latest": {"ok": False}}
+    assert _coverage(_race_clients({"ministral-14b-latest": 0.1}, answers), info) == {"ok": True}
+    assert info["model"] == "ministral-14b-latest"
+
+
+def test_call_c_does_not_race_when_the_primary_is_kept_for_call_b(coverage_race):
+    """Near its request limit the primary is left to call B (coverage_leave_primary): one rung, one call."""
+    limit = settings.llm_requests_per_minute[settings.coverage_model] - settings.coverage_leave_primary
+    for _ in range(limit):
+        router._count_call(settings.coverage_model)
+    plan = router._Stage("coverage")
+    assert plan.race_width == 1 and plan.ladder == [settings.coverage_fallback_model]
+    router.reset_cooldowns()
+
+
 # ---- ladders and quota (llm/registry.py, llm/quota.py) ----------------------------------------------
 def test_the_shipped_ladders_write_answers_with_open_weight_mistral_models_only():
     """Bake-off 2026-09-29: call B and call C stay on Ministral; variations run Gemini, then 8B; there
@@ -683,3 +722,189 @@ def test_enrich_llm_on_the_critical_path_still_works(monkeypatch, keys):
     )
     assert detail["source"] == "llm" and intents[0].title == "Touch input lag"
     assert settings.variation_min <= len(variations) <= settings.variation_max
+
+
+# ---- call C's verdict, and the word check that must agree with it (coverage.v2, pipeline/mismatch.py) ---
+UNRELATED = {"match": "unrelated", "fixes": []}
+RELATED = {"match": "related", "fixes": []}
+
+
+def _with_verdict(monkeypatch, verdict: dict | None, problem: str = "The phone gets hot"):
+    """Call B picks the touchscreen action and states `problem`; call C answers `verdict`; None = call C down."""
+    select = {"goals": [{**SELECT_ANSWER["goals"][0], "problem": problem, "title": "Phone overheating"}]}
+
+    def complete_json(prompt_name, variables, schema, *, stage=None, info=None, clients=None, accept=None):
+        if prompt_name == "variations":
+            return {"variations": VARIATIONS}
+        if prompt_name == "coverage" and verdict is None:
+            raise router.LLMError([{"model": "m", "ok": False, "error": "timeout", "ms": 1}])
+        answer = verdict if prompt_name == "coverage" else select
+        if accept is not None:
+            assert accept(answer)
+        if info is not None:
+            info.update(model=f"fake-{prompt_name}", tokens_in=1, tokens_out=1, cost_usd=0.0, attempts=[])
+        return answer
+
+    monkeypatch.setattr(router, "complete_json", complete_json)
+
+
+def _run_cold(query: str):
+    cache.clear()
+    events = {e.stage.value: e.detail for e in run_stream(query, REQUEST["siis_response"])}
+    cache.clear()
+    return events
+
+
+def test_an_article_is_turned_away_when_call_c_and_the_word_check_agree(monkeypatch, keys):
+    """The reported bug: "phone is hot" against the touchscreen article returned touchscreen fixes at 0.84."""
+    _with_verdict(monkeypatch, UNRELATED)
+    events = _run_cold("phone is hot")
+    assert events["extract"]["no_match"] is True
+    gate = events["extract"]["mismatch"]
+    assert (
+        gate["acted"] and gate["verdict"] == "unrelated" and gate["terms"] == ["hot"] and gate["shared"] == []
+    )
+    assert events["done"]["contexts"] == [] and events["done"]["meta"]["fallback"] == "no_match"
+
+
+def test_the_models_verdict_alone_never_turns_an_article_away(monkeypatch, keys):
+    """Measured: 16% of the paraphrases of well-matched kit rows came back `unrelated` (row 8: 10 of 10).
+    The complaint shares its words with the article, so the word check says no and the plan stands."""
+    _with_verdict(monkeypatch, UNRELATED)
+    events = _run_cold(REQUEST["query"])
+    gate = events["extract"]["mismatch"]
+    assert gate["verdict"] == "unrelated" and gate["acted"] is False and gate["shared"]
+    (goal,) = events["done"]["contexts"]
+    assert "Turn Off Full Screen Gestures" in [a["actionName"] for a in goal["actions"]]
+
+
+def test_the_word_check_alone_never_turns_an_article_away(monkeypatch, keys):
+    _with_verdict(monkeypatch, RELATED)
+    events = _run_cold("phone is hot")
+    assert events["extract"]["mismatch"]["acted"] is False and events["done"]["contexts"]
+
+
+def test_call_bs_problem_statement_is_not_the_customers_words(monkeypatch, keys):
+    """Call B explains causes in its problem statement ("background processes or software malfunctions"),
+    words the touchscreen article shares with any complaint. Counted as support they blinded the check for
+    "phone is hot" (seen on the real models), so only the customer's own words count."""
+    _with_verdict(monkeypatch, UNRELATED, problem="Phone overheating due to background processes or software")
+    events = _run_cold("phone is hot")
+    gate = events["extract"]["mismatch"]
+    assert gate["acted"] is True and gate["terms"] == ["hot"] and events["done"]["contexts"] == []
+
+
+def test_a_misspelt_complaint_is_never_turned_away(monkeypatch, keys):
+    _with_verdict(monkeypatch, UNRELATED)
+    events = _run_cold("phoen is hot")
+    gate = events["extract"]["mismatch"]
+    assert gate["verdict"] == "unrelated" and gate["acted"] is False and gate["typos"] == ["phoen"]
+    assert events["done"]["contexts"]
+
+
+def test_without_call_cs_answer_the_gate_stays_shut(monkeypatch, keys):
+    _with_verdict(monkeypatch, None)
+    events = _run_cold("phone is hot")
+    assert events["extract"]["mismatch"]["verdict"] is None and events["done"]["contexts"]
+
+
+def test_the_mismatch_gate_can_be_switched_off(monkeypatch, keys):
+    _with_verdict(monkeypatch, UNRELATED)
+    monkeypatch.setattr(settings, "coverage_mismatch", "off")
+    events = _run_cold("phone is hot")
+    assert events["extract"]["mismatch"]["acted"] is False and events["done"]["contexts"]
+
+
+def _extract_down_but_call_c_answers(monkeypatch, verdict: dict | None):
+    """Call B fails (both models busy), so the rules extractor answers; call C still says `verdict`."""
+
+    def complete_json(prompt_name, variables, schema, *, stage=None, info=None, clients=None, accept=None):
+        if prompt_name == "variations":
+            return {"variations": VARIATIONS}
+        if prompt_name == "extract" or verdict is None:
+            raise router.LLMError([{"model": "m", "ok": False, "error": "timeout", "ms": 1}])
+        if info is not None:
+            info.update(model="fake-coverage", tokens_in=1, tokens_out=1, cost_usd=0.0, attempts=[])
+        return verdict
+
+    monkeypatch.setattr(router, "complete_json", complete_json)
+
+
+def test_a_failed_call_b_still_gets_the_same_test_on_the_rules_answer(monkeypatch, keys):
+    """The second repro: "gets very hot" on the touchscreen article fell back to rules and returned the
+    charger, touch sensitivity, support and restart. Call C had the verdict all along."""
+    _extract_down_but_call_c_answers(monkeypatch, UNRELATED)
+    events = _run_cold("phone is hot")
+    assert events["extract"]["source"] == "rules" and events["extract"]["mismatch"]["acted"] is True
+    assert events["done"]["contexts"] == [] and events["done"]["meta"]["fallback"] == "no_match"
+    events = _run_cold(REQUEST["query"])  # a complaint the article does cover keeps its rules answer
+    assert events["extract"]["mismatch"]["acted"] is False and events["done"]["contexts"]
+
+
+def test_a_failed_call_b_and_no_verdict_leaves_the_rules_answer_as_it_was(monkeypatch, keys):
+    _extract_down_but_call_c_answers(monkeypatch, None)
+    events = _run_cold("phone is hot")
+    (goal,) = events["done"]["contexts"]
+    assert events["extract"]["source"] == "rules" and events["extract"]["mismatch"]["verdict"] is None
+    assert "Touch Sensitivity Setting" in [a["actionName"] for a in goal["actions"]]
+
+
+def test_coverage_schema_requires_the_verdict_and_an_unknown_one_is_ignored(monkeypatch, keys):
+    schema = extract_module.coverage_schema(["P1", "P2"])
+    assert schema["required"] == ["match", "fixes"]
+    assert schema["properties"]["match"]["enum"] == ["related", "unrelated"]
+
+    def complete_json(prompt_name, variables, schema, *, stage=None, info=None, clients=None, accept=None):
+        return {"match": "banana", "fixes": [{"p": "P1", "name": "Restart Device"}, {"p": "P9", "name": "x"}]}
+
+    monkeypatch.setattr(router, "complete_json", complete_json)
+    fixes, info = extract_module._coverage_llm("q", "article", ["P1", "P2"])
+    assert fixes == [{"p": "P1", "name": "Restart Device"}] and info["match"] is None
+
+
+ARTICLE = ["Restart your phone.", "Touch sensitivity", "Check the charger, then contact support."]
+
+
+def test_the_word_check_ignores_typos_generic_words_and_model_numbers():
+    from app.pipeline import mismatch
+
+    hot = mismatch.check(["My Galaxy S22 phone is hot"], ARTICLE)
+    assert hot == {
+        "unrelated": True,
+        "terms": ["hot"],
+        "shared": [],
+        "typos": [],
+    }  # phone, galaxy, s22: nothing
+    assert mismatch.check(["my fon is blak and dead"], ARTICLE)["terms"] == [
+        "dead"
+    ]  # rare words never trigger
+    assert mismatch.check(["asdkjh qwe zzz 12345"], ARTICLE)["unrelated"] is False  # no real word: no verdict
+    assert mismatch.check([""], ARTICLE)["unrelated"] is False
+
+
+def test_a_misspelt_complaint_gets_no_verdict():
+    """The misspelt paraphrases are what a bare word check wrongly flags: the words a typo lost may be the
+    ones the article shares. So any word that is not English, not Samsung vocabulary and not in the article
+    keeps the check shut; a rare but real word ("touchscreen") does not."""
+    from app.pipeline import mismatch
+
+    typo = mismatch.check(["phoen is hot"], ARTICLE)
+    assert typo["unrelated"] is False and typo["typos"] == ["phoen"] and typo["terms"] == ["hot"]
+    assert mismatch.check(["touchscreen is hot"], ARTICLE)["typos"] == []
+    # support vocabulary is not a typo: nothing else in the complaint is unknown, so the check can act
+    assert mismatch.check(["touchscreen is hot"], ["Restart your phone."])["unrelated"] is True
+
+
+def test_the_word_check_matches_by_word_stem_and_any_shared_word_saves_the_article():
+    from app.pipeline import mismatch
+
+    # "charge" is general-fix vocabulary every article has: no information either way, so no verdict
+    assert mismatch.check(["it will not charge"], ARTICLE)["unrelated"] is False
+    assert (
+        mismatch.check(["the display flickers"], ["The display is fine"])["unrelated"] is False
+    )  # shared word
+    assert mismatch.check(["it flickers"], ["Screen flickering after an update"])["shared"] == ["flickers"]
+    # a rare word (not common English, so it cannot trigger) still saves the article when the article uses it
+    assert (
+        mismatch.check(["touchscreen is hot"], ["Touch sensitivity", "the touchscreen"])["unrelated"] is False
+    )

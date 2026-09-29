@@ -18,6 +18,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 
 from app.config import settings
 from app.models import DraftAction, DraftStep, Intent, SiisSentence
+from app.pipeline import mismatch
 from app.pipeline.text import content_terms, word_block
 
 # ---- rules-only extractor ---------------------------------------------------------------------------
@@ -1056,10 +1057,14 @@ def format_paragraphs(sentences: list[SiisSentence], sections: list[dict] | None
     return "\n".join(lines).strip()
 
 
+COVERAGE_MATCHES = ("related", "unrelated")
+
+
 def coverage_schema(unit_ids: list[str]) -> dict:
     return {
         "type": "object",
         "properties": {
+            "match": {"type": "string", "enum": list(COVERAGE_MATCHES)},
             "fixes": {
                 "type": "array",
                 "maxItems": settings.coverage_max_fixes,
@@ -1069,9 +1074,9 @@ def coverage_schema(unit_ids: list[str]) -> dict:
                     "required": ["p", "name"],
                     "additionalProperties": False,
                 },
-            }
+            },
         },
-        "required": ["fixes"],
+        "required": ["match", "fixes"],
         "additionalProperties": False,
     }
 
@@ -1094,8 +1099,12 @@ def _coverage_llm(query: str, article: str, unit_ids: list[str]) -> tuple[list[d
         for f in answer.get("fixes") or []
         if isinstance(f, dict) and f.get("p") in known
     ]
+    match = answer.get("match")
     keys = ("model", "tokens_in", "tokens_out", "cost_usd", "attempts", "prompt")
-    return fixes, {k: info.get(k) for k in keys} | {"ms": round((time.perf_counter() - started) * 1000, 1)}
+    return fixes, {k: info.get(k) for k in keys} | {
+        "match": match if match in COVERAGE_MATCHES else None,
+        "ms": round((time.perf_counter() - started) * 1000, 1),
+    }
 
 
 def start_coverage(
@@ -1497,8 +1506,13 @@ def merge_unstated_goals(
 
 
 def extract_select_llm(
-    query: str, sentences: list[SiisSentence], sections: list[dict] | None
+    query: str,
+    sentences: list[SiisSentence],
+    sections: list[dict] | None,
+    carrier: dict | None = None,
 ) -> tuple[list[DraftAction], list[str], dict]:
+    """`carrier` receives call C's future, its paragraph units and the start time, so the caller can
+    still use call C's verdict when call B fails (see judge_rules)."""
     from app.llm.router import LLMError, complete_json
 
     known = {s.id for s in sentences}
@@ -1519,6 +1533,8 @@ def extract_select_llm(
 
     started = time.perf_counter()
     coverage, units = start_coverage(query, sentences, sections)
+    if carrier is not None:
+        carrier.update(coverage=coverage, units=units, started=started)
     try:
         schema = select_schema([s.id for s in sentences])
         answer = complete_json("extract", variables, schema, stage="extract", info=info, accept=accept)
@@ -1533,6 +1549,19 @@ def extract_select_llm(
         raise ValueError("the extraction answer has no usable action")
     actions, topics, intents, merged_goals = merge_unstated_goals(query, actions, topics, intents, sentences)
     fixes, coverage_info = finish_coverage(coverage, started)
+    keys = ("model", "tokens_in", "tokens_out", "cost_usd", "attempts", "prompt")
+    # Call C also says whether the article is about the complaint (coverage.v2). It was not heard in time,
+    # or the gate is off: no verdict, and the plan is built as before. Only the customer's own words count:
+    # call B's problem statements explain causes ("software malfunctions") the article shares with any
+    # complaint, which blinded the check for "phone is hot" against the touchscreen article.
+    gate = _mismatch(coverage_info if fixes is not None else {}, query, sentences)
+
+    def nothing() -> tuple[list[DraftAction], list[str], dict]:
+        detail = {"source": "llm", "mode": "select", "no_match": True, "mismatch": gate}
+        return [], [], detail | {"coverage": coverage_info} | {k: info.get(k) for k in keys}
+
+    if gate["acted"]:
+        return nothing()
     if fixes is not None:
         # call C's paragraphs and the numbered procedure's general fixes, then whatever else the numbered
         # steps now followed hold (the LDI check under "Step 1" once the inspection is in)
@@ -1547,16 +1576,52 @@ def extract_select_llm(
             actions, sentences, units, followed_step_paragraphs(actions, units, sections)
         )
         completed += more
-    keys = ("model", "tokens_in", "tokens_out", "cost_usd", "attempts", "prompt")
     detail = {
         "source": "llm",
         "mode": "select",
+        "mismatch": gate,
         "intents": [i.model_dump(mode="json") for i in intents],
         "completed_sections": completed,
         "merged_goals": merged_goals,
         "coverage": coverage_info,
     }
     return actions, topics, detail | {k: info.get(k) for k in keys}
+
+
+def _mismatch(coverage_info: dict, query: str, sentences: list[SiisSentence]) -> dict:
+    """{verdict, acted, terms, shared, typos}: whether the article is turned away for this complaint. It is
+    only when call C said `unrelated` AND the article shares no word with the complaint (mismatch.py): the
+    model's verdict alone is wording-sensitive, the word check alone misses synonyms and typos."""
+    verdict = coverage_info.get("match")
+    gate = {"verdict": verdict, "acted": False, "terms": [], "shared": [], "typos": []}
+    if settings.coverage_mismatch != "no_match" or verdict != "unrelated":
+        return gate
+    article = [*(s.text for s in sentences), *dict.fromkeys(s.section for s in sentences)]
+    evidence = mismatch.check([query], article)
+    acted = evidence.pop("unrelated")
+    return {**gate, **evidence, "acted": acted}
+
+
+def judge_rules(
+    actions: list[DraftAction],
+    topics: list[str],
+    info: dict,
+    carrier: dict,
+    query: str,
+    sentences: list[SiisSentence],
+) -> tuple[list[DraftAction], list[str], dict]:
+    """Call B failed and the rules extractor answered. Call C may still have said how well the article
+    fits the complaint: a rules answer for another problem's article is the same wrong plan (the touchscreen
+    article's checks for "phone is hot"). Applies the same test as extract_select_llm; without a verdict
+    (call C not started, late or failed) nothing changes."""
+    if not carrier.get("coverage") or settings.coverage_mismatch == "off":
+        return actions, topics, info
+    fixes, coverage_info = finish_coverage(carrier["coverage"], carrier["started"])
+    gate = _mismatch(coverage_info if fixes is not None else {}, query, sentences)
+    info = {**info, "mismatch": gate, **({"coverage": coverage_info} if fixes is not None else {})}
+    if gate["acted"]:
+        return [], topics, {**info, "no_match": True}
+    return actions, topics, info
 
 
 # ---- entry point ------------------------------------------------------------------------------------
@@ -1577,15 +1642,16 @@ def extract_with_topics(
     rules_info = {"source": "rules", "model": None, "tokens_in": 0, "tokens_out": 0}
     if available() and sentences:
         text = query or (intents[0].text if intents else "")
+        carrier: dict = {}
         try:
             if settings.extract_mode == "select":
-                return extract_select_llm(text, sentences, sections)
+                return extract_select_llm(text, sentences, sections, carrier)
             return extract_llm(text, intents, sentences, sections)
         except Exception as exc:  # noqa: BLE001 - LLMError or a malformed answer: degrade to rules
             actions, topics = extract_rules(intents, sentences, sections)
             rules_info["degraded"] = f"{type(exc).__name__}: {str(exc)[:200]}"
             rules_info["attempts"] = getattr(exc, "attempts", [])
-            return actions, topics, rules_info
+            return judge_rules(actions, topics, rules_info, carrier, text, sentences)
     actions, topics = extract_rules(intents, sentences, sections)
     return actions, topics, rules_info
 

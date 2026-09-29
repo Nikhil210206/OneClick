@@ -120,6 +120,11 @@ class _Stage:
             self.primary_timeout = self.budget = settings.coverage_budget_s
             self.max_tokens = settings.coverage_max_tokens
             self.cools = False  # its 429 must not cost call B the primary for a minute
+            # The pipeline waits ~4.5 s for it. 14B alone stalled to its 6 s timeout on 3 of 6 direct calls
+            # (2026-09-29) with 8B answering in ~2 s every time, and a stalled call C meant no verdict on
+            # whether the article fits the complaint. Racing adds no 14B request (call C makes it anyway).
+            self.race_width = 2 if len(ladder) > 1 else 1
+            self.prefer_deadline = settings.coverage_prefer_deadline_s
         elif stage == "enrich":
             self.thinking = settings.enrich_thinking
             self.primary_timeout, self.budget = settings.enrich_primary_timeout_s, settings.enrich_budget_s

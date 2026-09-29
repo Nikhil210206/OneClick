@@ -166,7 +166,7 @@ Cold run, grounding hover, multi-intent.
 - `resolve(DraftAction) → LinkDecision`
 - `dense.embed(texts)`
 - Device, metrics and trace endpoints for Nikhil's console
-- The live public URL from M1 onwards
+- A Docker setup a judge can run from a fresh clone (no hosting; decided 2026-09-28)
 
 ### Needs from others
 - Vishaal: `models.py` + fixtures at M0; the LLM router for mid-confidence tie-breaks and node phrasings.
@@ -260,12 +260,12 @@ Hook, all UI, final edit. Owns the video overall.
 | Milestone | Vishaal | Karur | Nikhil | Exit check |
 | --- | --- | --- | --- | --- |
 | **M0 Contract** | Freeze `models.py`, add `data/fixtures/` | Review contract | Review contract | Everyone can code against fixtures |
-| **M1 Walking skeleton** | Rules-only extractor + compiler + orchestrator | Keyword resolver, exact cache, **live always-on deploy** | Gate replica in CI, console on mock data | Live URL passes G2–G5 |
+| **M1 Walking skeleton** | Rules-only extractor + compiler + orchestrator | Keyword resolver, exact cache, **Docker from a fresh clone** | Gate replica in CI, console on mock data | A fresh-clone Docker run passes G2–G5 |
 | **M2 Real engine** | LLM stages, grounding, ordering, multi-intent, SSE | Screen Graph, hybrid retrieval, semantic cache + slot guard, simulator | Console on live SSE, test sets, judge | All components real; gates still green |
 | **M3 Quality loop** | Prompt + threshold tuning | τ, retrieval and latency tuning | Ablation, load tests, `metrics.md` | Internal targets met or documented |
-| **M4 Freeze** | `results.jsonl` final | Uptime watch | Video, deck, docs | Tag `PRISM_GENAI_HACKATHON_Y2026` pushed |
+| **M4 Freeze** | `results.jsonl` final | Fresh-clone Docker rehearsal | Video, deck, docs | Tag `PRISM_GENAI_HACKATHON_Y2026` pushed |
 
 ## Open questions (emailed to prism@samsung.com)
-- Does the goal string end with a period? (Following the FAQ regex until answered.)
+- ~~Does the goal string end with a period?~~ Answered by FAQ v4 (Theme 2 Q3, Q6): yes.
 - Is an extra `meta` key allowed in the API body? (Behind a flag until answered.)
 - Service-centre steps before or after critical actions? (Critical last until answered.)

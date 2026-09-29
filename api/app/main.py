@@ -3,10 +3,12 @@
 import logging
 from contextlib import asynccontextmanager
 
+from anyio import to_thread
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.cache import no_siis
+from app.config import settings
 from app.obs import readiness
 from app.pipeline import segment
 from app.routes import device, metrics, stream, troubleshoot
@@ -14,6 +16,9 @@ from app.routes import device, metrics, stream, troubleshoot
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # The endpoints are sync, so each request holds a worker thread; a cold run holds it for seconds.
+    # More threads than the cold-capacity limit keep cache hits from queueing behind cold runs.
+    to_thread.current_default_thread_limiter().total_tokens = settings.api_thread_limit
     readiness.warm()  # catalog, Screen Graph, vector index, cache snapshot
     try:
         no_siis.prewarm()  # kit plans + kit articles for requests without an article (~2 s)

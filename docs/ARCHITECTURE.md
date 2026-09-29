@@ -66,8 +66,10 @@ console streams the pipeline live and renders the plan on a phone mockup for the
 - Hidden tests cover Battery, Camera and Performance, not just the Display cases in the kit.
 - Hidden tests always include an SIIS payload and must return non-empty responses (A4).
 - The catalog has gaps: no safe mode, clear cache or Smart Switch entries, so some settings steps will need `dummy_positive`.
-- Judges call a public URL; we host it ourselves for the whole evaluation window.
-- Gemini or Mistral usage earns bonus points, so both are in the stack.
+- Judges run the repo locally from the README and Docker files (FAQ Q17). The scorer calls `/health`
+  and `/v1/troubleshoot` with no key or auth header (FAQ Theme 2 Q21, Q22). Nothing is hosted
+  (decided 2026-09-28).
+- Gemini and Mistral usage earn bonus points (FAQ Theme 2 Q19), so both are in the stack.
 
 ## High-level design
 
@@ -156,6 +158,8 @@ unseen, loosely structured articles. **Consequences.** Easier: gates, determinis
 we own a template and repair layer.
 
 ### ADR-002: Gemini Flash-class primary, Mistral fallback
+
+> **Superseded in the submission** by free-tier Mistral for every answer and Gemini for query variations, chosen by a measured bake-off; see the "LLM providers" row of "What the submission actually runs" below.
 
 **Context.** Any LLM is allowed; Gemini and Mistral earn bonus points. Cold p95 must stay under 8 s.
 
@@ -629,7 +633,8 @@ together. The lane split lives in [TEAM.md](TEAM.md).
 (A4 requires non-empty); `no_match` only when no step survives grounding. Until answered we follow
 the FAQ regex, keep `meta` behind a flag, and place critical actions last.
 
-- Does the goal string end with a period? The FAQ regex has one; the spec and sample do not.
+- ~~Does the goal string end with a period?~~ Answered by FAQ v4 (Theme 2 Q3, Q6): yes, the regex
+  includes it, as our template does.
 - Is an extra `meta` key allowed in the API body, or is validation strict?
 - Should service-centre steps come before or after critical actions?
 
@@ -654,7 +659,7 @@ number below lives in `api/app/config.py`.
 
 | Area | Design | Submission | Why |
 | --- | --- | --- | --- |
-| LLM providers (ADR-002) | Gemini Flash primary, Mistral fallback, temperature 0 | Call B races `ministral-14b-latest` against `ministral-8b-latest` on Mistral (14B kept if back within 6 s); `gemini-3-flash-preview` is the last fallback; a model answering 429/5xx is skipped for 20 s. Gemini at temperature 1.0, Mistral at 0 | Measured 2026-09-24: every Gemini model answers 503 on the free tier under load, and Mistral's free plan returns 429 for Small/Medium but serves Ministral. Gemini 3 guidance is temperature 1.0 |
+| LLM providers (ADR-002) | Gemini Flash primary, Mistral fallback, temperature 0 | Call B races `ministral-14b-latest` against `ministral-8b-latest` (14B kept if back within 6 s); call C runs 14B then 8B; the background variations call runs `gemini-3.1-flash-lite` then 8B. No last-resort model and no `reasoning_effort` on Mistral calls. Each stage walks a ladder that skips a rung with no key, on cooldown or at its request limit, without calling it; a model answering 429/5xx is skipped for 20 s. Gemini at temperature 1.0, Mistral at 0 | Free tiers only. The 2026-09-29 bake-off (`eval/results/bakeoff/SUMMARY.md`) tried Groq (gpt-oss-120b, gpt-oss-20b, Qwen 3.8 27B), NVIDIA's free API and Gemma: gpt-oss-120b tied Ministral on step accuracy (kit 2.53 vs 2.53) with an 8K tokens-a-minute cap and false no-match answers; NVIDIA timed out or returned 404/503. Gemini Flash-Lite gave the most diverse variations (Jaccard 0.127 vs 8B's 0.251) and the Gemini bonus. `mistral-small-latest` (the old last resort) is served 0 requests a minute on the free plan, and Ministral rejects `reasoning_effort` (a 400 and a retry that halved 14B's capacity) |
 | Extraction (C5) | The model rewrites steps and cites ids | **Select mode** (`extract.v3`): the model lists the sentence ids of each action and the intents; steps are the article's own sentences, split into single instructions. One-line JSON with short keys, the ids an enum of the article's own, at most 8 actions per goal, and the screen path down to the setting itself. The selection is then repaired by rule (a chosen "To ...:" line brings its steps, a procedure joined at its end gets its start, every listed method is kept, a second procedure is split off, repeats merge) and, in an article written as numbered steps, the steps the model skipped are added from the rules extractor. Rewrite mode (`extract.v1`) stays available for a paid tier | ~5× fewer output tokens than rewriting; v3 (2026-09-26) took 14B's slowest kit answer from 8.5 s to 5.3 s, stopped 8B's blank-space answers and punctuation ids, and made "Touch sensitivity" resolve to its own entry instead of the Display parent |
 | Normalize and segment (C1, C4) | Text before the first header is breadcrumb, dropped | The breadcrumb alone is dropped; article text after it is a first section. A glued article (words run together) gets its spaces back (`pipeline/deglue.py`, wordninja's unigram list), only spaces added | Row 3's fixes (USB mouse, damage check, force restart) sat before its first header, and its other sections arrived glued: rows 3, 11 and 17 each scored 0/3 with one unreadable step |
 | Coverage (new, call C) | — | `coverage.v1`: 14B while it has made fewer than 10 requests in the minute, else 8B lists the instruction paragraphs that help with the complaint, in parallel with call B; skipped ones become actions of the article's own sentences, plus a numbered procedure's general-fix steps and the rest of any step the plan follows; invented goals fold into the stated one | The judge's most common complaint was a missing article fix; embedding relevance could not tell a skipped fix from an off-topic section (both 0.5–0.7), the classifier can. Same recorded model answers, judge-v3: 2.30 without, 2.75 with |

@@ -3,11 +3,16 @@
 import os
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Repo root in a checkout. In the image api/ sits at /app, so this resolves to /data, where the
 # Dockerfile copies data/; docker-compose also sets ONECLICK_DATA explicitly.
 _DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+
+
+def _env_models(name: str) -> list[str]:
+    """A model ladder from a comma list in the environment (bake-offs); empty or unset -> []."""
+    return [m.strip() for m in os.getenv(name, "").split(",") if m.strip()]
 
 
 class Settings(BaseModel):
@@ -35,11 +40,14 @@ class Settings(BaseModel):
     enrich_llm_on_critical_path: bool = False
     enrich_model: str = "gemini-3.1-flash-lite"  # used only when enrich_llm_on_critical_path is on
     enrich_thinking: str = "minimal"
-    # Background, and on 8B because the free plan limits requests per model per minute (measured
-    # 2026-09-27 from the x-ratelimit headers: ministral-14b 30/min, ministral-8b 188/min). With
-    # variations on 14B every cold request spent two of its 30, and a run of 20 kit rows put 14B on
-    # cooldown for the last 9: extraction then fell to 8B for all of them.
-    variations_model: str = "ministral-8b-latest"
+    # Background, never on 14B: the free plan limits requests per model per minute (measured 2026-09-27
+    # from the x-ratelimit headers: ministral-14b 30/min, ministral-8b 188/min), and with variations on
+    # 14B a run of 20 kit rows put it on cooldown for the last 9. Gemini 3.1 Flash-Lite since the
+    # 2026-09-29 bake-off (eval/results/bakeoff/SUMMARY.md): half 8B's word overlap between variations
+    # (Jaccard 0.127 vs 0.251), 85.0% paraphrase hits vs 84.5%, no wrong plan served, and the Gemini
+    # bonus (FAQ Theme 2 Q19). Its free tier was down for hours on the 28th, so 8B follows it in
+    # variations_models below. The console's story page reads this key.
+    variations_model: str = "gemini-3.1-flash-lite"
     variations_budget_s: float = 10.0  # background: never delays a response
     # Call C (coverage), free tier: 8B marks which instruction paragraphs of the article help with the
     # complaint, next to call B. Paragraphs call B skipped that it marks become actions (the article's
@@ -62,11 +70,62 @@ class Settings(BaseModel):
     # in the minute, so call B keeps 14B to itself under load: a burst of cold requests with call C on
     # 14B each time drew 429s after ~16 requests in 30 s, and extraction fell to 8B. Idle (a demo, a
     # paced run) call C gets 14B.
+    # A rung that has made this many requests in the last minute is skipped instead of drawing a 429.
     llm_requests_per_minute: dict[str, int] = {"ministral-14b-latest": 30, "ministral-8b-latest": 188}
     coverage_leave_primary: int = 20
-    # Last resort for every call. A model answering 429 or 5xx is skipped for llm_cooldown_s.
-    fallback_model: str = "gemini-3-flash-preview"
-    fallback_reasoning: str = "none"  # reasoning_effort on every Mistral call; "" leaves it out
+    # Last resort for every call except coverage; "" = none. mistral-small-latest held this until the
+    # 2026-09-29 bake-off, which found the free plan serves it 0 requests a minute
+    # (x-ratelimit-limit-req-minute: 0): it only ever added a 429 and a cooldown.
+    fallback_model: str = ""
+    # reasoning_effort sent on every Mistral call; "" leaves it out. "" since the bake-off: the Ministral
+    # models answer "reasoning_effort is not enabled for this model" (400), and each retry without it
+    # spent a second request of 14B's 30 a minute (so ~15 answers a minute) and ~0.3 s.
+    fallback_reasoning: str = ""
+    # Model ladders (2026-09-28). A stage's ladder is its list below, quality first; when the list is
+    # empty it is the single-model keys above (extract: extract_model, extract_fast_model; coverage:
+    # coverage_model, coverage_fallback_model; enrich: enrich_model), and every stage but coverage ends
+    # with fallback_model. Each list can also be set from the environment as a comma list
+    # (ONECLICK_EXTRACT_MODELS, ...), so a bake-off needs no code edit. Extraction races its first two
+    # usable rungs; the rest are tried in order while llm_min_fallback_s of the budget is left. A rung
+    # with no key, on cooldown or at its request limit is skipped without a call. An id is bare
+    # (gemini-* goes to Google, everything else to Mistral) or "provider:model" for a provider in
+    # llm_providers ("gemini:" for any model on Google's API).
+    extract_models: list[str] = Field(default_factory=lambda: _env_models("ONECLICK_EXTRACT_MODELS"))
+    coverage_models: list[str] = Field(default_factory=lambda: _env_models("ONECLICK_COVERAGE_MODELS"))
+    variations_models: list[str] = Field(
+        default_factory=lambda: (
+            _env_models("ONECLICK_VARIATIONS_MODELS") or ["gemini-3.1-flash-lite", "ministral-8b-latest"]
+        )
+    )
+    enrich_models: list[str] = Field(default_factory=lambda: _env_models("ONECLICK_ENRICH_MODELS"))
+    # OpenAI-compatible providers (chat completions, strict json_schema); Gemini has its own client
+    # (llm/gemini.py). temperature: None means llm_temperature_mistral. The header names say where the
+    # provider reports what is left of its limits (llm/quota.py).
+    llm_providers: dict[str, dict] = {
+        "mistral": {
+            "url": "https://api.mistral.ai/v1/chat/completions",
+            "key_env": "MISTRAL_API_KEY",
+            "temperature": None,
+            "remaining_requests_header": "x-ratelimit-remaining-req-minute",
+            "remaining_tokens_header": "x-ratelimit-remaining-tokens-minute",
+        },
+    }
+    # Per-model request options (reasoning_effort, max_tokens_extra, expected_reasoning_tokens) for a
+    # model that needs them; none of the shipped ones does.
+    llm_model_options: dict[str, dict] = {}
+    # Tokens per minute a free plan allows per model, for a model whose plan limits tokens. Before a call
+    # the router estimates it (prompt characters / llm_chars_per_token, plus the stage's expected output
+    # and the model's expected reasoning) and skips the rung when the last minute's tokens plus the
+    # estimate would pass the limit. Mistral's free plan limits requests, not tokens.
+    llm_tokens_per_minute: dict[str, int] = {}
+    llm_chars_per_token: float = 3.5
+    llm_expected_output_tokens: dict[str, int] = {
+        "extract": 400,
+        "coverage": 150,
+        "variations": 400,
+        "enrich": 400,
+    }
+    llm_cooldown_max_s: float = 60.0  # a 429's retry-after lengthens the cooldown up to this
     # 20 s since 2026-09-27: the free plan's limit behaves like a refilling bucket (a burst of ~16 14B
     # requests in 30 s drew 429s), so a minute's cooldown threw 14B away long after it had capacity
     # again; a retry that still fails costs ~0.6 s while the fast model's answer is on its way.
@@ -109,6 +168,18 @@ class Settings(BaseModel):
     llm_timeout_default_s: float = 3.0  # a client called without a stage timeout
     llm_min_fallback_s: float = 0.5  # less than this left in a stage budget: skip the fallback model
     variations_workers: int = 4  # background variations calls running at once
+    # Cold-capacity guard (pipeline/capacity.py). The API is public and unauthenticated (FAQ Theme 2 Q22)
+    # and a cold run holds a request thread and LLM quota for ~5-7 s. At most cold_max_concurrent cold
+    # pipelines run at once; a request that finds no slot within cold_queue_wait_s gets the rules-only
+    # answer (score-capped, cached for degraded_cache_ttl_s) instead of queueing, so cache hits never
+    # wait behind cold load and a burst cannot outspend the free tier. No per-IP limit: the scorer is one
+    # IP. 8 is a starting value; tune it with the mixed-load run (cache hits while cold runs are in flight).
+    cold_max_concurrent: int = 8
+    cold_queue_wait_s: float = 0.25
+    # Call C runs at once: one per concurrent cold run. It was 4, so cold runs 5-8 queued for a worker
+    # and usually missed coverage_wait_s.
+    coverage_workers: int = 8
+    api_thread_limit: int = 100  # worker threads for the sync endpoints (anyio's default is 40)
     max_intents: int = 3  # intents (and so Goals) per query, from call A or call B
     enrich_max_tokens: int = 1024
     extract_max_tokens: int = 1500  # select mode needs ~100-400; rewrite mode wants ~4096

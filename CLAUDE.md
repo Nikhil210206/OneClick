@@ -6,7 +6,7 @@ Guidance for Claude Code (and humans) working in this repository. Shared by the 
 
 OneClick is a Smart Guided Troubleshooting engine for the Samsung PRISM GenAI Hackathon 2026 (Theme 2). A vague user complaint plus a SIIS knowledge article go in; a grounded, schema-valid troubleshooting plan with verified Galaxy Settings deeplinks comes out.
 
-The engine is complete end to end and in freeze for the tag. Each module's docstring states which design component it implements (C1–C12); [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is the design, and its last section lists where the submission differs from it. The only stubs left are the device simulator (`device/simulator.py`, `routes/device.py`), which is cut from the submission and on the roadmap.
+The engine is complete end to end. The final-week changes (capacity guard, LLM ladders, a judge-ready README, packaging) and the engine freeze on 1 Oct 2026 are in [Hackathon submission](#hackathon-submission-final-week) at the end of this file. Each module's docstring states which design component it implements (C1–C12); [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) is the design, and its last section lists where the submission differs from it. The only stubs left are the device simulator (`device/simulator.py`, `routes/device.py`), which is cut from the submission and on the roadmap.
 
 ## Commands
 
@@ -67,6 +67,7 @@ normalize -> cache lookup -> enrich (LLM A) -> segment -> extract (LLM B)
 - **normalize / slots** — whitespace and numbering fixes (every line of a numbered kit query), URL/email scrub of the SIIS text **and the complaint** *before any LLM sees them*, lost spaces put back in a glued article (`pipeline/deglue.py`: rows 3/11/17 arrive as "restartyourdeviceandensure..."; only runs no dictionary knows, only in an article with several of them, and only spaces are added — a clean article is never touched), `siis_hash`; slots come from `data/slot_lexicon.json`, never from an LLM. The scrub (`compiler/scrub.py`) canonicalises first (HTML entities, NFKC, invisible characters) and every pattern is length-bounded, so it stays linear on hostile input; keep it that way (no unbounded `+`/`*` before a required character).
 - **cache** — Tier 0 exact (`norm_query + siis_hash`), Tier 1 semantic (brute-force cosine over each solved plan's original query *and* its 8–10 variations). A hit requires similarity ≥ τ (0.70) **and** compatible slots (component, intent, one-sided symptom) **and** a matching SIIS hash. The SIIS cache ships empty.
 - **no article** — missing, `null`, `""`, `{}`, whitespace or title-only content is one case ([cache/no_siis.py](api/app/cache/no_siis.py)): the same question answered before → a cached plan from the kit table (results.jsonl, loaded at startup) or any solved plan, similarity ≥ 0.80 + slot guard (`source: cached_plan`) → the full pipeline over a remembered article (every article the API receives, the kit's pre-loaded), similarity ≥ 0.82 and 0.04 ahead of the runner-up, scores scaled by that similarity (`source: retrieved_article`) → otherwise empty. All three carry `fallback: no_siis_context`. The LLM never fills the gap (FAQ Q14, G5). `no_match` means an article was given and there is no grounded answer: nothing survived grounding, every model that answered chose nothing from the article (at least `extract_empty_votes` of them), rules-only extraction met an article whose best section scores under `rules_min_relevance`, or the complaint holds no readable word (`pipeline/text.recognisable`).
+- **capacity** — at most `cold_max_concurrent` (8) cold pipelines run at once ([pipeline/capacity.py](api/app/pipeline/capacity.py)). A request that finds no slot within `cold_queue_wait_s` (0.25 s) gets the rules-only answer, which calls no model, is score-capped and is cached for `degraded_cache_ttl_s`, instead of queueing. So cache hits never wait behind cold load, and a burst on the open API cannot outspend the free tier. The limit is global, not per IP, because the scorer is one IP. The sync endpoints get `api_thread_limit` (100) worker threads, more than the cold limit, and call C's pool is sized to it (`coverage_workers`). Turned-away requests show `capacity:cold_busy` in their trace.
 - **enrich** — canonical query, 1–3 intents, domain, 2–3 word title, 12 candidate variations filtered down to 8–10 (drop token Jaccard ≥ 0.6, drop embedding cosine < 0.6).
 - **segment / extract** — SIIS split into sections and numbered sentences `S1…Sn`; the LLM returns actions whose every step cites sentence ids. The listing's breadcrumb (`<categories> <Title> (<categories>): `) is dropped, but article text between it and the first `#` is kept as a first section titled after the breadcrumb (row 3's fixes live there). The model's selection is then repaired by rule, never by adding words: a chosen introducing line ("To perform a factory data reset:") brings the instructions under it, a procedure the model joined at its end gets its start, an action that stops short of its own setting gets the step that reaches it, every method after "There are two methods for this:" is kept, a second procedure hung on an action ("To exit Safe mode, ...") is split off, repeated selections are merged, A selection with no instruction keeps only questions ("Did you drop your phone?"), never explanations.
 - **coverage (call C)** — runs next to call B: 14B while 14B has made fewer than 10 requests in the last minute, else 8B (`coverage_leave_primary`), so under load call B keeps 14B to itself marks which of the article's instruction *paragraphs* (its lines, `P1…Pn`) help with the complaint, and names each. The model picks only ids and a name; every step is still the article's own sentence. Paragraphs call B skipped become actions (neighbours in one section merge), a marked paragraph call B took the start of is continued (never past an escalation or another critical kind), and in a numbered procedure the general-fix steps (damage, charging, restart, Safe mode, update, reset, support) and the rest of any step the plan follows are added, up to `extract_complete_max_actions` (12). A numbered heading that is itself the only instruction ("3. Update Device Software") is a step citing its section. Goals call B invented (not close to the complaint in meaning or words) fold into the one it states (`merge_unstated_goals`). Without call C's answer in time, `complete_procedure` (every skipped numbered step) stands in. A 429 on call C never puts 14B on cooldown for call B.
@@ -110,7 +111,7 @@ These are graded, so build them by rule rather than letting the LLM free-write t
 - Absolute imports from the `app` package (`from app.models import DraftAction`), never relative.
 - Typed signatures and pydantic models throughout: internal models in `models.py`, official output in `schema.py`. Only compiler output crosses into `schema.py` types.
 - One module per design component, with the component number in the docstring. Keep stub signatures stable — other lanes code against them.
-- LLM calls go through [api/app/llm/router.py](api/app/llm/router.py), never a client directly. The team runs on **free tiers** (no billing): measured on 2026-09-24, every Gemini model answers 503 on the free tier under load and Mistral's free plan returns 429 for Small/Medium, but serves the open-weight Ministral 3B/8B/14B (~80–100 tokens/s, concurrent calls allowed). So call B (extract) runs in **select mode** (`extract.v3.md`): the model lists the article sentence ids of each action instead of rewriting steps, and the steps are the article's own sentences, split into single instructions. The answer is compact one-line JSON with short keys (`ids`, `desc`, `path`, `verb`; `extract._long_keys` renames them), `ids` is an enum of the article's own sentence ids (so no invented id can be decoded), at most `extract_max_actions` (8) actions per goal, and `path` must reach the setting itself, not its parent menu. An action whose name shares no word with its own steps and screen (the model labelled it after another sentence) is renamed from its screen. `ministral-14b-latest` is raced against `ministral-8b-latest`; 14B wins if it is back within 6 s (`extract_prefer_deadline_s`; measured 2026-09-27: 14B median 3.9 s, p90 5.9 s, and 8B skips more of an article's fixes), and the stage gives up at 6.3 s so a cold answer stays under 8 s. Intents come from call B too; the 8–10 variations come from a background call (`variations.v1.md`) on **8B** that never delays an answer, and call C (`coverage.v1.md`) runs alongside call B. Mistral's free plan limits requests **per model per minute** (`x-ratelimit-limit-req-minute`: 14B 30, 8B 188), so 14B is kept for extraction alone: with variations on it too, a run of 20 kit rows put it on cooldown and the last 9 answers were 8B's. `gemini-3-flash-preview` is the last fallback; a model answering 429/5xx is skipped for 20 s (the limit refills like a bucket: a burst of ~16 14B requests in 30 s draws 429s). All of it is in the engine section of `config.py`; with billing, `extract_mode = "rewrite"` and Gemini models switch back to the original design. Gemini runs at temperature 1.0 (Google's Gemini 3 guidance), Mistral at 0; repeatability comes from the cache and the compiler. With no key set, or every provider down, the pipeline runs rules-only (the article's own instruction sentences from its `rules_max_actions` (4) most relevant sections, score capped at 0.5). Every valid answer is cached, a degraded one too, so repeats are fast and identical; a degraded one only for `degraded_cache_ttl_s` (10 min), after which the question gets a cold run again. Variations that change the problem's slots (a different component, symptom or intent) are dropped unless fewer than 8 would be left. Prompts are versioned files in `api/app/llm/prompts/` (versions in `settings.prompt_versions`); add a new version rather than mutating a shipped one, and change `settings.prompt_version` (the cache-key tag) with it.
+- LLM calls go through [api/app/llm/router.py](api/app/llm/router.py), never a client directly. The team runs on **free tiers** (no billing): measured on 2026-09-24, every Gemini model answers 503 on the free tier under load and Mistral's free plan returns 429 for Small/Medium, but serves the open-weight Ministral 3B/8B/14B (~80–100 tokens/s, concurrent calls allowed). So call B (extract) runs in **select mode** (`extract.v3.md`): the model lists the article sentence ids of each action instead of rewriting steps, and the steps are the article's own sentences, split into single instructions. The answer is compact one-line JSON with short keys (`ids`, `desc`, `path`, `verb`; `extract._long_keys` renames them), `ids` is an enum of the article's own sentence ids (so no invented id can be decoded), at most `extract_max_actions` (8) actions per goal, and `path` must reach the setting itself, not its parent menu. An action whose name shares no word with its own steps and screen (the model labelled it after another sentence) is renamed from its screen. `ministral-14b-latest` is raced against `ministral-8b-latest`; 14B wins if it is back within 6 s (`extract_prefer_deadline_s`; measured 2026-09-27: 14B median 3.9 s, p90 5.9 s, and 8B skips more of an article's fixes), and the stage gives up at 6.3 s so a cold answer stays under 8 s. Intents come from call B too; the 8–10 variations come from a background call (`variations.v1.md`) on **Gemini 3.1 Flash-Lite, then 8B** that never delays an answer, and call C (`coverage.v1.md`) runs alongside call B. Mistral's free plan limits requests **per model per minute** (`x-ratelimit-limit-req-minute`: 14B 30, 8B 188), so 14B is kept for extraction and coverage: with variations on it too, a run of 20 kit rows put it on cooldown and the last 9 answers were 8B's. Each stage walks a model ladder ([llm/registry.py](api/app/llm/registry.py); lists settable by `ONECLICK_EXTRACT_MODELS` etc.). A rung with no key, on cooldown, or at its request limit ([llm/quota.py](api/app/llm/quota.py), which also reads Mistral's rate-limit headers) is skipped without a call. There is no last-resort model: `mistral-small-latest` is served 0 requests a minute on the free plan. A model answering 429/5xx is skipped for 20 s (the limit refills like a bucket: a burst of ~16 14B requests in 30 s draws 429s). All of it is in the engine section of `config.py`; with billing, `extract_mode = "rewrite"` and Gemini models switch back to the original design. Gemini runs at temperature 1.0 (Google's Gemini 3 guidance), Mistral at 0; repeatability comes from the cache and the compiler. With no key set, or every provider down, the pipeline runs rules-only (the article's own instruction sentences from its `rules_max_actions` (4) most relevant sections, score capped at 0.5). Every valid answer is cached, a degraded one too, so repeats are fast and identical; a degraded one only for `degraded_cache_ttl_s` (10 min), after which the question gets a cold run again. Variations that change the problem's slots (a different component, symptom or intent) are dropped unless fewer than 8 would be left. Prompts are versioned files in `api/app/llm/prompts/` (versions in `settings.prompt_versions`); add a new version rather than mutating a shipped one, and change `settings.prompt_version` (the cache-key tag) with it.
 
 ## Ownership and workflow
 
@@ -151,4 +152,129 @@ Stay in your lane; needed changes elsewhere go through a GitHub issue tagging th
 
 ## Open questions with the organisers
 
-Answers may change compiler behaviour, so check before "fixing" these: does the goal string end with a period (currently following the FAQ regex); is an extra `meta` key allowed in the body (behind `settings.include_meta`); do service-centre steps come before or after critical actions (critical last for now).
+Answers may change compiler behaviour, so check before "fixing" these. **Answered** by FAQ v4: the goal string ends with a period (Theme 2 Q3, Q6), as the template does. **Still open:** is an extra `meta` key allowed in the body (behind `settings.include_meta`; the spec's Appendix B example carries one and pydantic ignores extra keys, so it stays on); do service-centre steps come before or after critical actions (critical last for now).
+
+## Hackathon submission (final week)
+
+Everything left before the tag, and the organisers' rules behind it. Decided 2026-09-28; update the Status column as items land. The organisers' spec PDF and FAQ v4 are deliberately **not** in the repo (see the rules at the end), so this section is the team's copy of what they say. "T2-Qn" is the FAQ's Theme 2 question n; "Qn" is its general section.
+
+### How we are judged
+
+- **Automated score, 60 points, from the organisers' scorer calling our API** (T2-Q21, Q22). The scorer:
+  - calls `/health`
+  - sends the canonical kit queries (cold latency)
+  - sends the same queries again (cache hit)
+  - sends paraphrases
+  - sends unseen scenarios with new SIIS payloads
+
+  It sends no API key and no auth header, so the API stays open. **The judges run it locally** from the repo (Vishaal, 2026-09-28): the submission asks for a reproducible README and Docker files (Q17), and the form has no field for a URL. So the README is the whole automated score. It must take a judge from clone to a working `/health` and a first answer on a clean machine, with or without LLM keys.
+- **Gates** (all must pass, or the automated score does not count; T2-Q9):
+  - G2: `/health` → `{"status":"ok"}`, body exactly that
+  - G3: ≥ 95% of test queries in `results.jsonl`
+  - G4: ≥ 90% schema-valid
+  - G5: zero URL leaks
+- **Blocks** (T2-Q10):
+  - A1 schema & format: 15
+  - A2 deeplinks exist in the catalog, and every auto action has one: 15
+  - A3 cache & latency: 15. Repeat p95 ≤ 300 ms at ≥ 90% hits, paraphrase hits ≥ 80%, cold p95 ≤ 8 s, measured on the judge's machine against our API running there.
+  - A4 unseen scenarios valid and **non-empty**: 10
+  - A5 8–10 diverse variations: 5
+
+  Invented steps are penalised in manual review (T2-Q14). The spec's metrics.md template wants **N ≥ 30 requests per latency path**.
+- **Jury review** of the tagged repo, deck, video and final demo (Q22):
+  - working prototype & functionality 30%
+  - technical depth & feasibility 25%
+  - innovation & originality 20%
+  - relevance to theme 15%
+  - presentation & documentation 10%
+
+  The jury also weighs whether it is useful to a real user and could be taken further as a PRISM worklet (Q24). The final demo is a live walkthrough plus questions on design decisions and trade-offs (Q26).
+
+### Settled by the FAQ (do not re-open)
+
+- Goal format: `Follow these steps to perform this <Name> Troubleshooting.` or `... Configuration.`, **with the period** (T2-Q3, Q6).
+- A results.jsonl line is `{query, query_variations, response}` (T2-Q17). Our extra `meta` is ignored by pydantic; keep it.
+- auto must carry an `actionableDeeplink`, and critical is treated like manual (T2-Q7). `dummy_positive` gets our own 5–7 word description and message naming the screen (T2-Q15).
+- "Any LLM API (Gemini and Mistral will have bonus points)" (T2-Q19).
+- Tagging (Q19, Q20): `git tag -a PRISM_GENAI_HACKATHON_Y2026 -m "PRISM Gen AI Hackathon Y2026 Final Submission"`, then `git push origin PRISM_GENAI_HACKATHON_Y2026`. The tagged commit is what gets judged, and it must contain everything it references.
+- Submission files are named `CollegeName_TeamName` (Q12, Q21).
+- Key dates (Q27): top 15 announced 9 Oct 2026, final demo 15 Oct, results 24 Oct.
+- FAQ v4 prints the final submission as 25 Sep 2026. That date is out of date: the submission window is later (Vishaal, 2026-09-28), so the schedule below is our own internal target, not the organisers' deadline.
+
+### Decisions (2026-09-28, Vishaal)
+
+1. **No hosting.** Judges clone the repo and run it locally (Docker, or Python for the API alone); `docker compose up` also serves the site on `:3000` for the walkthrough. Two consequences:
+   - The README and Docker setup must work first time on a clean Windows, Linux or macOS machine.
+   - A judge running it locally uses **their own** LLM keys, or none (T2-Q22: no key is provided). Without keys every answer is rules-only: valid and grounded, but weaker. The README must say this, and how to get free Mistral and Gemini keys in minutes. That is one more reason for free tiers.
+2. **LLMs: free tiers, Mistral and Gemini only (final, 2026-09-29).**
+   - Calls that write the answer: call B races `ministral-14b-latest` against `ministral-8b-latest`, and call C runs 14B then 8B. These are open-weight Apache-2.0 models, which keeps the Mistral bonus.
+   - The background variations call ("query understanding" in T2-Q19) runs `gemini-3.1-flash-lite`, then 8B, for the Gemini bonus. It never touches or delays an answer.
+   - There is no last-resort model (`fallback_model = ""`), and no `reasoning_effort` is sent to Mistral (`fallback_reasoning = ""`). See decision 3.
+   - Only the Mistral and Gemini clients ship. Groq and NVIDIA were tested and dropped, and their code was removed.
+   - Never suggest GitHub Models (retired 30 Jul 2026) or gpt-4o-mini (closed and paid).
+3. **The bake-off decided it** ([eval/results/bakeoff/SUMMARY.md](eval/results/bakeoff/SUMMARY.md); raw outputs stay local). The rule: adopt a new ladder only if it beats today's on kit and unseen, keeps cold p95 ≤ 7 s, stays 100% schema-valid with 0 leaks, and returns 100% non-empty answers on unseen.
+   - **Groq `gpt-oss-120b`** tied Ministral on step accuracy (kit 2.53 vs 2.53) and was faster, but not better. It is capped at 8K tokens a minute, and it gives false "no match" answers on hard kit rows. Groq's Qwen also returned false "no match" answers.
+   - **NVIDIA's free endpoint was unusable:** 30–40 s timeouts, 404s and 503s.
+   - **Gemini Flash-Lite won variations:** half the overlap between variations and no wrong plan served.
+   - **Two settings bugs were bigger wins than any model swap:**
+     - `mistral-small-latest`, the old last resort, is served 0 requests a minute on the free plan.
+     - `reasoning_effort` made every Ministral call fail once with a 400 and retry, halving 14B's capacity and adding ~0.3 s.
+4. **The cache ships empty.** `cache.sqlite` never goes into the repo or the image (already in `.gitignore` and `.dockerignore`), so a judge's first call on a query is genuinely cold, as designed.
+5. **The cold-capacity guard stays.** A judge's load test can fire many cold requests at once, and over the limit a request degrades to rules-only instead of queueing behind the others.
+
+### Deliverables checklist
+
+| Item | Where | Owner | Status |
+| --- | --- | --- | --- |
+| Source code in a public repo | `VishaalPillay/OneClick` (public) | all | done |
+| README: clone-to-first-answer for Docker and Python, Python version, optional keys (free sign-ups), keyless rules-only mode, an example request, how to reproduce our numbers, links | `README.md` | Vishaal | todo |
+| `requirements.txt` at the repo root, exact pins | `requirements.txt` | Vishaal | todo |
+| Deck, PPTX + PDF, the organisers' 12-slide template | `docs/deck/CollegeName_TeamName_Submission.*` | Nikhil | todo |
+| Demo video ≤ 5 min (YouTube or Drive) | link in README and `docs/VIDEO.md` | Nikhil | todo |
+| AI disclosure | `AI_DISCLOSURE.md`, linked from README | Vishaal | todo |
+| `results.jsonl` from the final engine | `results.jsonl` | Vishaal | regenerate after freeze |
+| `metrics.md` at the final commit | `docs/metrics.md` | Nikhil | regenerate after freeze |
+| APK/SDK | README: N/A | Vishaal | todo |
+| Tag pushed, form submitted | `PRISM_GENAI_HACKATHON_Y2026` | Vishaal | todo |
+
+### Remaining work by lane
+
+- **Vishaal**
+  - ~~Cold-capacity guard (`pipeline/capacity.py`)~~ **Done 2026-09-28.** Bounded cold runs with rules-only over capacity, `_coverage_pool` sized by `coverage_workers`, anyio thread limit raised. Its state (`capacity.state()`) should reach `/v1/metrics` readiness; `routes/metrics.py` is Karur's, so this goes through an issue.
+  - ~~LLM ladders~~ **Done 2026-09-29:** `llm/openai_compat.py`, `llm/registry.py`, `llm/quota.py`, `ONECLICK_*_MODELS` overrides, and no closed model on the answer path.
+  - ~~Bake-off~~ **Done 2026-09-29** (decision 3). Final models applied in `config.py`.
+  - `console/lib/story.server.ts` reads `fallback_model` from `config.py` and shows its own default ("gemini-3-flash-preview") when the value is empty, which it now is. Nikhil: show "none" instead, then re-record the story.
+  - README, AI disclosure, `requirements.txt`.
+  - `results.jsonl`.
+  - Tag.
+- **Nikhil** (evals against the problem statement)
+  - ~~≥ 30 cold samples, and judging unseen per domain~~ **Done in PR #29 (2026-09-29).** It also added the adversarial set to the live gate replica and classified paraphrase hits by the plan they served.
+  - Gate replica + loadtest against a fresh-clone Docker run, the way a judge will, plus a mixed-load run.
+  - Grow unseen to 10 per domain, and track the A4 non-empty rate.
+  - More independent gold labels.
+  - `metrics.md` regeneration on the final engine (after the model change of 2026-09-29).
+  - Deck, video.
+- **Karur** (mapping, sequencing, fast-path cache, Docker)
+  - Docker: `docker compose up --build` works first time on a clean machine (Windows, Linux, macOS), and `docker compose up api` alone works; checked from a fresh clone.
+  - The semantic tier respects `prompt_version`.
+  - Bound `_key_locks`; stop `np.vstack` on every insert.
+  - Recover the 5 over-cautious catalog misses.
+  - Ordering check against spec §6: Settings toggles → system optimizations → device reboots.
+
+### Schedule
+
+| Date | Milestone |
+| --- | --- |
+| Tue 29 Sep | Capacity guard and LLM ladders merged (Mistral defaults) |
+| Wed 30 Sep | Bake-off; README, disclosure and requirements drafts; deck draft |
+| Thu 1 Oct | Adopt the winning ladder or keep today's; **engine freeze** at end of day |
+| Fri 2 Oct | `results.jsonl`, story recording and `metrics.md` regenerated; video and deck final |
+| Sat 3 Oct | Fresh-clone rehearsal (Docker and Python, with and without keys), tag, push, form |
+
+After the freeze, only packaging commits land: docs, deck, video link, and results/metrics regeneration.
+
+### Rules for this phase
+
+- Never commit the organisers' spec PDF or FAQ. Both carry per-recipient watermarks, and this repo is public; summarise them here instead.
+- Everything the tagged commit references (deck, results, metrics, video link) is committed before tagging.
+- Measure A3 on a fresh-clone run, the way a judge will, not on a dev machine with a warm cache.

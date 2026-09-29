@@ -7,6 +7,8 @@ stream can never disagree. Every stage degrades instead of raising (hard rule 4)
     enrich fails      -> the query as the only intent, template variations
     extract fails     -> rules-only steps from the relevant sections, score capped
     nothing grounded  -> empty contexts, fallback "no_match" (never a fabricated step)
+    cold runs at the  -> rules-only steps, score capped, no model called (capacity.py): a burst never
+      capacity limit     queues cache hits behind it or outspends the free tier
     no SIIS           -> a cached plan, else the pipeline over a remembered article, else empty with
                          fallback "no_siis_context" (cache/no_siis.py; never an LLM filling the gap)
 """
@@ -35,6 +37,7 @@ from app.models import StageName as S
 from app.obs import metrics, readiness
 from app.obs import trace as traces
 from app.obs.logging import log_request
+from app.pipeline import capacity
 from app.pipeline.categorize import categorize
 from app.pipeline.enrich import enrich_rules, enrich_with_report, finish_variations, start_variations
 from app.pipeline.extract import extract_rules, extract_with_topics
@@ -264,12 +267,14 @@ def _cold(
     wait_variations: bool = False,
     sink: dict | None = None,
     retrieved: "no_siis.RetrievedArticle | None" = None,
+    llm: bool = True,
 ):
     """The full pipeline. `retrieved`: the request had no article and this remembered one matched it;
-    scores are scaled by the match confidence and the answer is tagged as such."""
+    scores are scaled by the match confidence and the answer is tagged as such. `llm` off: no model is
+    called (the cold-capacity limit was reached), so extraction is rules-only and variations are templates."""
     # Free tier: the variations call starts now and runs next to extraction (never on the answer's path).
     try:
-        future = start_variations(query_text)
+        future = start_variations(query_text) if llm else None
     except Exception:  # noqa: BLE001 - templates stand in
         future = None
 
@@ -316,12 +321,19 @@ def _cold(
 
     # extract
     t = time.perf_counter()
-    try:
-        actions, topics, info = extract_with_topics(intents, sentences, sections=sections, query=query_text)
-    except Exception as exc:  # noqa: BLE001
-        run.degraded.append(f"extract:{type(exc).__name__}")
+    if not llm:
+        # Over the cold-capacity limit (capacity.py): the article's own instructions, no model call.
         actions, topics = extract_rules(intents, sentences, sections)
-        info = {"source": "rules", "model": None, "tokens_in": 0, "tokens_out": 0}
+        info = {"source": "rules", "model": None, "tokens_in": 0, "tokens_out": 0, "capacity": "cold_busy"}
+    else:
+        try:
+            actions, topics, info = extract_with_topics(
+                intents, sentences, sections=sections, query=query_text
+            )
+        except Exception as exc:  # noqa: BLE001
+            run.degraded.append(f"extract:{type(exc).__name__}")
+            actions, topics = extract_rules(intents, sentences, sections)
+            info = {"source": "rules", "model": None, "tokens_in": 0, "tokens_out": 0}
     run.add_llm(info)
     if (info.get("coverage") or {}).get("model"):
         run.add_llm(info["coverage"], answer_model=False)  # call C: tokens and cost, never meta.model
@@ -462,6 +474,14 @@ def _cold(
     yield run.done(contexts, fallback=fallback, latency=answer_ready_ms, source=source)
 
 
+def _cold_guarded(run: _Run, *args, **kwargs):
+    """_cold inside the cold-capacity guard: with no free slot, the rules-only answer (capacity.py)."""
+    with capacity.cold_slot() as held:
+        if not held:
+            run.degraded.append("capacity:cold_busy")
+        yield from _cold(run, *args, llm=held, **kwargs)
+
+
 def _late_variations(future, query_text: str, slots: Slots, entry) -> None:
     try:
         variations, _, _ = finish_variations(query_text, slots, future)
@@ -533,7 +553,7 @@ def _run_stream(
             run.degraded.append("query:unrecognisable")
             yield run.done([], fallback=FALLBACK_NO_MATCH)
             return
-        yield from _cold(
+        yield from _cold_guarded(
             run,
             query_text,
             slots,
@@ -591,7 +611,7 @@ def _no_article(
         detail,
     )
     with store.single_flight(key):
-        yield from _cold(
+        yield from _cold_guarded(
             run,
             query_text,
             slots,

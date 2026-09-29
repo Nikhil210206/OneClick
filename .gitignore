@@ -229,6 +229,8 @@ data/build/
 eval/results/*.json
 eval/results/judge_runs/
 eval/results/*.jsonl
+# The model bake-off's raw outputs stay local; its SUMMARY.md is committed
+eval/results/bakeoff/raw/
 
 # Console (Next.js)
 node_modules/

@@ -971,7 +971,7 @@ def complete_procedure(
 
 
 # ---- call C, coverage: which instruction paragraphs help with this complaint ----------------------------
-_coverage_pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="coverage")
+_coverage_pool = ThreadPoolExecutor(max_workers=settings.coverage_workers, thread_name_prefix="coverage")
 _CONTEXT_CHARS = 200  # a context-only paragraph is shown this long
 _UNIT_CHARS = 700  # an instruction paragraph is shown this long
 

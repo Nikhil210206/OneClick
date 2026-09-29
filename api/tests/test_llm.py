@@ -9,16 +9,18 @@ answer, repeats identically).
 
 import json
 import time
+from contextlib import ExitStack
 from pathlib import Path
 
 import httpx
 import pytest
 
 from app import cache
-from app.config import settings
-from app.llm import router
+from app.config import Settings, settings
+from app.llm import openai_compat, quota, registry, router
 from app.llm.errors import LLMCallError, parse_json
 from app.models import Intent, SiisSentence, Slots
+from app.pipeline import capacity
 from app.pipeline import enrich as enrich_module
 from app.pipeline import extract as extract_module
 from app.pipeline.run import run_stream, run_with_variations
@@ -232,6 +234,75 @@ def test_race_skips_a_rejected_quality_answer(race):
     assert result == {"ok": True} and info["model"] == "ministral-8b-latest"
 
 
+# ---- ladders and quota (llm/registry.py, llm/quota.py) ----------------------------------------------
+def test_the_shipped_ladders_write_answers_with_open_weight_mistral_models_only():
+    """Bake-off 2026-09-29: call B and call C stay on Ministral; variations run Gemini, then 8B; there
+    is no dead last rung (mistral-small-latest is served 0 requests a minute on the free plan)."""
+    assert registry.ladder("extract") == ["ministral-14b-latest", "ministral-8b-latest"]
+    assert registry.ladder("coverage") == ["ministral-14b-latest", "ministral-8b-latest"]
+    assert registry.ladder("variations") == ["gemini-3.1-flash-lite", "ministral-8b-latest"]
+    for stage in ("extract", "coverage"):
+        assert {registry.parse(m)[0] for m in registry.ladder(stage)} == {"mistral"}
+
+
+def test_model_ids_name_their_provider():
+    assert registry.parse("ministral-14b-latest") == ("mistral", "ministral-14b-latest")
+    assert registry.parse("gemini-3.1-flash-lite") == ("gemini", "gemini-3.1-flash-lite")
+    assert registry.parse("mistral:ministral-8b-latest") == ("mistral", "ministral-8b-latest")
+    assert registry.parse("gemini:some-model") == ("gemini", "some-model")
+    assert registry.parse("acme:m") == ("acme", "m") and not registry.known("acme")
+
+
+def test_ladders_come_from_the_environment_for_a_bake_off(monkeypatch):
+    monkeypatch.setenv("ONECLICK_EXTRACT_MODELS", " ministral-8b-latest , mistral:x ,")
+    monkeypatch.setenv("ONECLICK_VARIATIONS_MODELS", "")
+    fresh = Settings()
+    assert fresh.extract_models == ["ministral-8b-latest", "mistral:x"]
+    assert fresh.variations_models == ["gemini-3.1-flash-lite", "ministral-8b-latest"]  # empty: default
+
+
+def test_a_rung_at_its_request_limit_is_skipped_without_a_call(race):
+    for _ in range(settings.llm_requests_per_minute["ministral-14b-latest"]):
+        router._count_call("ministral-14b-latest")
+    called = []
+
+    def mistral(request):
+        called.append(json.loads(request.content)["model"])
+        return _mistral_ok({"ok": True})
+
+    info = {}
+    assert _extract(_clients(lambda r: httpx.Response(503), mistral), info) == {"ok": True}
+    assert called == ["ministral-8b-latest"] and info["model"] == "ministral-8b-latest"
+    assert {"model": "ministral-14b-latest", "ok": False, "error": "quota", "ms": 0.0} in info["attempts"]
+
+
+def test_an_unknown_provider_is_a_failed_attempt_not_an_exception(monkeypatch, keys):
+    monkeypatch.setattr(settings, "enrich_models", ["acme:m", "ministral-8b-latest"])
+    info = {}
+    clients = _clients(lambda r: pytest.fail("no Gemini call"), lambda r: _mistral_ok({"ok": True}))
+    assert _complete(clients, info) == {"ok": True}
+    assert info["attempts"][0]["error"] == "unknown_provider"
+
+
+def test_token_limits_and_provider_headers_hold_a_model_back(monkeypatch):
+    quota.reset()
+    monkeypatch.setattr(settings, "llm_tokens_per_minute", {"m": 1000})
+    quota.reserve("m", 900)
+    assert quota.over("m", 200) and not quota.over("m", 50)
+    quota.note_headers("n", {"remaining_requests": 0, "reset_requests_s": 30})
+    assert quota.over("n", 1)
+    quota.note_headers("o", {"remaining_tokens": 100, "reset_tokens_s": 30})
+    assert quota.over("o", 500) and not quota.over("o", 50)
+    assert quota.parse_reset("2m59.5s") == pytest.approx(179.5)
+    assert quota.parse_reset("250ms") == pytest.approx(0.25) and quota.parse_reset("7") == 7.0
+    quota.reset()
+
+
+def test_mistral_calls_carry_no_reasoning_setting_the_ministral_models_reject():
+    body = openai_compat._body("ministral-14b-latest", "p", SCHEMA, 100, True)
+    assert "reasoning_effort" not in body and body["response_format"]["json_schema"]["strict"] is True
+
+
 def test_parse_json_tolerates_fences_and_rejects_non_objects():
     assert parse_json('```json\n{"a": 1}\n```') == {"a": 1}
     assert parse_json('Sure! {"a": 1} hope that helps') == {"a": 1}
@@ -303,7 +374,9 @@ def fake_llm(monkeypatch, keys):
 
     def complete_json(prompt_name, variables, schema, *, stage=None, info=None, clients=None, accept=None):
         calls.append(prompt_name)
-        answer = {"variations": {"variations": VARIATIONS}, "coverage": {"fixes": []}}.get(prompt_name, SELECT_ANSWER)
+        answer = {"variations": {"variations": VARIATIONS}, "coverage": {"fixes": []}}.get(
+            prompt_name, SELECT_ANSWER
+        )
         if accept is not None:
             assert accept(answer)
         if info is not None:
@@ -363,6 +436,32 @@ def test_llm_failure_degrades_to_rules_capped_and_repeats_identically(monkeypatc
     assert body["contexts"] and all(g["score"] <= settings.rules_only_score_cap for g in body["contexts"])
     repeat = {e.stage.value: e.detail for e in run_stream(REQUEST["query"], REQUEST["siis_response"])}
     assert repeat["done"]["meta"]["cache_tier"] == "exact" and repeat["done"]["contexts"] == body["contexts"]
+    cache.clear()
+
+
+def test_over_the_cold_capacity_the_answer_is_rules_only_and_no_model_is_called(fake_llm, monkeypatch):
+    """Every cold slot is taken: the request does not queue behind them. It gets the article's own steps,
+    score-capped and cached for the degraded window, and spends no LLM quota; the next ask with a free
+    slot gets a model's answer once that window has passed."""
+    monkeypatch.setattr(settings, "cold_queue_wait_s", 0.01)
+    cache.clear()
+    turned_away = capacity.state()["cold_turned_away"]
+    with ExitStack() as held:
+        for _ in range(settings.cold_max_concurrent):
+            assert held.enter_context(capacity.cold_slot())
+        events = {e.stage.value: e.detail for e in run_stream(REQUEST["query"], REQUEST["siis_response"])}
+    assert events["extract"]["source"] == "rules" and events["extract"]["capacity"] == "cold_busy"
+    assert fake_llm == []  # no extract, coverage or variations call
+    body = events["done"]
+    assert body["contexts"] and all(g["score"] <= settings.rules_only_score_cap for g in body["contexts"])
+    assert capacity.state() == {
+        "cold_in_flight": 0,
+        "cold_max_concurrent": settings.cold_max_concurrent,
+        "cold_turned_away": turned_away + 1,
+    }
+    monkeypatch.setattr(settings, "degraded_cache_ttl_s", 0.0)
+    again = {e.stage.value: e.detail for e in run_stream(REQUEST["query"], REQUEST["siis_response"])}
+    assert again["extract"]["source"] == "llm" and "extract" in fake_llm
     cache.clear()
 
 

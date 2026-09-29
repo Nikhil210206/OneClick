@@ -46,14 +46,16 @@ def call(
     key = os.getenv(KEY_ENV)
     if not key:
         raise LLMCallError("no_key", f"{KEY_ENV} is not set")
-    model = model or settings.fallback_model  # the Gemini model; the router always passes one
+    if not model:
+        raise LLMCallError("no_model", "a Gemini model id is required")  # the router always passes one
+    name = model.removeprefix("gemini:")  # an explicit "gemini:" prefix (llm/registry.py) is not sent
     http = client or httpx.Client()
     try:
         response = None
         # A 400 on the optional knobs (thinking level) must not cost the answer: retry once without.
         for optional in (True, False):
             response = http.post(
-                API.format(model=model),
+                API.format(model=name),
                 headers={"x-goog-api-key": key, "Content-Type": "application/json"},
                 json=_body(prompt, schema, thinking, max_tokens, optional),
                 timeout=timeout or settings.llm_timeout_default_s,

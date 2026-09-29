@@ -64,6 +64,15 @@ def _english() -> dict[str, int]:
     return {}
 
 
+def word_rank(word: str) -> int | None:
+    """How common an English word is (0 = the most common), or None when it is not one. The plain word
+    or its singular / -es form counts ("flashes"); a typo ("blak", "screeen") is usually not a word."""
+    english = _english()
+    word = word.lower()
+    ranks = [english[w] for w in (word, word[:-1], word[:-2]) if w in english and len(w) >= 3]
+    return min(ranks) if ranks else None
+
+
 def _known_words(text: str) -> frozenset[str]:
     """The dictionary words `text` uses, with their common inflections ("reboot" -> "rebooting").
     Only dictionary words: a short glued run ("andthentap") must never become a known word."""
@@ -93,6 +102,11 @@ def _corpus_words() -> frozenset[str]:
     except (OSError, ValueError):
         pass
     return _known_words(" ".join(texts))
+
+
+def is_known_word(word: str) -> bool:
+    """An English word, or a word Samsung support text uses ("wifi", "touchscreen"): not a misspelling."""
+    return word_rank(word) is not None or word.lower() in _corpus_words()
 
 
 class _Costs:

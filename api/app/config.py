@@ -30,7 +30,7 @@ class Settings(BaseModel):
     extract_model: str = "ministral-14b-latest"
     # Raced with extract_model (the console's story page names both). The ladder itself is
     # extract_models below, which ends with 8B.
-    extract_fast_model: str = "gemini-3.5-flash-lite"
+    extract_fast_model: str = "ministral-8b-latest"
     extract_thinking: str = "low"  # Gemini models only
     # The quality answer wins if it is back by then. 6.0 (the primary's own timeout) since 2026-09-27:
     # measured alone on the 20 kit articles that day, 14B took median 3.9 s, p90 5.9 s, max 7.9 s,
@@ -118,15 +118,16 @@ class Settings(BaseModel):
     # (gemini-* goes to Google, everything else to Mistral) or "provider:model" for a provider in
     # llm_providers ("gemini:" for any model on Google's API).
     # Call B, decided 2026-09-30 (3 runs x kit 20 + unseen 15, judge gemini-3.5-flash-lite): 14B kit 2.60 in
-    # every run, unseen 2.76; flash-lite kit 2.40 (2.25-2.60), unseen 2.76, about 8B's level. 14B races
-    # flash-lite and wins when back within extract_prefer_deadline_s; flash-lite is the racer so that a
-    # Mistral outage or limit still leaves a model from another provider, and 8B steps into the race when
-    # either is skipped (no Gemini key, cooldown, a spent daily quota). gemini-3.5-flash is out: its free
-    # tier is 20 requests a day per project.
+    # every run, unseen 2.76; flash-lite kit 2.40 (2.25-2.60), unseen 2.76, about 8B's level. 14B races 8B
+    # and wins when back within extract_prefer_deadline_s; flash-lite is third. As the racer it held the slot
+    # on every request while Gemini's free tier was slow or down (a timeout puts no model on cooldown, and
+    # the race never replaces a failed racer), so a late 14B fell to rules. Third, it still covers Mistral:
+    # a Mistral limit skips 14B and 8B races flash-lite; a Mistral outage fails fast and flash-lite gets the
+    # rest of the budget. gemini-3.5-flash is out: its free tier is 20 requests a day per project.
     extract_models: list[str] = Field(
         default_factory=lambda: (
             _env_models("ONECLICK_EXTRACT_MODELS")
-            or ["ministral-14b-latest", "gemini-3.5-flash-lite", "ministral-8b-latest"]
+            or ["ministral-14b-latest", "ministral-8b-latest", "gemini-3.5-flash-lite"]
         )
     )
     coverage_models: list[str] = Field(default_factory=lambda: _env_models("ONECLICK_COVERAGE_MODELS"))

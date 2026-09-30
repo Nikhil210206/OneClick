@@ -277,14 +277,14 @@ def test_call_c_does_not_race_when_the_primary_is_kept_for_call_b(coverage_race)
 
 # ---- ladders and quota (llm/registry.py, llm/quota.py) ----------------------------------------------
 def test_the_shipped_ladders():
-    """Bake-offs 2026-09-29 and 2026-09-30: call B puts 14B first, races Gemini Flash-Lite against it (another
-    provider, so one outage never takes both racers) and ends with 8B; call C stays on Ministral;
+    """Bake-offs 2026-09-29 and 2026-09-30: call B races 14B against 8B and ends with Gemini Flash-Lite
+    (another provider, for a Mistral limit or outage; as the racer a slow Gemini held the slot); call C stays on Ministral;
     variations run Gemini, then 8B. No dead last rung (mistral-small-latest is served 0 requests a minute
     on the free plan) and no gemini-3.5-flash (20 requests a day on the free tier)."""
     assert registry.ladder("extract") == [
         "ministral-14b-latest",
-        "gemini-3.5-flash-lite",
         "ministral-8b-latest",
+        "gemini-3.5-flash-lite",
     ]
     assert registry.ladder("coverage") == ["ministral-14b-latest", "ministral-8b-latest"]
     assert registry.ladder("variations") == ["gemini-3.1-flash-lite", "ministral-8b-latest"]

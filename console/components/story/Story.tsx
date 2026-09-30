@@ -13,7 +13,7 @@ import { PhoneSection } from "@/components/story/PhoneSection";
 import { Prompt } from "@/components/story/Prompt";
 import { Proof } from "@/components/story/Proof";
 import { Resolve } from "@/components/story/Resolve";
-import { ScrollSmoother, ScrollTrigger, gsap, useGSAP } from "@/lib/gsap";
+import { MEDIA, ScrollSmoother, ScrollTrigger, gsap, useGSAP } from "@/lib/gsap";
 import type { StoryData } from "@/lib/story";
 
 /**
@@ -42,6 +42,8 @@ export function Story({ data }: { data: StoryData }) {
           <Finale />
         </div>
       </div>
+      <FitSections />
+      <SnapSections />
       <Nav />
     </div>
   );
@@ -59,6 +61,123 @@ function Smoother() {
     // Outfit swaps in after first paint and changes every line height; re-measure once it has.
     document.fonts?.ready.then(() => ScrollTrigger.refresh());
     return () => smoother.kill();
+  });
+  return null;
+}
+
+/**
+ * Keeps every `.fit` section to one screen on a desktop. The CSS sizes each one to the window;
+ * when a short window still cannot hold a section, its content is zoomed down just enough to fit,
+ * and ScrollTrigger re-measures. Narrow screens scroll naturally and are left alone.
+ */
+function FitSections() {
+  useGSAP(() => {
+    const wide = window.matchMedia("(min-width: 1024px)");
+    const fit = () => {
+      let changed = false;
+      document.querySelectorAll<HTMLElement>(".fit").forEach((section) => {
+        const inner = section.firstElementChild as HTMLElement | null;
+        if (!inner) return;
+        const before = inner.style.getPropertyValue("--fit-zoom");
+        inner.style.removeProperty("--fit-zoom");
+        let zoom = 1;
+        if (wide.matches) {
+          const css = getComputedStyle(section);
+          const room = section.clientHeight - parseFloat(css.paddingTop) - parseFloat(css.paddingBottom);
+          const need = inner.offsetHeight;
+          if (need > room) zoom = Math.max(0.6, Math.floor((room / need) * 1000) / 1000);
+        }
+        if (zoom < 1) inner.style.setProperty("--fit-zoom", String(zoom));
+        if ((before || "1") !== String(zoom)) changed = true;
+      });
+      if (changed) ScrollTrigger.refresh();
+    };
+    fit();
+    document.fonts?.ready.then(fit);
+    let frame = 0;
+    const onResize = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    };
+    window.addEventListener("resize", onResize);
+    wide.addEventListener("change", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      wide.removeEventListener("change", onResize);
+      cancelAnimationFrame(frame);
+    };
+  });
+  return null;
+}
+
+/**
+ * A magnetic stop between sections on a desktop. When the reader stops scrolling between two
+ * one-screen sections, the page settles on the nearer one. Inside a pinned walkthrough (prompt,
+ * grounding, phone) the scroll drives the animation, so it only settles when the reader stops close to
+ * where the walkthrough starts or ends, never in the middle of it.
+ */
+function SnapSections() {
+  useGSAP(() => {
+    const mm = gsap.matchMedia();
+    mm.add(MEDIA.wide, () => {
+      // Each top-level block of the page as a scroll range; a pin spacer is a pinned walkthrough. The
+      // smoothed content starts at scroll 0, so a block's layout offset is the scroll that brings it to
+      // the top. Measured lazily after each refresh: measuring inside one would start another.
+      let ranges: { start: number; end: number; pinned: boolean }[] = [];
+      let stale = true;
+      const measure = () => {
+        const blocks = [...document.querySelectorAll<HTMLElement>("#smooth-content > section, #smooth-content > .pin-spacer")];
+        const max = ScrollTrigger.maxScroll(window);
+        ranges = blocks.map((el, i) => {
+          const start = Math.min(el.offsetTop, max);
+          const end = Math.min(i + 1 < blocks.length ? blocks[i + 1].offsetTop : max, max);
+          // Longer than a screen (a pinned walkthrough, or the caching section): read freely inside.
+          return { start, end, pinned: el.classList.contains("pin-spacer") || end - start > window.innerHeight * 1.05 };
+        });
+        stale = false;
+      };
+      const markStale = () => {
+        stale = true;
+      };
+      ScrollTrigger.addEventListener("refresh", markStale);
+
+      // Where the page should come to rest from scroll position y: the nearer edge of a one-screen
+      // section; inside a longer block, only an edge the reader has nearly reached.
+      const rest = (y: number) => {
+        if (stale) measure();
+        const r = ranges.find((x) => y >= x.start && y < x.end) ?? ranges[ranges.length - 1];
+        if (!r) return y;
+        const pull = window.innerHeight * 0.22;
+        if (!r.pinned) return y - r.start < r.end - y ? r.start : r.end;
+        if (y - r.start < pull) return r.start;
+        if (r.end - y < pull) return r.end;
+        return y;
+      };
+      // When the reader stops scrolling, glide the rest of the way with the smoother's own easing.
+      let settling = false;
+      let release: ReturnType<typeof setTimeout> | undefined;
+      const settle = () => {
+        if (settling) return;
+        const smoother = ScrollSmoother.get();
+        // The native scroll is where the reader stopped; the smoothed view is still catching up to it.
+        const y = window.scrollY;
+        const to = rest(y);
+        if (Math.abs(to - y) < 2) return;
+        settling = true;
+        if (smoother) smoother.scrollTo(to, true);
+        else window.scrollTo({ top: to, behavior: "smooth" });
+        release = setTimeout(() => {
+          settling = false;
+        }, 1200);
+      };
+      ScrollTrigger.addEventListener("scrollEnd", settle);
+
+      return () => {
+        ScrollTrigger.removeEventListener("refresh", markStale);
+        ScrollTrigger.removeEventListener("scrollEnd", settle);
+        clearTimeout(release);
+      };
+    });
   });
   return null;
 }

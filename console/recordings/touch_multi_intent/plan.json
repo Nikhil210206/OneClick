@@ -1,16 +1,15 @@
 {
   "contexts": [
     {
-      "goal": "Follow these steps to perform this Display Navigation Settings Troubleshooting.",
-      "title": "Navigation gesture issues",
+      "goal": "Follow these steps to perform this Navigation Settings Adjustment Troubleshooting.",
+      "title": "Gesture button navigation",
       "actions": [
         {
-          "actionName": "Disable Full Screen Gestures",
-          "description": "It will switch to buttons",
+          "actionName": "Switch To Navigation Buttons",
+          "description": "It will replace swipe gestures",
           "stepGroups": [
             {
               "steps": [
-                "To prevent this, disable the full screen gesture function.",
                 "Go to Settings.",
                 "Tap Display.",
                 "Tap Navigation bar.",
@@ -31,7 +30,7 @@
           "category": "auto"
         }
       ],
-      "score": 0.88
+      "score": 0.89
     },
     {
       "goal": "Follow these steps to perform this Touchscreen Performance Issues Troubleshooting.",
@@ -53,7 +52,7 @@
         },
         {
           "actionName": "Enable Touch Sensitivity",
-          "description": "It will adjust screen sensitivity",
+          "description": "It will enhance touch accuracy",
           "stepGroups": [
             {
               "steps": [
@@ -95,7 +94,7 @@
         },
         {
           "actionName": "Disable Touch Sensitivity",
-          "description": "It will reduce oversensitivity issues",
+          "description": "It will reduce touch lag",
           "stepGroups": [
             {
               "steps": [
@@ -117,7 +116,7 @@
         },
         {
           "actionName": "Get Further Assistance",
-          "description": "It will get help from Samsung Support",
+          "description": "It will get further assistance",
           "stepGroups": [
             {
               "steps": [
@@ -131,7 +130,7 @@
         },
         {
           "actionName": "Restart Device Normally",
-          "description": "It will clear minor software glitches",
+          "description": "It will refresh system performance",
           "stepGroups": [
             {
               "steps": [
@@ -145,8 +144,25 @@
           "category": "critical"
         },
         {
+          "actionName": "Restart Device With Side Button",
+          "description": "It will restart device with side button",
+          "stepGroups": [
+            {
+              "steps": [
+                "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+                "Tap the Power icon.",
+                "Tap Restart.",
+                "Tap Restart again to confirm."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
           "actionName": "Force Restart Unresponsive Device",
-          "description": "It will reboot the system",
+          "description": "It will reboot the phone",
           "stepGroups": [
             {
               "steps": [
@@ -168,7 +184,8 @@
                 "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
                 "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
                 "Touch and hold Power off.",
-                "Tap Safe mode."
+                "Tap Safe mode.",
+                "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began."
               ],
               "actionableDeeplink": null,
               "validationDeeplink": null
@@ -177,8 +194,8 @@
           "category": "critical"
         },
         {
-          "actionName": "Software Updates",
-          "description": "It will check for the latest updates",
+          "actionName": "Update Device Software",
+          "description": "It will update device software",
           "stepGroups": [
             {
               "steps": [
@@ -191,11 +208,12 @@
           "category": "critical"
         },
         {
-          "actionName": "Factory Data Reset",
-          "description": "It will restore the factory settings",
+          "actionName": "Consider Factory Data Reset",
+          "description": "It will consider factory data reset",
           "stepGroups": [
             {
               "steps": [
+                "Before proceeding, back up your personal data to avoid losing it.",
                 "Navigate to and open Settings.",
                 "Tap General management.",
                 "Tap Reset.",
@@ -215,12 +233,12 @@
     }
   ],
   "meta": {
-    "latency_ms": 4813.1,
+    "latency_ms": 6260.4,
     "cache_hit": false,
     "cache_tier": null,
     "model": "ministral-14b-latest",
-    "cost_usd": 0.0,
-    "trace_id": "t_7b3b2eba23",
+    "cost_usd": 0.000539,
+    "trace_id": "t_72a5687935",
     "fallback": null,
     "source": null
   }

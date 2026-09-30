@@ -31,8 +31,6 @@ function receipts(actions: StoryAction[], dropped: string, limit = 4): Receipt[]
   return [...best.values()];
 }
 
-const idNum = (id: string) => Number(id.slice(1));
-
 export function Grounding({ data }: { data: StoryData }) {
   const root = useRef<HTMLElement>(null);
   const { ground, article } = data;
@@ -41,8 +39,11 @@ export function Grounding({ data }: { data: StoryData }) {
   const clean = ground.dropped === null;
   const drop = ground.dropped ?? { ...ground.lowest, reason: "" };
   const pairs = receipts(data.extract.actions, drop.text);
-  const cited = new Set([...pairs.map((p) => p.src), ...drop.src]);
-  const sentences = article.sentences.filter((s) => cited.has(s.id)).sort((a, b) => idNum(a.id) - idNum(b.id));
+  // The sources in the same order as their steps, so every receipt runs straight across.
+  const order = [...new Set([...pairs.map((p) => p.src), drop.src[0]])];
+  const sentences = order
+    .map((id) => article.sentences.find((s) => s.id === id))
+    .filter((s): s is (typeof article.sentences)[number] => Boolean(s));
   const noSharedTerm = drop.reason.includes("no_shared_term");
 
   useGSAP(
@@ -103,6 +104,7 @@ export function Grounding({ data }: { data: StoryData }) {
             defaults: { stagger: 0.12, duration: 1, ease: "expo.out" },
             scrollTrigger: { trigger: root.current, start: "top 65%", toggleActions: "play none none reverse" },
           })
+          .from($(".gr-col"), { y: 20, autoAlpha: 0 }, 0)
           .from($(".gr-step"), { x: -80, autoAlpha: 0 }, 0)
           .from($(".gr-sent"), { x: 80, autoAlpha: 0 }, 0.1);
 
@@ -192,6 +194,18 @@ export function Grounding({ data }: { data: StoryData }) {
           </div>
         </header>
 
+        <div className="gr-cols" aria-hidden>
+          <p className="gr-col">
+            <span>1 · The step</span>
+            What OneClick tells you to do
+          </p>
+          <p className="gr-col gr-col-mid">checked against →</p>
+          <p className="gr-col">
+            <span>2 · Its source</span>
+            The article sentence it cites, word for word
+          </p>
+        </div>
+
         <div className="gr-stage">
           <div className="gr-steps">
             {pairs.map((p, i) => (
@@ -215,7 +229,7 @@ export function Grounding({ data }: { data: StoryData }) {
               data-clean={clean ? "true" : undefined}
             >
               <span className="gr-act">
-                {drop.action} · {clean ? "the closest call in this run" : "also proposed by the model"}
+                {drop.action} · {clean ? "the weakest match in this run" : "also proposed by the model"}
               </span>
               <p className="gr-rogue-text">{drop.text}</p>
               <span className="gr-cite">{drop.src[0]}</span>
@@ -254,8 +268,9 @@ export function Grounding({ data }: { data: StoryData }) {
 
         <div className="gr-foot">
           <p className="gr-rule">
-            A step stays only if it <b>means what its sentence says</b> and <b>shares a real word</b> with it.
-            Fail either and it never reaches your phone.
+            A step stays only if it <b>means what its sentence says</b> (the ✓ score, at least{" "}
+            {ground.threshold.toFixed(2)} out of 1) and <b>shares a real word</b> with it. Fail either and it never
+            reaches your phone.
           </p>
           <p className="st-fine">
             Steps and match scores from one recorded run of the engine ({data.recording.model}).

@@ -22,5 +22,5 @@ export interface StageEvent<D = unknown> {
   detail?: D;
 }
 
-/** Stages that cost an LLM round trip: the only time tinted pink, and where the live badge reads the model. */
+/** Stages that cost an LLM round trip: the only time tinted Samsung blue, and where the live badge reads the model. */
 export const LLM_STAGES = new Set<StageName>(["enrich", "extract"]);

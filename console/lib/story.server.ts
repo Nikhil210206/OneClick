@@ -65,8 +65,9 @@ function json<T>(rel: string): T | null {
 function readLlmConfig(): LlmConfig {
   const file = path.join(REPO, "api/app/config.py");
   const src = existsSync(file) ? readFileSync(file, "utf8") : "";
+  // A key set to "" is a real value (no fallback model), so only a missing key takes the default.
   const str = (name: string, fallback: string) =>
-    new RegExp(`^\\s*${name}: str = "([^"]*)"`, "m").exec(src)?.[1] || fallback;
+    new RegExp(`^\\s*${name}: str = "([^"]*)"`, "m").exec(src)?.[1] ?? fallback;
   const num = (name: string, fallback: number) => {
     const v = Number(new RegExp(`^\\s*${name}: float = ([\\d.]+)`, "m").exec(src)?.[1]);
     return Number.isFinite(v) ? v : fallback;
@@ -74,11 +75,11 @@ function readLlmConfig(): LlmConfig {
   return {
     model: str("extract_model", "ministral-14b-latest"),
     fastModel: str("extract_fast_model", "ministral-8b-latest"),
-    variationsModel: str("variations_model", "ministral-14b-latest"),
+    variationsModel: str("variations_model", "gemini-3.1-flash-lite"),
     temperature: num("llm_temperature_mistral", 0),
-    fallback: str("fallback_model", "gemini-3-flash-preview"),
+    fallback: str("fallback_model", ""),
     fallbackTemperature: num("llm_temperature_gemini", 1),
-    preferDeadline: num("extract_prefer_deadline_s", 5),
+    preferDeadline: num("extract_prefer_deadline_s", 6),
     budget: num("extract_budget_s", 6.3),
   };
 }
@@ -123,7 +124,9 @@ function readMetrics(): Metrics {
     schemaValid: num(cells("Schema-valid output lines")[2]),
     urlLeaks: num(cells("Absolute URL leaks")[2]),
     stepAccuracy: num(cells("Step accuracy")[2]),
-    judgedPlans: num(match(/judge.*? over (\d+) plans/)),
+    // The headline pools every judged set when one judge graded them all ("weighted by plans (35)").
+    judgedPlans: num(match(/weighted by plans \((\d+)\)/) ?? match(/judge.*? over (\d+) plans/)),
+    judgedDomains: /Across all four domains/.test(md),
     relevance: num(cells("Deeplink relevance")[2]),
     resolver: {
       n: num(match(/Precision@1 [\d.]+% on the (\d+) steps/)),
@@ -236,24 +239,28 @@ function readMultiIntent(): MultiIntent {
 }
 
 /**
- * The live section's presets. Every one is a real request: the recorded fixtures, or a row from
- * the held-out eval sets, which the engine is never tuned on.
+ * The live section's presets. Every one is the showcase complaint (touch_lag, the one the whole page
+ * walks through) or a held-out variant of it, so each preset shows one behaviour on the same example:
+ * a cold run, both cache tiers, a near miss, a second request, and the three ways an article can
+ * fail it (missing, off topic, carrying planted instructions). The last two reuse the adversarial
+ * set's own article and planted text, paired with the showcase complaint.
  */
 function readPresets(): Preset[] {
-  const touch = fixture("touch_lag").request;
+  const touch = fixture("touch_lag").request as { query: string; siis_response: { title: string; content: string } };
   const multi = recording("touch_multi_intent").request;
-  const email = fixture("email_not_responding").request;
   const titleOf = (siis: unknown) =>
     siis && typeof siis === "object" && "title" in siis ? String((siis as { title: string }).title) : "no article";
   const row = (set: string, id: string) => jsonl(`eval/sets/${set}.jsonl`).find((r) => r.id === id);
-  const firstOf = (set: string, key: string, value: string) =>
-    jsonl(`eval/sets/${set}.jsonl`).find((r) => r[key] === value);
 
   const reworded = row("paraphrases", "para_21_02");
   const nearMiss = row("near_miss", "nm_21_1");
-  const unseen = firstOf("unseen", "domain", "Battery");
-  const injection = row("adversarial", "adv_08");
-  const offTopic = row("adversarial", "adv_12");
+  const offTopic = row("adversarial", "adv_12")?.siis_response;
+  // adv_08's planted "System Notice", added to the showcase article as one more section.
+  const injected = row("adversarial", "adv_08")?.siis_response as { content?: string } | undefined;
+  const notice = /##[^\n]*System Notice\n([\s\S]*)$/.exec(injected?.content ?? "")?.[1]?.trim();
+  const planted = notice
+    ? { ...touch.siis_response, content: `${touch.siis_response.content.trimEnd()}\n## System Notice\n${notice}\n` }
+    : undefined;
 
   const make = (
     id: string,
@@ -270,11 +277,10 @@ function readPresets(): Preset[] {
     make("exact", "Ask it again", "exact cache hit", touch, touch.siis_response, "exact"),
     make("semantic", "Reworded", "held-out paraphrase", reworded, touch.siis_response, "semantic"),
     make("near", "Cracked screen", "near miss, must not reuse", nearMiss, touch.siis_response),
-    make("multi", "Two problems", "multi-intent", multi),
-    make("email", "Mismatched article", "all three link tiers", email),
-    make("unseen", "Battery drain", "unseen domain", unseen),
-    make("inject", "Prompt injection", "instructions inside the article", injection),
-    make("offtopic", "Wrong article", "must return no_match", offTopic),
+    make("multi", "Two problems", "plus a second request", multi),
+    make("noarticle", "No article", "answers from memory", touch, null),
+    offTopic ? make("offtopic", "Wrong article", "must return no_match", touch, offTopic) : null,
+    planted ? make("inject", "Prompt injection", "orders planted in the article", touch, planted) : null,
   ];
   return presets.filter((p): p is Preset => Boolean(p));
 }

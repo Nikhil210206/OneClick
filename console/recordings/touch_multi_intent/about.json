@@ -1,10 +1,10 @@
 {
-  "recorded_at": "2026-09-27T14:53:14+00:00",
-  "commit": "5ec93d2",
-  "prompt_version": "enrich-v1+extract-v3+variations-v1",
+  "recorded_at": "2026-09-29T12:02:47+00:00",
+  "commit": "a162422",
+  "prompt_version": "enrich-v1+extract-v3+variations-v1+coverage-v1",
   "extract_model": "ministral-14b-latest",
   "extract_fast_model": "ministral-8b-latest",
-  "variations_model": "ministral-8b-latest",
+  "variations_model": "gemini-3.1-flash-lite",
   "how": "eval/tools/record_story.py: the shipping pipeline in-process, throwaway cache, real keys",
   "cold_tries": 1
 }

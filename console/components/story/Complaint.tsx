@@ -71,7 +71,8 @@ export function Complaint({ data }: { data: StoryData }) {
           duration: 1.2,
           stagger: 0.12,
           ease: "expo.out",
-          scrollTrigger: { trigger: ".cmp-kicker", start: "top 85%" },
+          // Keyed to the cards: on a one-screen section the line sits low and would wait for a scroll.
+          scrollTrigger: { trigger: ".cmp-steps", start: "top 70%" },
         });
       });
     },
@@ -79,7 +80,7 @@ export function Complaint({ data }: { data: StoryData }) {
   );
 
   return (
-    <section className="cmp" data-nav="dark" ref={root}>
+    <section className="cmp fit" data-nav="dark" ref={root}>
       <div className="cmp-inner">
         <p className="st-eyebrow">01 · The complaint</p>
         <p className="cmp-quote">
@@ -101,28 +102,65 @@ export function Complaint({ data }: { data: StoryData }) {
 
         <div className="cmp-steps">
           <div className="cmp-step">
-            <span className="cmp-n">1</span>
-            <h3>Clean it</h3>
-            <p>
-              Whitespace and list numbering are fixed. Any link or email address in the article is scrubbed
-              before a model ever sees it.
+            <div className="cmp-top">
+              <span className="cmp-n">1</span>
+              <h3>Clean it</h3>
+            </div>
+            <p>Tidied before any model reads it, the article and the complaint alike.</p>
+            <ul className="cmp-rules" aria-label="What cleaning does">
+              <li>
+                <s>links</s> removed
+              </li>
+              <li>
+                <s>emails</s> removed
+              </li>
+              <li>glued words split</li>
+              <li>numbering fixed</li>
+            </ul>
+            <p className="cmp-unique">
+              <b>Only here:</b> the article gets a fingerprint, so memory never mixes up two articles.
             </p>
-            <code>article scrubbed</code>
+            <code>fingerprint · {data.cache.siisHash}</code>
           </div>
           <div className="cmp-step">
-            <span className="cmp-n">2</span>
-            <h3>Read the slots</h3>
+            <div className="cmp-top">
+              <span className="cmp-n">2</span>
+              <h3>Read the slots</h3>
+            </div>
             <p>What broke and how, looked up in a fixed word list. Never guessed by the model.</p>
-            <code>
-              {Object.entries(data.slots)
-                .map(([k, v]) => `${k}: ${v ?? "none"}`)
-                .join(" · ")}
-            </code>
+            <dl className="cmp-slots">
+              {Object.entries(data.slots).map(([k, v]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>{v ?? "none"}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="cmp-unique">
+              <b>Only here:</b> same words, same slots, every time. Later they stop a near miss from getting
+              someone else&apos;s answer.
+            </p>
+            <code>no model · word list</code>
           </div>
           <div className="cmp-step">
-            <span className="cmp-n">3</span>
-            <h3>Check memory</h3>
-            <p>Has this complaint, or one that means the same, been solved against this article before?</p>
+            <div className="cmp-top">
+              <span className="cmp-n">3</span>
+              <h3>Check memory</h3>
+            </div>
+            <p>Solved before, against this article, in these words or ones that mean the same?</p>
+            <ol className="cmp-tiers" aria-label="Memory lookup in this run">
+              <li>
+                <span>Same words</span>
+                <em>no</em>
+              </li>
+              <li>
+                <span>Same meaning ≥ {data.cache.threshold.toFixed(2)}</span>
+                <em>no</em>
+              </li>
+            </ol>
+            <p className="cmp-unique">
+              <b>Only here:</b> a match also needs the same slots and the same article, or it is not served.
+            </p>
             <code>miss · {data.cache.ms} ms</code>
           </div>
         </div>

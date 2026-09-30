@@ -25,6 +25,8 @@
   <a href="#tests-and-reproducing-the-metrics">Tests</a>
 </p>
 
+<div align="center">
+  
 | Resource | Link |
 | --- | --- |
 | 🎬 **Demo video** | [Watch on Google Drive](https://drive.google.com/file/d/1GvLDjTpm3jm9S1jTYc0IJ96J-gWKrlMP/view?usp=sharing) |
@@ -32,6 +34,8 @@
 | 🏗️ **Architecture** | [docs/architecture.md](docs/architecture.md) |
 | 📈 **Metrics** | [docs/metrics.md](docs/metrics.md) |
 | 🤖 **AI disclosure** | [docs/LangAI3.0_AI_Disclosure - Vibe Coders.pdf](docs/LangAI3.0_AI_Disclosure%20-%20Vibe%20Coders.pdf) |
+
+</div>
 
 ---
 

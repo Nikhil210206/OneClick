@@ -242,3 +242,6 @@ next-env.d.ts
 # would collide with the repo's own, so neither is ever committed.
 console/AGENTS.md
 console/CLAUDE.md
+# Local AI-assistant files: kept on each machine, never committed
+/.claude/
+/CLAUDE.md

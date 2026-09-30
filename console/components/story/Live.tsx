@@ -57,6 +57,8 @@ interface ReadArticle {
   /** A complaint that came with the paste (a kit entry's original_query), if any. */
   query?: string;
   bad?: boolean;
+  /** Worth a second look, but the request still goes (no article: only a remembered plan can answer). */
+  warn?: boolean;
 }
 
 /**
@@ -68,7 +70,8 @@ interface ReadArticle {
  */
 function readArticle(title: string, text: string, complaint: string): ReadArticle {
   const body = text.trim();
-  if (!body && !title.trim()) return { siis: null, note: "empty: no article" };
+  if (!body && !title.trim())
+    return { siis: null, note: "No article attached: OneClick answers only if it has solved this before", warn: true };
   if (body.startsWith("{") || body.startsWith('"')) {
     let parsed: unknown;
     try {
@@ -263,6 +266,8 @@ export function Live({ data }: { data: StoryData }) {
       model?: string | null;
       cache_tier?: string | null;
       source?: string | null;
+      reason?: string | null;
+      message?: string | null;
     }) ?? {};
   const noScenario = mock && meta.trace_id === "t_mock_none";
   const stages = frames.filter((f) => f.stage !== "done");
@@ -318,8 +323,8 @@ export function Live({ data }: { data: StoryData }) {
               <div className="lv-field lv-field-a">
                 <span className="lv-field-label">
                   <i>2</i> The support article
-                  <small className={read.bad ? "bad" : undefined}>
-                    {asPreset ? "✎ paste text or the kit's JSON" : read.note}
+                  <small className={read.bad ? "bad" : read.warn ? "warn" : undefined}>
+                    {asPreset && !read.warn ? "✎ paste text or the kit's JSON" : read.note}
                   </small>
                 </span>
                 <input
@@ -418,6 +423,8 @@ export function Live({ data }: { data: StoryData }) {
                 contexts={contexts}
                 fallback={meta.fallback ?? null}
                 source={meta.source ?? null}
+                reason={meta.reason ?? null}
+                message={meta.message ?? null}
                 noScenario={noScenario}
               />
             </Galaxy>
@@ -435,13 +442,27 @@ export function Live({ data }: { data: StoryData }) {
 /** Model colour only when a model really ran: on the free tier enrich is rules-only on the answer's path. */
 const usedModel = (f: Frame) => LLM_STAGES.has(f.stage) && Boolean(str(f.detail?.model));
 
+/** The empty screen's title for each meta.reason (api/app/compiler/messages.py); its text is meta.message. */
+const EMPTY_TITLE: Record<string, string> = {
+  no_article: "No article provided",
+  article_mismatch: "Article does not match",
+  no_grounded_fix: "No grounded fix",
+  unreadable_query: "Couldn't read the complaint",
+  invalid_request: "Couldn't read the request",
+};
+
 /** Who produced the answer: the cache tier on a hit, else the model (or the no-LLM rules path). */
 function answeredBy(meta: {
   model?: string | null;
   cache_tier?: string | null;
   fallback?: string | null;
+  reason?: string | null;
 }): string {
+  if (meta.reason === "no_article") return "no article sent";
   if (meta.fallback === "no_siis_context") return "no article sent, answered from memory";
+  if (meta.reason === "article_mismatch") return "article does not match the complaint";
+  if (meta.reason === "unreadable_query" || meta.reason === "invalid_request") return "couldn't read the request";
+  if (meta.fallback === "no_match") return "no grounded fix";
   if (meta.cache_tier) return `${meta.cache_tier} cache hit, no model call`;
   if (!meta.model) return "answered";
   return meta.model === "rules" ? "rules only, no model" : meta.model;
@@ -452,12 +473,17 @@ function LiveScreen({
   contexts,
   fallback,
   source,
+  reason,
+  message,
   noScenario,
 }: {
   status: Status;
   contexts: PlanContext[];
   fallback: string | null;
   source: string | null;
+  /** meta.reason / meta.message: the engine's own words for an empty or remembered answer. */
+  reason: string | null;
+  message: string | null;
   noScenario: boolean;
 }) {
   const [goal, setGoal] = useState(0);
@@ -473,9 +499,10 @@ function LiveScreen({
         {fallback === "no_siis_context" && (
           <p className="lv-memory">
             <b>No article was sent.</b>{" "}
-            {source === "retrieved_article"
-              ? "OneClick answered from a support article it has read before."
-              : "This is a plan OneClick solved before, for a question that means the same."}
+            {message?.replace(/^No support article was provided\.\s*/, "") ||
+              (source === "retrieved_article"
+                ? "OneClick answered from a support article it has read before."
+                : "This is a plan OneClick solved before, for a question that means the same.")}
           </p>
         )}
         {/* One tab per problem, so a second goal is never hidden under the first one's cards. */}
@@ -538,9 +565,11 @@ function LiveScreen({
           ? ["No recorded run", "The mock only replays recorded runs. The live engine answers this one."]
           : status === "done"
             ? [
-                fallback === "no_siis_context" ? "No article" : "No grounded fix",
-                "Nothing in the article supports a fix, so OneClick returns no steps rather than invent them." +
-                  (fallback ? ` (${fallback})` : ""),
+                EMPTY_TITLE[reason ?? ""] ?? (fallback === "no_siis_context" ? "No article provided" : "No grounded fix"),
+                message ??
+                  (fallback === "no_siis_context"
+                    ? "No support article was sent, and OneClick has not solved this question before. Attach the article to get a plan."
+                    : "Nothing in the article supports a fix, so OneClick returns no steps rather than invent them."),
               ]
             : ["What's wrong?", "Write a complaint and press Find the fix."];
 

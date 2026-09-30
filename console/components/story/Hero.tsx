@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { Galaxy } from "@/components/story/Galaxy";
 import { AskScreen } from "@/components/story/Screens";
-import { ScrollSmoother, SplitText, gsap, useGSAP } from "@/lib/gsap";
+import { ScrollSmoother, ScrollTrigger, SplitText, gsap, useGSAP } from "@/lib/gsap";
 import type { StoryData } from "@/lib/story";
 
 export function stepCount(data: StoryData) {
@@ -51,15 +51,30 @@ export function Hero({ data }: { data: StoryData }) {
           .fromTo(".ask-result", { y: 40, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.9 }, "<")
           .fromTo(".ask-row", { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.12 }, "<+0.2");
 
-        // Idle drift, so the device never looks pasted on.
-        gsap.to(".hero-float", { y: -14, rotate: 0.6, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: -1 });
+        // Idle drift, so the device never looks pasted on. It stops while the hero is off screen: an
+        // endless tween there kept the browser drawing on every frame of the rest of the page.
+        const drift = gsap.to(".hero-float", {
+          y: -14,
+          rotate: 0.6,
+          duration: 3.2,
+          ease: "sine.inOut",
+          yoyo: true,
+          repeat: -1,
+        });
+        ScrollTrigger.create({
+          trigger: root.current,
+          start: "top bottom",
+          end: "bottom top",
+          onToggle: (self) => (self.isActive ? drift.play() : drift.pause()),
+        });
 
-        // Leaving the hero: the phone turns to face the reader and the copy lifts away.
+        // Leaving the hero: the phone turns to face the reader and the copy lifts away. Transforms and
+        // opacity only, so the scroll never repaints the card (a scrubbed border radius did, every frame).
         gsap
           .timeline({ scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true } })
           .to(".hero-phone", { rotateY: 12, rotateX: -6, y: 120, ease: "none" }, 0)
           .to(".hero-copy", { y: -120, opacity: 0.2, ease: "none" }, 0)
-          .to(".hero-card", { scale: 0.94, borderRadius: "80px", ease: "none" }, 0);
+          .to(".hero-card", { scale: 0.94, ease: "none" }, 0);
 
         return () => {
           title.revert();

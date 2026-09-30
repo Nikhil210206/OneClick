@@ -194,17 +194,17 @@ body:has(.st) {
   transition: color 0.35s ease, background-color 0.35s ease, padding 0.35s ease;
   pointer-events: none;
 }
-/* Once the page has moved, the bar gets its own ground so it never sits bare on content. */
+/* Once the page has moved, the bar gets its own ground so it never sits bare on content. A near-opaque
+   fill, not a backdrop blur: the blur re-ran over the scrolling page on every frame and was the main
+   cost of scrolling once the hero was left behind. */
 .nav[data-solid="true"] {
   padding-top: 14px;
   padding-bottom: 14px;
-  background: rgba(241, 240, 234, 0.82);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  backdrop-filter: blur(18px) saturate(1.4);
+  background: rgba(241, 240, 234, 0.96);
   pointer-events: auto;
 }
 .nav[data-solid="true"][data-tone="light"] {
-  background: rgba(10, 10, 11, 0.7);
+  background: rgba(10, 10, 11, 0.93);
 }
 .nav > * {
   pointer-events: auto;
@@ -325,7 +325,8 @@ body:has(.st) {
     inset 0 0 0 0.75cqw #050506,
     1.1cqw 0.3cqw 0 -0.1cqw #1b1c20,
     1.5cqw 0.5cqw 0 -0.2cqw #0a0a0c,
-    0 3cqw 6cqw -1cqw rgba(0, 0, 0, 0.35);
+    0 3cqw 6cqw -1cqw rgba(0, 0, 0, 0.35),
+    var(--gx-drop, 0 0 0 transparent);
 }
 .gx-btn {
   position: absolute;
@@ -886,6 +887,8 @@ body:has(.st) {
   color: #fff;
   overflow: hidden;
   transform-origin: 50% 100%;
+  /* Scaled by the scroll: its own layer, so leaving the hero moves pixels instead of repainting. */
+  will-change: transform;
 }
 .hero-rings {
   position: absolute;
@@ -931,9 +934,13 @@ body:has(.st) {
   top: clamp(70px, 9vh, 110px);
   width: min(24vw, 39vh, 460px);
   perspective: 2200px;
+  will-change: transform;
 }
 .hero-float {
   perspective: 1800px;
+  /* The phone below carries a large drop-shadow filter. On its own layer it is drawn once and then
+     only moved; without one, every frame of the drift and of the scroll re-ran the filter. */
+  will-change: transform;
 }
 .hero-tilt {
   transform: rotateX(10deg) rotateY(-22deg) rotateZ(6deg);
@@ -2425,10 +2432,13 @@ body:has(.st) {
   display: grid;
   place-items: center;
 }
+/* The phone's shadow is a box-shadow on its body (--gx-drop), not a drop-shadow filter over the whole
+   phone: the screens change while the section scrubs, and the filter re-blurred the entire phone on
+   every frame. The body is the phone's silhouette, so the shadow looks the same. */
 .ph-phone {
   width: min(24vw, 39vh, 440px);
   perspective: 1800px;
-  filter: drop-shadow(0 50px 60px rgba(8, 20, 70, 0.4));
+  --gx-drop: 0 50px 60px rgba(8, 20, 70, 0.4);
 }
 .ph-shadow {
   bottom: 4%;
@@ -3445,6 +3455,9 @@ body:has(.st) {
 .lv-field-label small.bad {
   color: #c01d10;
 }
+.lv-field-label small.warn {
+  color: #8a5300;
+}
 .lv-field-label small {
   margin-left: auto;
   font-size: 11.5px;
@@ -3672,7 +3685,7 @@ body:has(.st) {
 }
 .lv-phone {
   width: min(22vw, 38vh, 400px);
-  filter: drop-shadow(0 50px 60px rgba(4, 12, 60, 0.45));
+  --gx-drop: 0 50px 60px rgba(4, 12, 60, 0.45); /* see .ph-phone */
 }
 .lv-fine {
   max-width: 1640px;

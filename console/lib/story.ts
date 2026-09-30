@@ -40,6 +40,7 @@ export interface Metrics {
   urlLeaks: number | null;
   stepAccuracy: number | null;
   judgedPlans: number | null;
+  judgedDomains: boolean; // the headline covers Battery, Display, Camera and Performance
   relevance: number | null;
   resolver: {
     n: number | null;
@@ -94,7 +95,7 @@ export interface LlmConfig {
   fastModel: string;
   variationsModel: string; // the background call
   temperature: number; // Mistral models
-  fallback: string; // last resort for every call
+  fallback: string; // last resort for every call; "" = none (both Ministral models miss -> rules only)
   fallbackTemperature: number;
   preferDeadline: number; // seconds the 14B answer is waited for
   budget: number; // the extract stage gives up here
@@ -125,7 +126,7 @@ export interface StoryData {
   query: string;
   slots: Record<string, string | null>;
   articleTitle: string;
-  cache: { ms: number; threshold: number };
+  cache: { ms: number; threshold: number; siisHash: string };
   enrich: {
     ms: number;
     model: string;
@@ -161,6 +162,14 @@ export interface StoryData {
   };
   resolve: {
     counts: { catalog: number; dummy: number; manual: number };
+    /** Every action of the plan in order, with its category and what the resolver found for it. */
+    actions: {
+      name: string;
+      category: "auto" | "manual" | "critical";
+      tier: "catalog" | "dummy" | "manual";
+      link: string | null; // the catalog entry's own message, e.g. "Enable Touch sensitivity"
+      verifiable: boolean; // its validation carries a condition, so it can prove the change
+    }[];
     featured: {
       action: string;
       step: string;
@@ -185,6 +194,20 @@ export interface StoryData {
   semanticHit: { query: string; matched: string; similarity: number; threshold: number };
   /** When and how the run was recorded (eval/tools/record_story.py). */
   recording: { at: string; commit: string | null; coldTries: number; model: string };
+  /** Call B as the page tells it: the rule it is given, the race between its models, its answer. */
+  model: {
+    /** The prompt's own sentence that forbids writing steps, verbatim (markdown bold kept). */
+    rule: string | null;
+    /** Every model the race asked, in the order they were asked; `used` is the one whose answer won. */
+    race: { model: string; ms: number | null; ok: boolean; used: boolean }[];
+    /** The actions the model chose, with the sentence ids it cited. */
+    picked: { name: string; ids: string[] }[];
+    /** Actions the engine added after the answer: fixes the model skipped, from the article. */
+    added: { name: string; ids: string[] }[];
+    /** Who found the skipped fixes: call C (coverage), the numbered procedure, or nobody. */
+    addedBy: "coverage" | "procedure" | null;
+    coverageModel: string | null;
+  };
   prompts: { variations: PromptFile; extract: PromptFile };
   llm: LlmConfig;
   proof: Proof;
@@ -229,6 +252,7 @@ export function buildStory({ prompts, llm, proof, catalog, multiIntent, presets 
     slots: Record<string, string | null>;
     threshold: number;
     siis_title: string;
+    siis_hash: string;
   }>("cache");
   const enrich = detail<{ canonical_query: string }>("enrich");
   // The variations call runs in the background (it never delays the answer), so its result is not a
@@ -251,6 +275,9 @@ export function buildStory({ prompts, llm, proof, catalog, multiIntent, presets 
     model: string;
     tokens_in: number;
     tokens_out: number;
+    attempts?: { model: string; ok: boolean; ms: number | null }[];
+    completed_sections?: string[];
+    coverage?: { model?: string | null; added?: string[] } | null;
   }>("extract");
   const ground = detail<{
     threshold: number;
@@ -314,11 +341,28 @@ export function buildStory({ prompts, llm, proof, catalog, multiIntent, presets 
     (catalog.find((e) => e.id === id)?.message ?? id).replace(/^(Enable|Disable|View|Adjust|Open)\s+/, "");
   const about = aboutJson as unknown as { recorded_at: string; commit: string | null; cold_tries: number };
 
+  // Which actions the model chose and which the engine added after it. The engine names what it
+  // added: the headings of a numbered procedure's skipped steps, or the actions call C's paragraphs
+  // became. An action is the engine's when it is named there or every sentence it cites sits under
+  // one of those headings.
+  const coverage = extract.coverage?.model ? extract.coverage : null;
+  const addedNames = new Set([...(extract.completed_sections ?? []), ...(coverage?.added ?? [])]);
+  const sectionOf = new Map(segment.sentences.map((x) => [x.id, x.section]));
+  const idsOf = (a: RawAction) => [...new Set(a.steps.flatMap((st) => st.src_ids))];
+  const byEngine = (a: RawAction) =>
+    addedNames.has(a.name) || (idsOf(a).length > 0 && idsOf(a).every((id) => addedNames.has(sectionOf.get(id) ?? "")));
+  const brief = (a: RawAction) => ({ name: a.name, ids: idsOf(a) });
+  const added = extract.actions.filter(byEngine).map(brief);
+  // The one sentence of the prompt that makes the model point instead of write.
+  const rule =
+    /You do \*\*not\*\* write the steps[^.]*\./.exec((prompts.extract.body ?? "").replace(/\s+/g, " "))?.[0] ??
+    null;
+
   return {
     query: request.query,
     slots: cache.slots,
     articleTitle: cache.siis_title,
-    cache: { ms: msOf("cache"), threshold: cache.threshold },
+    cache: { ms: msOf("cache"), threshold: cache.threshold, siisHash: cache.siis_hash },
     enrich: {
       ms: msOf("enrich"),
       model: variations.model,
@@ -365,6 +409,18 @@ export function buildStory({ prompts, llm, proof, catalog, multiIntent, presets 
     },
     resolve: {
       counts: resolve.counts,
+      actions: ctx.actions.map((a) => {
+        const g = a.stepGroups[0];
+        const tier = resolve.links.find((l) => l.action === a.actionName)?.tier ?? "manual";
+        const validation = g?.validationDeeplink as unknown as { condition?: string } | null | undefined;
+        return {
+          name: a.actionName,
+          category: a.category as "auto" | "manual" | "critical",
+          tier: (tier === "catalog" || tier === "dummy" ? tier : "manual") as "catalog" | "dummy" | "manual",
+          link: g?.actionableDeeplink?.message ?? null,
+          verifiable: Boolean(validation?.condition),
+        };
+      }),
       featured: {
         action: link.action,
         step: switchStep.text,
@@ -402,6 +458,19 @@ export function buildStory({ prompts, llm, proof, catalog, multiIntent, presets 
       commit: about.commit,
       coldTries: about.cold_tries,
       model: extract.model,
+    },
+    model: {
+      rule,
+      race: (extract.attempts ?? []).map((t) => ({
+        model: t.model,
+        ms: t.ok ? t.ms : null,
+        ok: t.ok,
+        used: t.ok && t.model === extract.model,
+      })),
+      picked: extract.actions.filter((a) => !byEngine(a)).map(brief),
+      added,
+      addedBy: added.length === 0 ? null : coverage ? "coverage" : "procedure",
+      coverageModel: coverage?.model ?? null,
     },
     prompts,
     llm,

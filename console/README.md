@@ -131,3 +131,20 @@ sections, SplitText for the hero. Three traps cost time here, so avoid them:
 Built for 1440×900 and checked at 1920×1080. `devIndicators` is off so the Next badge never
 appears in a capture, and pane scrollbars are hidden for the same reason. Motion respects `prefers-reduced-motion`: the replay
 skips its staging and every final value still renders.
+
+### Before a take of Try it live
+
+The live section calls the real engine on free-tier keys. Mistral's free plan limits requests per
+model per minute (`llm_requests_per_minute` in `api/app/config.py`: Ministral 14B 30, 8B 188), and a
+cold question spends up to two 14B requests (the extraction race and the coverage call). After a
+burst of test clicks 14B answers 429 for about a minute, and the engine falls back to 8B or, with
+both busy, answers from the article without a model ("rules only" in the status line). Every
+answer is cached, so a weak one repeats until the cache is cleared.
+
+1. Start from an empty cache: `docker compose up -d --force-recreate api` (the engine keeps its
+   cache in the container, so a recreated container starts cold).
+2. Wait a minute after the last test click, so 14B's per-minute quota has refilled.
+3. Check the status line on the first run: it should name `ministral-14b-latest`. If it says
+   `ministral-8b-latest` or "rules only", wait a minute and recreate the container again.
+4. In the take, click "The complaint" first (a cold run, about 5 s), then "Ask it again" (an exact
+   cache hit, a few ms): the second only hits the cache if the first ran in the same take.

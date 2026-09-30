@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useRef, type ReactNode } from "react";
-import { gsap, useGSAP } from "@/lib/gsap";
+import { MEDIA, gsap, useGSAP } from "@/lib/gsap";
 import type { StoryData } from "@/lib/story";
 
 /**
@@ -31,8 +31,8 @@ const v = (x: string | number | boolean | null) =>
 function lines(value: Json, depth = 0, key?: string, last = true, out: Line[] = []): Line[] {
   const head = key !== undefined ? (
     <>
-      {k(key)}
-      {p(": ")}
+        {k(key)}
+        {p(": ")}
     </>
   ) : null;
   const tail = last ? "" : ",";
@@ -60,6 +60,7 @@ function lines(value: Json, depth = 0, key?: string, last = true, out: Line[] = 
 
 export function Compile({ data }: { data: StoryData }) {
   const root = useRef<HTMLElement>(null);
+  const rules = useRef<HTMLElement>(null);
   const { compile, multiIntent } = data;
   const ctx = compile.body.contexts[0];
   const shown = 2;
@@ -93,18 +94,6 @@ export function Compile({ data }: { data: StoryData }) {
           ease: "expo.out",
           scrollTrigger: { trigger: $(".cp-head")[0], start: "top 80%" },
         });
-        // The response types itself out at the pace of the scroll.
-        gsap.fromTo(
-          $(".cp-ln"),
-          { opacity: 0, x: -8 },
-          {
-            opacity: 1,
-            x: 0,
-            stagger: 0.05,
-            ease: "none",
-            scrollTrigger: { trigger: $(".cp-json")[0], start: "top 75%", end: "bottom 55%", scrub: true },
-          },
-        );
         gsap.from($(".cp-check"), {
           x: 60,
           autoAlpha: 0,
@@ -124,6 +113,63 @@ export function Compile({ data }: { data: StoryData }) {
             scrollTrigger: { trigger: $(".cp-checks")[0], start: "top 75%" },
           },
         );
+      });
+
+      // Desktop: the section holds still while the full response scrolls through its window with the
+      // page, top to bottom. Every line is always shown, so the window is never part empty.
+      mm.add(MEDIA.wide, () => {
+        const $ = gsap.utils.selector(root);
+        const code = $(".cp-code")[0] as HTMLElement;
+        const roll = $(".cp-roll")[0] as HTMLElement;
+        const room = () => code.clientHeight - parseFloat(getComputedStyle(code).paddingTop);
+        gsap
+          .timeline({
+            defaults: { ease: "none" },
+            scrollTrigger: {
+              trigger: root.current,
+              start: "top top",
+              end: "+=110%",
+              pin: true,
+              scrub: 0.6,
+              invalidateOnRefresh: true,
+            },
+          })
+          .to({}, { duration: 0.15 })
+          .fromTo(roll, { y: 0 }, { y: () => -Math.max(0, roll.offsetHeight - room() + 30), duration: 1 })
+          .to({}, { duration: 0.2 });
+      });
+      // Narrow screens: the whole response is on the page; it types out as it scrolls past.
+      mm.add(MEDIA.narrow, () => {
+        const $ = gsap.utils.selector(root);
+        gsap.fromTo(
+          $(".cp-ln"),
+          { opacity: 0, x: -8 },
+          {
+            opacity: 1,
+            x: 0,
+            stagger: 0.05,
+            ease: "none",
+            scrollTrigger: { trigger: $(".cp-json")[0], start: "top 75%", end: "bottom 55%", scrub: true },
+          },
+        );
+      });
+    },
+    { scope: root },
+  );
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        const $ = gsap.utils.selector(rules);
+        gsap.from($(".cp-head > *"), {
+          y: 60,
+          autoAlpha: 0,
+          stagger: 0.12,
+          duration: 1.2,
+          ease: "expo.out",
+          scrollTrigger: { trigger: $(".cp-head")[0], start: "top 80%" },
+        });
         gsap.from($(".cp-card"), {
           y: 90,
           rotate: (i: number) => (i % 2 ? -2 : 2),
@@ -135,11 +181,12 @@ export function Compile({ data }: { data: StoryData }) {
         });
       });
     },
-    { scope: root },
+    { scope: rules },
   );
 
   return (
-    <section className="cp" id="compile" data-nav="dark" ref={root}>
+    <>
+    <section className="cp fit" id="compile" data-nav="dark" ref={root}>
       <div className="cp-inner">
         <header className="cp-head">
           <div>
@@ -173,11 +220,13 @@ export function Compile({ data }: { data: StoryData }) {
               </span>
             </div>
             <div className="cp-code">
-              {body.map((l, i) => (
-                <div className="cp-ln" style={{ paddingLeft: `${l.depth * 1.4}em` }} key={i}>
-                  {l.body}
-                </div>
-              ))}
+              <div className="cp-roll">
+                {body.map((l, i) => (
+                  <div className="cp-ln" style={{ paddingLeft: `${l.depth * 1.4}em` }} key={i}>
+                    {l.body}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -216,11 +265,26 @@ export function Compile({ data }: { data: StoryData }) {
         <p className="st-fine cp-fine">
           Checked at build time with the same rules as the eval gate replica, on the recorded run.
         </p>
+      </div>
+    </section>
+
+    <section className="cp cp-rules fit" data-nav="dark" ref={rules}>
+      <div className="cp-inner">
+        <header className="cp-head">
+          <div>
+            <p className="st-eyebrow">06 · Compile &amp; check</p>
+            <h2 className="st-h2">Built not to break.</h2>
+          </div>
+          <p className="st-lead">
+            Two problems in one message get two plans. A failure inside never becomes an error outside, and no
+            link survives the trip.
+          </p>
+        </header>
 
         <div className="cp-cards">
           <article className="cp-card cp-card-multi">
             <span className="tag tag-blue">Multi-intent</span>
-            <h3>Two problems in one sentence</h3>
+            <h3>Two problems, one message</h3>
             <blockquote>&ldquo;{multiIntent.query}&rdquo;</blockquote>
             <div className="cp-goals">
               {multiIntent.goals.map((g) => (
@@ -255,9 +319,11 @@ export function Compile({ data }: { data: StoryData }) {
             <h3>Two models, one race</h3>
             <p>
               Open-weight Ministral 14B and 8B read the same prompt at once. The 14B answer wins if it is back
-              within {data.llm.preferDeadline} seconds, else the first good answer does, and the stage gives up at{" "}
-              {data.llm.budget} s so a new question stays under 8 s. Gemini is the last fallback; with every model
-              down, the article&apos;s own instructions still answer.
+              within {data.llm.preferDeadline} seconds, otherwise the 8B answer is used, and the stage gives up at{" "}
+              {data.llm.budget} s so a new question fits the 8 s limit
+              {data.proof.metrics.latency.coldP95 !== null &&
+                ` (measured: ${(data.proof.metrics.latency.coldP95 / 1000).toFixed(1)} s at p95)`}
+              . With both models down, the article&apos;s own instructions still answer.
             </p>
           </article>
           <article className="cp-card cp-card-blue">
@@ -275,5 +341,6 @@ export function Compile({ data }: { data: StoryData }) {
         </p>
       </div>
     </section>
+    </>
   );
 }

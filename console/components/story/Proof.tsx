@@ -118,11 +118,13 @@ export function Proof({ data }: { data: StoryData }) {
   );
 
   return (
-    <section className="pf" id="proof" data-nav="light" ref={root}>
+    <section className="pf fit" id="proof" data-nav="light" ref={root}>
       <div className="pf-inner">
         <header className="pf-head">
-          <p className="st-eyebrow">09 · Proof</p>
-          <h2 className="st-h2">Measured, not claimed.</h2>
+          <div>
+            <p className="st-eyebrow">09 · Proof</p>
+            <h2 className="st-h2">Measured, not claimed.</h2>
+          </div>
           <p className="st-lead">
             Every engine number here is read from the committed evaluation report ({source}
             {metrics.date ? `, ${metrics.date}` : ""}) when the site is built. Anything it has not measured says
@@ -131,7 +133,7 @@ export function Proof({ data }: { data: StoryData }) {
         </header>
 
         <div className="pf-grid">
-          <article className="pf-card pf-span-7">
+          <article className="pf-card pf-span-4">
             <div className="pf-top">
               <h3>Near misses look more alike than paraphrases</h3>
               <span className="tag tag-lime">Test design</span>
@@ -163,7 +165,7 @@ export function Proof({ data }: { data: StoryData }) {
             </p>
           </article>
 
-          <article className="pf-card pf-span-5">
+          <article className="pf-card pf-span-4">
             <div className="pf-top">
               <h3>Right screen, first try</h3>
               <span className="tag tag-blue">Resolver</span>
@@ -211,7 +213,7 @@ export function Proof({ data }: { data: StoryData }) {
             </p>
           </article>
 
-          <article className="pf-card pf-span-4">
+          <article className="pf-card pf-span-3">
             <div className="pf-top">
               <h3>Held-out test sets</h3>
               <span className="tag tag-ink">Eval</span>
@@ -230,7 +232,7 @@ export function Proof({ data }: { data: StoryData }) {
             </p>
           </article>
 
-          <article className="pf-card pf-span-4">
+          <article className="pf-card pf-span-3">
             <div className="pf-top">
               <h3>Links that can prove themselves</h3>
               <span className="tag tag-blue">Catalog</span>
@@ -259,7 +261,7 @@ export function Proof({ data }: { data: StoryData }) {
             </p>
           </article>
 
-          <article className="pf-card pf-span-4">
+          <article className="pf-card pf-span-3">
             <div className="pf-top">
               <h3>Answer key</h3>
               <span className="tag tag-amber">Gold</span>
@@ -288,7 +290,7 @@ export function Proof({ data }: { data: StoryData }) {
             <p className="pf-note">The answer key for deeplink precision: {owners}.</p>
           </article>
 
-          <article className={`pf-card pf-span-8${measured ? "" : " pf-card-pending"}`}>
+          <article className={`pf-card pf-span-3${measured ? "" : " pf-card-pending"}`}>
             <div className="pf-top">
               <h3>End to end, over HTTP</h3>
               <span className={`tag ${measured ? "tag-lime" : "tag-ghost"}`}>
@@ -304,7 +306,10 @@ export function Proof({ data }: { data: StoryData }) {
               ))}
             </ul>
             {metrics.judgedPlans !== null && (
-              <p className="pf-note">Step accuracy: an independent model judged {metrics.judgedPlans} plans, 0 to 3.</p>
+              <p className="pf-note">
+                Step accuracy: an independent model judged {metrics.judgedPlans} plans
+                {metrics.judgedDomains ? " across Battery, Display, Camera and Performance" : ""}, 0 to 3.
+              </p>
             )}
           </article>
         </div>

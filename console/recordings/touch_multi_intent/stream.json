@@ -1,20 +1,20 @@
 [
   {
     "stage": "cache",
-    "ms": 25.1,
+    "ms": 21.9,
     "summary": "Cache miss (no exact key, no semantic match)",
     "detail": {
       "hit": false,
       "tier": null,
       "similarity": null,
       "threshold": 0.7,
-      "norm_query": "my galaxy s22 touchscreen lags behind my taps, and i also want to switch the navigation back to buttons instead of swipe gestures.",
+      "norm_query": "my galaxy s22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when i try to interact with the phone. i also want to switch the navigation back to buttons instead of swipe gestures.",
       "slots": {
         "component": "screen",
-        "symptom": null,
+        "symptom": "slow",
         "intent": "configure"
       },
-      "key": "b20055771e5506c7",
+      "key": "63046df1be833f78",
       "siis_hash": "aa71c2c2cb988681",
       "siis_title": "Touchscreen issues on a Galaxy phone or tablet"
     }
@@ -24,12 +24,12 @@
     "ms": 0.1,
     "summary": "1 intent(s), variations in the background",
     "detail": {
-      "canonical_query": "My Galaxy S22 touchscreen lags behind my taps, and I also want to switch the navigation back to buttons instead of swipe gestures.",
+      "canonical_query": "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when I try to interact with the phone. I also want to switch the navigation back to buttons instead of swipe gestures.",
       "intents": [
         {
-          "text": "My Galaxy S22 touchscreen lags behind my taps, and I also want to switch the navigation back to buttons instead of swipe gestures.",
+          "text": "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when I try to interact with the phone. I also want to switch the navigation back to buttons instead of swipe gestures.",
           "domain": "Display",
-          "title": "Screen issue",
+          "title": "Screen slow",
           "relevance": 0.0
         }
       ],
@@ -45,7 +45,7 @@
   },
   {
     "stage": "segment",
-    "ms": 10.2,
+    "ms": 319.8,
     "summary": "10 sections, 56 sentences, 10 relevant",
     "detail": {
       "sections": [
@@ -56,6 +56,12 @@
           "sentence_ids": [
             "S1",
             "S2"
+          ],
+          "paragraphs": [
+            [
+              "S1",
+              "S2"
+            ]
           ],
           "relevance": [
             0.73
@@ -82,8 +88,28 @@
             "S15",
             "S16"
           ],
+          "paragraphs": [
+            [
+              "S3",
+              "S4"
+            ],
+            [
+              "S5",
+              "S6",
+              "S7",
+              "S8",
+              "S9",
+              "S10",
+              "S11",
+              "S12",
+              "S13",
+              "S14",
+              "S15",
+              "S16"
+            ]
+          ],
           "relevance": [
-            0.63
+            0.67
           ],
           "relevant": true
         },
@@ -102,6 +128,25 @@
             "S24",
             "S25"
           ],
+          "paragraphs": [
+            [
+              "S17",
+              "S18"
+            ],
+            [
+              "S19",
+              "S20"
+            ],
+            [
+              "S21",
+              "S22",
+              "S23"
+            ],
+            [
+              "S24",
+              "S25"
+            ]
+          ],
           "relevance": [
             0.68
           ],
@@ -116,8 +161,15 @@
             "S27",
             "S28"
           ],
+          "paragraphs": [
+            [
+              "S26",
+              "S27",
+              "S28"
+            ]
+          ],
           "relevance": [
-            0.63
+            0.66
           ],
           "relevant": true
         },
@@ -131,8 +183,16 @@
             "S31",
             "S32"
           ],
+          "paragraphs": [
+            [
+              "S29",
+              "S30",
+              "S31",
+              "S32"
+            ]
+          ],
           "relevance": [
-            0.76
+            0.72
           ],
           "relevant": true
         },
@@ -144,8 +204,14 @@
             "S33",
             "S34"
           ],
+          "paragraphs": [
+            [
+              "S33",
+              "S34"
+            ]
+          ],
           "relevance": [
-            0.72
+            0.7
           ],
           "relevant": true
         },
@@ -157,8 +223,14 @@
             "S35",
             "S36"
           ],
+          "paragraphs": [
+            [
+              "S35",
+              "S36"
+            ]
+          ],
           "relevance": [
-            0.67
+            0.7
           ],
           "relevant": true
         },
@@ -175,8 +247,25 @@
             "S42",
             "S43"
           ],
+          "paragraphs": [
+            [
+              "S37",
+              "S38"
+            ],
+            [
+              "S39"
+            ],
+            [
+              "S40"
+            ],
+            [
+              "S41",
+              "S42",
+              "S43"
+            ]
+          ],
           "relevance": [
-            0.62
+            0.6
           ],
           "relevant": true
         },
@@ -198,8 +287,38 @@
             "S54",
             "S55"
           ],
+          "paragraphs": [
+            [
+              "S44",
+              "S45",
+              "S46"
+            ],
+            [
+              "S47"
+            ],
+            [
+              "S48"
+            ],
+            [
+              "S49"
+            ],
+            [
+              "S50"
+            ],
+            [
+              "S51"
+            ],
+            [
+              "S52"
+            ],
+            [
+              "S53",
+              "S54",
+              "S55"
+            ]
+          ],
           "relevance": [
-            0.55
+            0.56
           ],
           "relevant": true
         },
@@ -210,8 +329,13 @@
           "sentence_ids": [
             "S56"
           ],
+          "paragraphs": [
+            [
+              "S56"
+            ]
+          ],
           "relevance": [
-            0.66
+            0.7
           ],
           "relevant": true
         }
@@ -233,85 +357,85 @@
           "id": "S3",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "There are a few things that can affect how well your touchscreen works.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S4",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "Please consider the following:",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S5",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "Screen Protectors and Accessories: If you have a third-party screen protector or accessory attached, it might interfere with the touchscreen.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S6",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "This is especially true if there's dust or air trapped under the protector, if you have more than one protective film on the screen, or if the film is peeling at the edges.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S7",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "If your screen protector is peeling or has debris under it, please remove it.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S8",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "If you wish to keep your screen protector on, you can try enabling the \"Touch sensitivity\" option.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S9",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "To do this, go to Settings, tap Display, and then tap the switch next to Touch sensitivity.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S10",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "Usage Habits: The touchscreen might not work correctly if you're wearing gloves, if your finger has dust on it, or if you're touching the screen with your fingernails or a ballpoint pen.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S11",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "It can also be affected if a conductive object, like a coin or key, is near the screen.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S12",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "Moisture: If the screen is wet, the touch sensor may not function properly.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S13",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "Even on waterproof models, some touch functions might not work if the device is used in water.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S14",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "To clean your device, gently wipe the front and back with a lint-free, soft microfiber cloth or a camera lens cleaning cloth.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S15",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "Please avoid applying too much pressure when cleaning.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S16",
           "section": "1. Factors Affecting Touchscreen Performance",
           "text": "S Pen Issues: If you're having trouble with the S Pen, please refer to our S Pen troubleshooting guide.",
-          "relevance": 0.63
+          "relevance": 0.67
         },
         {
           "id": "S17",
@@ -371,203 +495,203 @@
           "id": "S26",
           "section": "3. Charger Issues",
           "text": "A damaged charger might not be supplying enough power to your device, which could lead to touchscreen malfunctions.",
-          "relevance": 0.63
+          "relevance": 0.66
         },
         {
           "id": "S27",
           "section": "3. Charger Issues",
           "text": "If you suspect this is the case, please try using a different, undamaged charger.",
-          "relevance": 0.63
+          "relevance": 0.66
         },
         {
           "id": "S28",
           "section": "3. Charger Issues",
           "text": "It's also a good practice to avoid using the touchscreen while your device is charging.",
-          "relevance": 0.63
+          "relevance": 0.66
         },
         {
           "id": "S29",
           "section": "4. Full Screen Gesture Function",
           "text": "If you're using the full screen gesture function, your touch inputs might be misinterpreted as gestures, preventing them from being recognized.",
-          "relevance": 0.76
+          "relevance": 0.72
         },
         {
           "id": "S30",
           "section": "4. Full Screen Gesture Function",
           "text": "To prevent this, you can disable the full screen gesture function.",
-          "relevance": 0.76
+          "relevance": 0.72
         },
         {
           "id": "S31",
           "section": "4. Full Screen Gesture Function",
           "text": "Go to Settings, tap Display, and then tap Navigation bar.",
-          "relevance": 0.76
+          "relevance": 0.72
         },
         {
           "id": "S32",
           "section": "4. Full Screen Gesture Function",
           "text": "Select Buttons to turn off full screen gestures.",
-          "relevance": 0.76
+          "relevance": 0.72
         },
         {
           "id": "S33",
           "section": "5. Touch Sensitivity Setting",
           "text": "If the Touch sensitivity setting is enabled when you are not using a protective film, the touchscreen might become overly sensitive and malfunction.",
-          "relevance": 0.72
+          "relevance": 0.7
         },
         {
           "id": "S34",
           "section": "5. Touch Sensitivity Setting",
           "text": "To turn off this feature, navigate to Settings, tap Display, and then tap the switch next to Touch sensitivity to disable it.",
-          "relevance": 0.72
+          "relevance": 0.7
         },
         {
           "id": "S35",
           "section": "6. Software Updates",
           "text": "Keeping your device's software up to date is important for smooth performance.",
-          "relevance": 0.67
+          "relevance": 0.7
         },
         {
           "id": "S36",
           "section": "6. Software Updates",
           "text": "You should also check for updates for any third-party apps you use, as these can sometimes affect gesture customization.",
-          "relevance": 0.67
+          "relevance": 0.7
         },
         {
           "id": "S37",
           "section": "7. Safe Mode",
           "text": "Safe mode can help us identify if a recently installed third-party app is causing the problem.",
-          "relevance": 0.62
+          "relevance": 0.6
         },
         {
           "id": "S38",
           "section": "7. Safe Mode",
           "text": "To enter Safe mode:",
-          "relevance": 0.62
+          "relevance": 0.6
         },
         {
           "id": "S39",
           "section": "7. Safe Mode",
           "text": "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
-          "relevance": 0.62
+          "relevance": 0.6
         },
         {
           "id": "S40",
           "section": "7. Safe Mode",
           "text": "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
-          "relevance": 0.62
+          "relevance": 0.6
         },
         {
           "id": "S41",
           "section": "7. Safe Mode",
           "text": "Touch and hold Power off, then tap Safe mode.",
-          "relevance": 0.62
+          "relevance": 0.6
         },
         {
           "id": "S42",
           "section": "7. Safe Mode",
           "text": "Once in Safe mode, you can try removing any third-party apps that were recently updated or installed around the time the issue began.",
-          "relevance": 0.62
+          "relevance": 0.6
         },
         {
           "id": "S43",
           "section": "7. Safe Mode",
           "text": "To exit Safe mode, simply restart your phone or tablet, and it will boot up normally.",
-          "relevance": 0.62
+          "relevance": 0.6
         },
         {
           "id": "S44",
           "section": "8. Factory Data Reset",
           "text": "A factory data reset should only be considered as a last resort, after trying all the previous steps.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S45",
           "section": "8. Factory Data Reset",
           "text": "Please be aware that this action will erase all data and content from your device.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S46",
           "section": "8. Factory Data Reset",
           "text": "Before proceeding, it is crucial to back up your personal data to avoid losing it.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S47",
           "section": "8. Factory Data Reset",
           "text": "To perform a factory data reset:",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S48",
           "section": "8. Factory Data Reset",
           "text": "Navigate to and open Settings.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S49",
           "section": "8. Factory Data Reset",
           "text": "Tap General management.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S50",
           "section": "8. Factory Data Reset",
           "text": "Tap Reset.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S51",
           "section": "8. Factory Data Reset",
           "text": "Tap Factory data reset.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S52",
           "section": "8. Factory Data Reset",
           "text": "Swipe to and tap Reset.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S53",
           "section": "8. Factory Data Reset",
           "text": "Tap Delete all.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S54",
           "section": "8. Factory Data Reset",
           "text": "You will need to enter your Samsung account credentials to complete the reset.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S55",
           "section": "8. Factory Data Reset",
           "text": "Your device will then reset, and you will need to go through the initial setup process.",
-          "relevance": 0.55
+          "relevance": 0.56
         },
         {
           "id": "S56",
           "section": "9. Further Assistance",
           "text": "If the issue persists after trying all these steps, please reach out to Samsung Support for further assistance.",
-          "relevance": 0.66
+          "relevance": 0.7
         }
       ],
       "relevance_floor": 0.5,
       "intent_titles": [
-        "Screen issue"
+        "Screen slow"
       ]
     }
   },
   {
     "stage": "extract",
-    "ms": 4443.2,
-    "summary": "11 actions, 29 steps proposed (llm)",
+    "ms": 5699.1,
+    "summary": "13 actions, 38 steps proposed (llm)",
     "detail": {
       "topics": [
         "Touchscreen Performance Issues",
-        "Display Navigation Settings"
+        "Navigation Settings Adjustment"
       ],
       "actions": [
         {
@@ -628,7 +752,7 @@
           ],
           "screen_path": "Settings > Display > Touch sensitivity",
           "intent_verb": "enable",
-          "description": "It will adjust screen sensitivity",
+          "description": "It will enhance touch accuracy",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -657,7 +781,7 @@
           ],
           "screen_path": null,
           "intent_verb": "restart",
-          "description": "It will clear minor software glitches",
+          "description": "It will refresh system performance",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -686,13 +810,58 @@
           ],
           "screen_path": null,
           "intent_verb": "restart",
-          "description": "It will reboot the system",
+          "description": "It will reboot the phone",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
           "name": "Force Restart Unresponsive Device"
+        },
+        {
+          "steps": [
+            {
+              "text": "Go to Settings.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Display.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Navigation bar.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Select Buttons to turn off full screen gestures.",
+              "src_ids": [
+                "S32"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": "Settings > Display > Navigation bar",
+          "intent_verb": "set",
+          "description": "It will disable full screen gestures",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Switch to Navigation Buttons"
         },
         {
           "steps": [
@@ -707,7 +876,7 @@
           ],
           "screen_path": "Settings > Display > Touch sensitivity",
           "intent_verb": "disable",
-          "description": "It will reduce oversensitivity issues",
+          "description": "It will reduce touch lag",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -748,10 +917,18 @@
               ],
               "grounded": false,
               "grounding_score": 0.0
+            },
+            {
+              "text": "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began.",
+              "src_ids": [
+                "S42"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
             }
           ],
           "screen_path": null,
-          "intent_verb": null,
+          "intent_verb": "visit",
           "description": "It will isolate third-party app issues",
           "category": "manual",
           "disruption_rank": 0,
@@ -762,14 +939,6 @@
         },
         {
           "steps": [
-            {
-              "text": "To prevent this, disable the full screen gesture function.",
-              "src_ids": [
-                "S30"
-              ],
-              "grounded": false,
-              "grounding_score": 0.0
-            },
             {
               "text": "Go to Settings.",
               "src_ids": [
@@ -804,14 +973,59 @@
             }
           ],
           "screen_path": "Settings > Display > Navigation bar",
-          "intent_verb": "disable",
-          "description": "It will switch to buttons",
+          "intent_verb": "set",
+          "description": "It will replace swipe gestures",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 1,
-          "name": "Disable Full Screen Gestures"
+          "name": "Switch to Navigation Buttons"
+        },
+        {
+          "steps": [
+            {
+              "text": "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+              "src_ids": [
+                "S21"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap the Power icon.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Restart.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Restart again to confirm.",
+              "src_ids": [
+                "S23"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "restart",
+          "description": "It will restart Device With Side Button",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Restart Device With Side Button"
         },
         {
           "steps": [
@@ -847,16 +1061,24 @@
           ],
           "screen_path": null,
           "intent_verb": null,
-          "description": "It will check for the latest updates",
+          "description": "It will update Device Software",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Software Updates"
+          "name": "Update Device Software"
         },
         {
           "steps": [
+            {
+              "text": "Before proceeding, back up your personal data to avoid losing it.",
+              "src_ids": [
+                "S46"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
             {
               "text": "Navigate to and open Settings.",
               "src_ids": [
@@ -916,13 +1138,13 @@
           ],
           "screen_path": "Settings > General management > Reset > Factory data reset",
           "intent_verb": "reset",
-          "description": "It will restore the factory settings",
+          "description": "It will consider Factory Data Reset",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Factory Data Reset"
+          "name": "Consider Factory Data Reset"
         },
         {
           "steps": [
@@ -937,7 +1159,7 @@
           ],
           "screen_path": null,
           "intent_verb": "visit",
-          "description": "It will get help from Samsung Support",
+          "description": "It will get Further Assistance",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -950,40 +1172,115 @@
       "mode": "select",
       "intents": [
         {
-          "text": "The Galaxy S22 touchscreen lags behind taps, causing unresponsive input.",
+          "text": "Your Galaxy S22 touchscreen inputs are delayed and unresponsive, causing lag when interacting with the phone.",
           "domain": "Display",
           "title": "Touchscreen input lag",
           "relevance": 0.0
         },
         {
-          "text": "The navigation gestures are not preferred; buttons are desired instead of swipe gestures.",
+          "text": "You want to switch from swipe gestures to navigation buttons on your Galaxy S22.",
           "domain": "Display",
-          "title": "Navigation gesture issues",
+          "title": "Gesture button navigation",
           "relevance": 0.0
         }
       ],
       "completed_sections": [
-        "3. Charger Issues",
-        "6. Software Updates",
-        "8. Factory Data Reset",
-        "9. Further Assistance"
+        "Restart Device With Side Button",
+        "Check Charger Issues",
+        "Update Device Software",
+        "Consider Factory Data Reset",
+        "Get Further Assistance"
       ],
+      "merged_goals": [],
+      "coverage": {
+        "model": "ministral-14b-latest",
+        "tokens_in": 1330,
+        "tokens_out": 174,
+        "cost_usd": 0.0,
+        "attempts": [
+          {
+            "model": "ministral-14b-latest",
+            "ok": true,
+            "error": null,
+            "ms": 3918.8
+          }
+        ],
+        "prompt": "coverage.v1",
+        "ms": 3919.6,
+        "chosen": [
+          {
+            "p": "P1",
+            "name": "Remove Or Adjust Screen Protector"
+          },
+          {
+            "p": "P2",
+            "name": "Restart Device With Power Button"
+          },
+          {
+            "p": "P3",
+            "name": "Restart Device With Side Button"
+          },
+          {
+            "p": "P4",
+            "name": "Force Restart Unresponsive Device"
+          },
+          {
+            "p": "P6",
+            "name": "Disable Full Screen Gestures"
+          },
+          {
+            "p": "P7",
+            "name": "Disable Touch Sensitivity Setting"
+          },
+          {
+            "p": "P8",
+            "name": "Update Device Software"
+          },
+          {
+            "p": "P9",
+            "name": "Enter Safe Mode"
+          },
+          {
+            "p": "P10",
+            "name": "Alternative Safe Mode Entry"
+          },
+          {
+            "p": "P11",
+            "name": "Confirm Safe Mode Entry"
+          },
+          {
+            "p": "P12",
+            "name": "Consider Factory Data Reset"
+          },
+          {
+            "p": "P13",
+            "name": "Open Settings For Reset"
+          }
+        ],
+        "added": [
+          "Restart Device With Side Button",
+          "Check Charger Issues",
+          "Update Device Software",
+          "Consider Factory Data Reset",
+          "Get Further Assistance"
+        ]
+      },
       "model": "ministral-14b-latest",
-      "tokens_in": 2021,
-      "tokens_out": 381,
+      "tokens_in": 2037,
+      "tokens_out": 413,
       "cost_usd": 0.0,
       "attempts": [
         {
           "model": "ministral-8b-latest",
           "ok": true,
           "error": null,
-          "ms": 3529.3
+          "ms": 4656.0
         },
         {
           "model": "ministral-14b-latest",
           "ok": true,
           "error": null,
-          "ms": 4420.1
+          "ms": 5636.5
         }
       ],
       "prompt": "extract.v3"
@@ -991,12 +1288,12 @@
   },
   {
     "stage": "ground",
-    "ms": 255.5,
-    "summary": "29 of 29 steps grounded, 0 dropped",
+    "ms": 167.4,
+    "summary": "38 of 38 steps grounded, 0 dropped",
     "detail": {
       "threshold": 0.75,
-      "proposed_steps": 29,
-      "kept_steps": 29,
+      "proposed_steps": 38,
+      "kept_steps": 38,
       "coverage": 1.0,
       "coverage_by_intent": {
         "0": 1.0,
@@ -1063,7 +1360,7 @@
           ],
           "screen_path": "Settings > Display > Touch sensitivity",
           "intent_verb": "enable",
-          "description": "It will adjust screen sensitivity",
+          "description": "It will enhance touch accuracy",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1092,7 +1389,7 @@
           ],
           "screen_path": null,
           "intent_verb": "restart",
-          "description": "It will clear minor software glitches",
+          "description": "It will refresh system performance",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1121,13 +1418,58 @@
           ],
           "screen_path": null,
           "intent_verb": "restart",
-          "description": "It will reboot the system",
+          "description": "It will reboot the phone",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
           "name": "Force Restart Unresponsive Device"
+        },
+        {
+          "steps": [
+            {
+              "text": "Go to Settings.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Display.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Navigation bar.",
+              "src_ids": [
+                "S31"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Select Buttons to turn off full screen gestures.",
+              "src_ids": [
+                "S32"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            }
+          ],
+          "screen_path": "Settings > Display > Navigation bar",
+          "intent_verb": "set",
+          "description": "It will disable full screen gestures",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Switch to Navigation Buttons"
         },
         {
           "steps": [
@@ -1142,7 +1484,7 @@
           ],
           "screen_path": "Settings > Display > Touch sensitivity",
           "intent_verb": "disable",
-          "description": "It will reduce oversensitivity issues",
+          "description": "It will reduce touch lag",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1183,10 +1525,18 @@
               ],
               "grounded": true,
               "grounding_score": 1.0
+            },
+            {
+              "text": "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began.",
+              "src_ids": [
+                "S42"
+              ],
+              "grounded": true,
+              "grounding_score": 0.98
             }
           ],
           "screen_path": null,
-          "intent_verb": null,
+          "intent_verb": "visit",
           "description": "It will isolate third-party app issues",
           "category": "manual",
           "disruption_rank": 0,
@@ -1197,14 +1547,6 @@
         },
         {
           "steps": [
-            {
-              "text": "To prevent this, disable the full screen gesture function.",
-              "src_ids": [
-                "S30"
-              ],
-              "grounded": true,
-              "grounding_score": 0.98
-            },
             {
               "text": "Go to Settings.",
               "src_ids": [
@@ -1239,14 +1581,59 @@
             }
           ],
           "screen_path": "Settings > Display > Navigation bar",
-          "intent_verb": "disable",
-          "description": "It will switch to buttons",
+          "intent_verb": "set",
+          "description": "It will replace swipe gestures",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 1,
-          "name": "Disable Full Screen Gestures"
+          "name": "Switch to Navigation Buttons"
+        },
+        {
+          "steps": [
+            {
+              "text": "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+              "src_ids": [
+                "S21"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap the Power icon.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Restart.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Restart again to confirm.",
+              "src_ids": [
+                "S23"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "restart",
+          "description": "It will restart Device With Side Button",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Restart Device With Side Button"
         },
         {
           "steps": [
@@ -1282,16 +1669,24 @@
           ],
           "screen_path": null,
           "intent_verb": null,
-          "description": "It will check for the latest updates",
+          "description": "It will update Device Software",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Software Updates"
+          "name": "Update Device Software"
         },
         {
           "steps": [
+            {
+              "text": "Before proceeding, back up your personal data to avoid losing it.",
+              "src_ids": [
+                "S46"
+              ],
+              "grounded": true,
+              "grounding_score": 0.98
+            },
             {
               "text": "Navigate to and open Settings.",
               "src_ids": [
@@ -1351,13 +1746,13 @@
           ],
           "screen_path": "Settings > General management > Reset > Factory data reset",
           "intent_verb": "reset",
-          "description": "It will restore the factory settings",
+          "description": "It will consider Factory Data Reset",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Factory Data Reset"
+          "name": "Consider Factory Data Reset"
         },
         {
           "steps": [
@@ -1372,7 +1767,7 @@
           ],
           "screen_path": null,
           "intent_verb": "visit",
-          "description": "It will get help from Samsung Support",
+          "description": "It will get Further Assistance",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1385,8 +1780,8 @@
   },
   {
     "stage": "resolve",
-    "ms": 68.9,
-    "summary": "3 catalog, 1 dummy, 7 manual",
+    "ms": 36.5,
+    "summary": "4 catalog, 1 dummy, 8 manual",
     "detail": {
       "links": [
         {
@@ -1443,6 +1838,29 @@
           "candidates": []
         },
         {
+          "action": "Switch to Navigation Buttons",
+          "screen_path": "Settings > Display > Navigation bar",
+          "intent_verb": "set",
+          "tier": "catalog",
+          "node_id": "SN-0228",
+          "entry_id": "DL-0169",
+          "confidence": 0.86,
+          "candidates": [
+            {
+              "entry_id": "DL-0169",
+              "score": 1.6
+            },
+            {
+              "entry_id": "DL-0137",
+              "score": 1.17
+            },
+            {
+              "entry_id": "DL-0527",
+              "score": 1.15
+            }
+          ]
+        },
+        {
           "action": "Disable Touch Sensitivity",
           "screen_path": "Settings > Display > Touch sensitivity",
           "intent_verb": "disable",
@@ -1468,7 +1886,7 @@
         {
           "action": "Enter Safe Mode",
           "screen_path": null,
-          "intent_verb": null,
+          "intent_verb": "visit",
           "tier": "manual",
           "node_id": null,
           "entry_id": null,
@@ -1476,27 +1894,37 @@
           "candidates": []
         },
         {
-          "action": "Disable Full Screen Gestures",
+          "action": "Switch to Navigation Buttons",
           "screen_path": "Settings > Display > Navigation bar",
-          "intent_verb": "disable",
+          "intent_verb": "set",
           "tier": "catalog",
           "node_id": "SN-0228",
           "entry_id": "DL-0169",
-          "confidence": 1.0,
+          "confidence": 0.86,
           "candidates": [
             {
-              "entry_id": "DL-0136",
-              "score": 1.49
+              "entry_id": "DL-0169",
+              "score": 1.6
             },
             {
-              "entry_id": "DL-0363",
-              "score": 1.32
+              "entry_id": "DL-0137",
+              "score": 1.17
             },
             {
-              "entry_id": "DL-0294",
-              "score": 1.3
+              "entry_id": "DL-0527",
+              "score": 1.15
             }
           ]
+        },
+        {
+          "action": "Restart Device With Side Button",
+          "screen_path": null,
+          "intent_verb": "restart",
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
         },
         {
           "action": "Check Charger Issues",
@@ -1509,7 +1937,7 @@
           "candidates": []
         },
         {
-          "action": "Software Updates",
+          "action": "Update Device Software",
           "screen_path": null,
           "intent_verb": null,
           "tier": "manual",
@@ -1519,7 +1947,7 @@
           "candidates": []
         },
         {
-          "action": "Factory Data Reset",
+          "action": "Consider Factory Data Reset",
           "screen_path": "Settings > General management > Reset > Factory data reset",
           "intent_verb": "reset",
           "tier": "dummy",
@@ -1553,23 +1981,23 @@
         }
       ],
       "counts": {
-        "catalog": 3,
+        "catalog": 4,
         "dummy": 1,
-        "manual": 7
+        "manual": 8
       }
     }
   },
   {
     "stage": "compile",
-    "ms": 9.6,
-    "summary": "2 goal(s), 11 actions, 0 URL leaks, schema valid",
+    "ms": 5.6,
+    "summary": "2 goal(s), 12 actions, 0 URL leaks, schema valid",
     "detail": {
       "score_inputs": [
         {
           "intent_index": 1,
-          "title": "Navigation gesture issues",
-          "score": 0.88,
-          "relevance": 0.71,
+          "title": "Gesture button navigation",
+          "score": 0.89,
+          "relevance": 0.72,
           "grounding_coverage": 1.0,
           "link_coverage": 1.0
         },
@@ -1577,7 +2005,7 @@
           "intent_index": 0,
           "title": "Touchscreen input lag",
           "score": 0.86,
-          "relevance": 0.65,
+          "relevance": 0.66,
           "grounding_coverage": 1.0,
           "link_coverage": 1.0
         }
@@ -1586,8 +2014,16 @@
       "merged": [],
       "dropped_intents": [],
       "goals": 2,
-      "actions": 11,
-      "deduped": [],
+      "actions": 12,
+      "deduped": [
+        {
+          "action": "Switch to Navigation Buttons",
+          "kept_in_intent": 1,
+          "removed_from_intents": [
+            0
+          ]
+        }
+      ],
       "url_leaks": 0,
       "schema_valid": true,
       "repairs": 0,
@@ -1596,21 +2032,20 @@
   },
   {
     "stage": "done",
-    "ms": 4813.1,
-    "summary": "2 goal(s), 11 action(s) in 4813.1 ms (cold)",
+    "ms": 6260.4,
+    "summary": "2 goal(s), 12 action(s) in 6260.4 ms (cold)",
     "detail": {
       "contexts": [
         {
-          "goal": "Follow these steps to perform this Display Navigation Settings Troubleshooting.",
-          "title": "Navigation gesture issues",
+          "goal": "Follow these steps to perform this Navigation Settings Adjustment Troubleshooting.",
+          "title": "Gesture button navigation",
           "actions": [
             {
-              "actionName": "Disable Full Screen Gestures",
-              "description": "It will switch to buttons",
+              "actionName": "Switch To Navigation Buttons",
+              "description": "It will replace swipe gestures",
               "stepGroups": [
                 {
                   "steps": [
-                    "To prevent this, disable the full screen gesture function.",
                     "Go to Settings.",
                     "Tap Display.",
                     "Tap Navigation bar.",
@@ -1631,7 +2066,7 @@
               "category": "auto"
             }
           ],
-          "score": 0.88
+          "score": 0.89
         },
         {
           "goal": "Follow these steps to perform this Touchscreen Performance Issues Troubleshooting.",
@@ -1653,7 +2088,7 @@
             },
             {
               "actionName": "Enable Touch Sensitivity",
-              "description": "It will adjust screen sensitivity",
+              "description": "It will enhance touch accuracy",
               "stepGroups": [
                 {
                   "steps": [
@@ -1695,7 +2130,7 @@
             },
             {
               "actionName": "Disable Touch Sensitivity",
-              "description": "It will reduce oversensitivity issues",
+              "description": "It will reduce touch lag",
               "stepGroups": [
                 {
                   "steps": [
@@ -1717,7 +2152,7 @@
             },
             {
               "actionName": "Get Further Assistance",
-              "description": "It will get help from Samsung Support",
+              "description": "It will get further assistance",
               "stepGroups": [
                 {
                   "steps": [
@@ -1731,7 +2166,7 @@
             },
             {
               "actionName": "Restart Device Normally",
-              "description": "It will clear minor software glitches",
+              "description": "It will refresh system performance",
               "stepGroups": [
                 {
                   "steps": [
@@ -1745,8 +2180,25 @@
               "category": "critical"
             },
             {
+              "actionName": "Restart Device With Side Button",
+              "description": "It will restart device with side button",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+                    "Tap the Power icon.",
+                    "Tap Restart.",
+                    "Tap Restart again to confirm."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "critical"
+            },
+            {
               "actionName": "Force Restart Unresponsive Device",
-              "description": "It will reboot the system",
+              "description": "It will reboot the phone",
               "stepGroups": [
                 {
                   "steps": [
@@ -1768,7 +2220,8 @@
                     "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
                     "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
                     "Touch and hold Power off.",
-                    "Tap Safe mode."
+                    "Tap Safe mode.",
+                    "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began."
                   ],
                   "actionableDeeplink": null,
                   "validationDeeplink": null
@@ -1777,8 +2230,8 @@
               "category": "critical"
             },
             {
-              "actionName": "Software Updates",
-              "description": "It will check for the latest updates",
+              "actionName": "Update Device Software",
+              "description": "It will update device software",
               "stepGroups": [
                 {
                   "steps": [
@@ -1791,11 +2244,12 @@
               "category": "critical"
             },
             {
-              "actionName": "Factory Data Reset",
-              "description": "It will restore the factory settings",
+              "actionName": "Consider Factory Data Reset",
+              "description": "It will consider factory data reset",
               "stepGroups": [
                 {
                   "steps": [
+                    "Before proceeding, back up your personal data to avoid losing it.",
                     "Navigate to and open Settings.",
                     "Tap General management.",
                     "Tap Reset.",
@@ -1815,12 +2269,12 @@
         }
       ],
       "meta": {
-        "latency_ms": 4813.1,
+        "latency_ms": 6260.4,
         "cache_hit": false,
         "cache_tier": null,
         "model": "ministral-14b-latest",
-        "cost_usd": 0.0,
-        "trace_id": "t_7b3b2eba23",
+        "cost_usd": 0.000539,
+        "trace_id": "t_72a5687935",
         "fallback": null,
         "source": null
       }

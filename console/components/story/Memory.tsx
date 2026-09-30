@@ -80,7 +80,7 @@ export function Memory({ data }: { data: StoryData }) {
     <section className="mm" id="memory" data-nav="light" ref={root}>
       <div className="mm-inner">
         <header className="mm-head">
-          <p className="st-eyebrow">07 · Memory</p>
+          <p className="st-eyebrow">07 · Caching</p>
           <h2 className="st-h2">
             Ask again.
             <br />
@@ -132,7 +132,7 @@ export function Memory({ data }: { data: StoryData }) {
 
         <div className="mm-big">
           <b>{speedup}×</b>
-          <span>faster on a reworded question. A hit skips the model call entirely, and the pink is gone.</span>
+          <span>faster on a reworded question. A hit skips the model call entirely, and the blue is gone.</span>
         </div>
 
         <div className="mm-cards">

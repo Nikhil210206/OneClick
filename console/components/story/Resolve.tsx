@@ -4,11 +4,29 @@ import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 import type { StoryData } from "@/lib/story";
 
+type Action = StoryData["resolve"]["actions"][number];
+
+/** The plan's three kinds of action, in the order the phone shows them. */
+const GROUPS: { category: Action["category"]; tag: string; what: string }[] = [
+  { category: "auto", tag: "Auto · one tap", what: "One tap opens the exact Settings screen." },
+  { category: "manual", tag: "Manual · by hand", what: "No screen to open: you do these by hand." },
+  {
+    category: "critical",
+    tag: "Critical",
+    what: "Restart, Safe mode, updates, reset: disruptive, never fired for you, always last.",
+  },
+];
+
+/** What the resolver found for one action, in a few words. */
+function note(x: Action): string {
+  if (x.tier === "catalog") return `opens “${x.link}”${x.verifiable ? " · checks itself" : ""}`;
+  if (x.tier === "dummy") return "screen known, no catalog link";
+  return "no Settings screen to open";
+}
+
 export function Resolve({ data }: { data: StoryData }) {
   const root = useRef<HTMLElement>(null);
   const f = data.resolve.featured;
-  const { counts } = data.resolve;
-  const dummy = data.plan.actions.find((a) => a.actionName.toLowerCase().includes("factory"));
 
   useGSAP(
     () => {
@@ -42,27 +60,22 @@ export function Resolve({ data }: { data: StoryData }) {
             2,
           );
 
-        gsap.from($(".tier"), {
-          y: 120,
-          rotate: (i: number) => (i % 2 ? -3 : 3),
+        gsap.from($(".rs-group"), {
+          y: 70,
           autoAlpha: 0,
           stagger: 0.12,
-          duration: 1.3,
+          duration: 1.1,
           ease: "expo.out",
-          scrollTrigger: { trigger: $(".rs-tiers")[0], start: "top 80%" },
+          scrollTrigger: { trigger: $(".rs-board")[0], start: "top 85%" },
         });
-        $(".tier-n").forEach((el) => {
-          const to = Number(el.dataset.to);
-          const o = { v: 0 };
-          gsap.to(o, {
-            v: to,
-            duration: 1.4,
-            ease: "power3.out",
-            scrollTrigger: { trigger: el, start: "top 85%" },
-            onUpdate: () => {
-              el.textContent = String(Math.round(o.v));
-            },
-          });
+        gsap.from($(".rs-items li"), {
+          x: -16,
+          autoAlpha: 0,
+          stagger: 0.05,
+          duration: 0.6,
+          ease: "power2.out",
+          delay: 0.3,
+          scrollTrigger: { trigger: $(".rs-board")[0], start: "top 85%" },
         });
       });
     },
@@ -72,7 +85,7 @@ export function Resolve({ data }: { data: StoryData }) {
   const path = f.path.split(" > ");
 
   return (
-    <section className="rs" id="resolve" data-nav="light" ref={root}>
+    <section className="rs fit" id="resolve" data-nav="light" ref={root}>
       <div className="rs-inner">
         <header className="rs-head">
           <div>
@@ -106,7 +119,7 @@ export function Resolve({ data }: { data: StoryData }) {
           <span className="rs-arrow" aria-hidden />
 
           <div className="rs-card rs-rank">
-            <span className="rs-label">Screen candidates · BM25 + dense, fused, then name and polarity</span>
+            <span className="rs-label">Closest Settings screens</span>
             {f.candidates.map((c, i) => (
               <div className={`rs-cand${i === 0 ? " rs-cand-win" : ""}`} key={`${c.id}-${i}`}>
                 <span className="rs-cand-name">
@@ -137,47 +150,35 @@ export function Resolve({ data }: { data: StoryData }) {
                 {f.validation.value && <b>{f.validation.value}</b>}
               </span>
             </div>
-            <span className="rs-type">{f.originalType} · an enable toggle, so it can prove itself</span>
           </div>
         </div>
-        <p className="st-fine rs-fine">Candidates and scores from one recorded run of the resolver.</p>
 
-        <div className="rs-tiers">
-          <div className="tier tier-lime">
-            <b className="tier-n" data-to={counts.catalog}>
-              {counts.catalog}
-            </b>
-            <h3>One tap</h3>
-            <p>A catalog link, copied character for character, that opens the exact screen.</p>
-          </div>
-          <div className="tier tier-blue">
-            <b className="tier-n" data-to={counts.dummy}>
-              {counts.dummy}
-            </b>
-            <h3>Known screen, no link</h3>
-            <p>
-              {dummy ? `${dummy.actionName}: ` : ""}the screen is real, the catalog has no entry for it, so it
-              can only get the placeholder.
-            </p>
-          </div>
-          <div className="tier tier-ink">
-            <b className="tier-n" data-to={counts.manual}>
-              {counts.manual}
-            </b>
-            <h3>By hand</h3>
-            <p>Physical steps, and disruptive ones like a restart that OneClick will never fire for you.</p>
-          </div>
-          <div className="tier tier-gap">
-            <span className="tier-bang" aria-hidden>
-              !
-            </span>
-            <h3>Gaps stay gaps</h3>
-            <p>
-              The catalog has no entry for Software update, Safe mode or Factory data reset. Those steps stay
-              manual. That is the right answer, not a bug.
-            </p>
-          </div>
+        <div className="rs-board">
+          {GROUPS.map((g) => {
+            const items = data.resolve.actions.filter((x) => x.category === g.category);
+            return (
+              <div className={`rs-group rs-group-${g.category}`} key={g.category}>
+                <div className="rs-group-head">
+                  <span className="rs-tag">{g.tag}</span>
+                  <b className="rs-count">{items.length}</b>
+                </div>
+                <p className="rs-group-what">{g.what}</p>
+                <ul className="rs-items">
+                  {items.map((x) => (
+                    <li key={x.name}>
+                      <b>{x.name}</b>
+                      <small>{note(x)}</small>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
+        <p className="st-fine rs-fine">
+          The catalog has no entry for Safe mode, Software update or Factory data reset, so those steps never get
+          a made-up link. Candidates, scores and categories from one recorded run.
+        </p>
       </div>
     </section>
   );

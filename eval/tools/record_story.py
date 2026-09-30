@@ -8,10 +8,11 @@ the engine produced:
     touch_lag           the cold run (every stage frame, the background variations call with the
                         rewordings it dropped), then the same words again (exact hit), then a held-out
                         paraphrase from eval/sets/paraphrases.jsonl (semantic hit)
-    touch_multi_intent  a two-problem complaint on the same article (a lag fault and a navigation
-                        change), cold. The fixture's own two-problem query ("touch is laggy and my
-                        swipes are read as the wrong gesture") is one touchscreen problem to the model,
-                        so it gets one goal; this one names two.
+    touch_multi_intent  the same complaint with a second request added (switch the navigation back
+                        to buttons), on the same article, cold: the site's multi-intent example is the
+                        showcase complaint, not another one. The fixture's own two-problem query ("touch
+                        is laggy and my swipes are read as the wrong gesture") is one touchscreen
+                        problem to the model, so it gets one goal; this one names two.
 
 It runs in-process (the code path POST /v1/troubleshoot/stream drains) on a throwaway cache, with the
 LLM keys from .env. The page describes the normal path: the primary extract model answering (and, for
@@ -49,9 +50,12 @@ FIXTURES = REPO_ROOT / "data" / "fixtures"
 OUT = REPO_ROOT / "console" / "recordings"
 PARAPHRASES = REPO_ROOT / "eval" / "sets" / "paraphrases.jsonl"
 TOUCH_LAG_ROW = "row_21"
+# The showcase complaint (touch_lag's own words) with a second, separate request, so the site's
+# multi-intent example is the same complaint as every other example on it.
 MULTI_QUERY = (
-    "My Galaxy S22 touchscreen lags behind my taps, and I also want to switch the navigation back to "
-    "buttons instead of swipe gestures."
+    "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable "
+    "delay when I try to interact with the phone. I also want to switch the navigation back to buttons "
+    "instead of swipe gestures."
 )
 
 

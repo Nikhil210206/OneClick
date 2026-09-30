@@ -1,12 +1,12 @@
 {
   "contexts": [
     {
-      "goal": "Follow these steps to perform this Navigation Settings Adjustment Troubleshooting.",
-      "title": "Gesture button navigation",
+      "goal": "Follow these steps to perform this Display Navigation Settings Troubleshooting.",
+      "title": "Navigation gesture Switch",
       "actions": [
         {
-          "actionName": "Switch To Navigation Buttons",
-          "description": "It will replace swipe gestures",
+          "actionName": "Disable Full Screen Gestures",
+          "description": "It will switch to buttons",
           "stepGroups": [
             {
               "steps": [
@@ -30,7 +30,7 @@
           "category": "auto"
         }
       ],
-      "score": 0.89
+      "score": 0.9
     },
     {
       "goal": "Follow these steps to perform this Touchscreen Performance Issues Troubleshooting.",
@@ -93,8 +93,8 @@
           "category": "manual"
         },
         {
-          "actionName": "Disable Touch Sensitivity",
-          "description": "It will reduce touch lag",
+          "actionName": "Disable Touch Sensitivity Setting",
+          "description": "It will disable touch sensitivity setting",
           "stepGroups": [
             {
               "steps": [
@@ -115,8 +115,8 @@
           "category": "auto"
         },
         {
-          "actionName": "Get Further Assistance",
-          "description": "It will get further assistance",
+          "actionName": "Contact Samsung Support",
+          "description": "It will contact Samsung Support",
           "stepGroups": [
             {
               "steps": [
@@ -130,7 +130,7 @@
         },
         {
           "actionName": "Restart Device Normally",
-          "description": "It will refresh system performance",
+          "description": "It will refresh system processes",
           "stepGroups": [
             {
               "steps": [
@@ -144,8 +144,8 @@
           "category": "critical"
         },
         {
-          "actionName": "Restart Device With Side Button",
-          "description": "It will restart device with side button",
+          "actionName": "Restart Device Via Quick Settings",
+          "description": "It will restart device via quick settings",
           "stepGroups": [
             {
               "steps": [
@@ -177,7 +177,7 @@
         },
         {
           "actionName": "Enter Safe Mode",
-          "description": "It will isolate third-party app issues",
+          "description": "It will enter safe mode",
           "stepGroups": [
             {
               "steps": [
@@ -185,7 +185,8 @@
                 "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
                 "Touch and hold Power off.",
                 "Tap Safe mode.",
-                "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began."
+                "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began.",
+                "To exit Safe mode, restart your phone or tablet, and it will boot up normally."
               ],
               "actionableDeeplink": null,
               "validationDeeplink": null
@@ -208,8 +209,8 @@
           "category": "critical"
         },
         {
-          "actionName": "Consider Factory Data Reset",
-          "description": "It will consider factory data reset",
+          "actionName": "Factory Data Reset",
+          "description": "It will factory data reset",
           "stepGroups": [
             {
               "steps": [
@@ -233,13 +234,15 @@
     }
   ],
   "meta": {
-    "latency_ms": 6260.4,
+    "latency_ms": 4604.2,
     "cache_hit": false,
     "cache_tier": null,
     "model": "ministral-14b-latest",
-    "cost_usd": 0.000539,
-    "trace_id": "t_72a5687935",
+    "cost_usd": 0.000668,
+    "trace_id": "t_c64a9331e0",
     "fallback": null,
-    "source": null
+    "source": null,
+    "reason": null,
+    "message": null
   }
 }

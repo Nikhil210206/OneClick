@@ -1,7 +1,7 @@
 [
   {
     "stage": "cache",
-    "ms": 26.0,
+    "ms": 15.1,
     "summary": "Cache miss (no exact key, no semantic match)",
     "detail": {
       "hit": false,
@@ -14,7 +14,7 @@
         "symptom": "slow",
         "intent": "fault"
       },
-      "key": "33778410d41a120c",
+      "key": "22de56238d93bb46",
       "siis_hash": "aa71c2c2cb988681",
       "siis_title": "Touchscreen issues on a Galaxy phone or tablet"
     }
@@ -45,7 +45,7 @@
   },
   {
     "stage": "segment",
-    "ms": 12.7,
+    "ms": 6.2,
     "summary": "10 sections, 56 sentences, 10 relevant",
     "detail": {
       "sections": [
@@ -56,6 +56,12 @@
           "sentence_ids": [
             "S1",
             "S2"
+          ],
+          "paragraphs": [
+            [
+              "S1",
+              "S2"
+            ]
           ],
           "relevance": [
             0.75
@@ -82,6 +88,26 @@
             "S15",
             "S16"
           ],
+          "paragraphs": [
+            [
+              "S3",
+              "S4"
+            ],
+            [
+              "S5",
+              "S6",
+              "S7",
+              "S8",
+              "S9",
+              "S10",
+              "S11",
+              "S12",
+              "S13",
+              "S14",
+              "S15",
+              "S16"
+            ]
+          ],
           "relevance": [
             0.7
           ],
@@ -102,6 +128,25 @@
             "S24",
             "S25"
           ],
+          "paragraphs": [
+            [
+              "S17",
+              "S18"
+            ],
+            [
+              "S19",
+              "S20"
+            ],
+            [
+              "S21",
+              "S22",
+              "S23"
+            ],
+            [
+              "S24",
+              "S25"
+            ]
+          ],
           "relevance": [
             0.68
           ],
@@ -115,6 +160,13 @@
             "S26",
             "S27",
             "S28"
+          ],
+          "paragraphs": [
+            [
+              "S26",
+              "S27",
+              "S28"
+            ]
           ],
           "relevance": [
             0.71
@@ -131,6 +183,14 @@
             "S31",
             "S32"
           ],
+          "paragraphs": [
+            [
+              "S29",
+              "S30",
+              "S31",
+              "S32"
+            ]
+          ],
           "relevance": [
             0.66
           ],
@@ -144,6 +204,12 @@
             "S33",
             "S34"
           ],
+          "paragraphs": [
+            [
+              "S33",
+              "S34"
+            ]
+          ],
           "relevance": [
             0.69
           ],
@@ -156,6 +222,12 @@
           "sentence_ids": [
             "S35",
             "S36"
+          ],
+          "paragraphs": [
+            [
+              "S35",
+              "S36"
+            ]
           ],
           "relevance": [
             0.68
@@ -174,6 +246,23 @@
             "S41",
             "S42",
             "S43"
+          ],
+          "paragraphs": [
+            [
+              "S37",
+              "S38"
+            ],
+            [
+              "S39"
+            ],
+            [
+              "S40"
+            ],
+            [
+              "S41",
+              "S42",
+              "S43"
+            ]
           ],
           "relevance": [
             0.59
@@ -198,6 +287,36 @@
             "S54",
             "S55"
           ],
+          "paragraphs": [
+            [
+              "S44",
+              "S45",
+              "S46"
+            ],
+            [
+              "S47"
+            ],
+            [
+              "S48"
+            ],
+            [
+              "S49"
+            ],
+            [
+              "S50"
+            ],
+            [
+              "S51"
+            ],
+            [
+              "S52"
+            ],
+            [
+              "S53",
+              "S54",
+              "S55"
+            ]
+          ],
           "relevance": [
             0.55
           ],
@@ -209,6 +328,11 @@
           "level": 2,
           "sentence_ids": [
             "S56"
+          ],
+          "paragraphs": [
+            [
+              "S56"
+            ]
           ],
           "relevance": [
             0.74
@@ -562,11 +686,11 @@
   },
   {
     "stage": "extract",
-    "ms": 4724.9,
-    "summary": "10 actions, 27 steps proposed (llm)",
+    "ms": 4730.4,
+    "summary": "11 actions, 35 steps proposed (llm)",
     "detail": {
       "topics": [
-        "Touchscreen Responsiveness Problems"
+        "Touchscreen Responsiveness Issues"
       ],
       "actions": [
         {
@@ -582,7 +706,7 @@
           ],
           "screen_path": null,
           "intent_verb": null,
-          "description": "It will improve touch accuracy",
+          "description": "It will reduce interference",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -627,7 +751,7 @@
           ],
           "screen_path": "Settings > Display > Touch sensitivity",
           "intent_verb": "enable",
-          "description": "It will adjust sensitivity levels",
+          "description": "It will improve responsiveness",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -656,13 +780,13 @@
           ],
           "screen_path": null,
           "intent_verb": "restart",
-          "description": "It will clear minor software glitches",
+          "description": "It will refresh system processes",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Restart Device Normally"
+          "name": "Restart Device via Power Button"
         },
         {
           "steps": [
@@ -771,11 +895,19 @@
               ],
               "grounded": false,
               "grounding_score": 0.0
+            },
+            {
+              "text": "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began.",
+              "src_ids": [
+                "S42"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
             }
           ],
           "screen_path": null,
           "intent_verb": "visit",
-          "description": "It will isolate third-party app issues",
+          "description": "It will check third-party app conflicts",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -795,14 +927,75 @@
             }
           ],
           "screen_path": null,
-          "intent_verb": "visit",
-          "description": "It will get expert assistance",
+          "intent_verb": null,
+          "description": "It will get expert help",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
           "name": "Contact Samsung Support"
+        },
+        {
+          "steps": [
+            {
+              "text": "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+              "src_ids": [
+                "S21"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap the Power icon.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Restart.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Tap Restart again to confirm.",
+              "src_ids": [
+                "S23"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
+              "src_ids": [
+                "S24"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
+            {
+              "text": "Once the device turns off, press the Power button or Side button again to turn it back on.",
+              "src_ids": [
+                "S25"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "restart",
+          "description": "It will restart Device Using Quick Settings",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Restart Device Using Quick Settings"
         },
         {
           "steps": [
@@ -838,16 +1031,24 @@
           ],
           "screen_path": null,
           "intent_verb": null,
-          "description": "It will check for the latest updates",
+          "description": "It will update Device Software",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Software Updates"
+          "name": "Update Device Software"
         },
         {
           "steps": [
+            {
+              "text": "Before proceeding, back up your personal data to avoid losing it.",
+              "src_ids": [
+                "S46"
+              ],
+              "grounded": false,
+              "grounding_score": 0.0
+            },
             {
               "text": "Navigate to and open Settings.",
               "src_ids": [
@@ -907,7 +1108,7 @@
           ],
           "screen_path": "Settings > General management > Reset > Factory data reset",
           "intent_verb": "reset",
-          "description": "It will restore the factory settings",
+          "description": "It will factory Data Reset",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -918,35 +1119,115 @@
       ],
       "source": "llm",
       "mode": "select",
+      "mismatch": {
+        "verdict": "related",
+        "acted": false,
+        "path": null,
+        "terms": [],
+        "shared": [],
+        "typos": [],
+        "components": []
+      },
       "intents": [
         {
           "text": "The Galaxy S22 touchscreen has delayed and laggy responsiveness, causing noticeable interaction delays.",
           "domain": "Display",
-          "title": "Touchscreen lag issues",
+          "title": "Touchscreen lag delay",
           "relevance": 0.0
         }
       ],
       "completed_sections": [
-        "3. Charger Issues",
-        "6. Software Updates",
-        "8. Factory Data Reset"
+        "Restart Device Using Quick Settings",
+        "Check Charger Issues",
+        "Update Device Software",
+        "Factory Data Reset"
       ],
+      "merged_goals": [],
+      "coverage": {
+        "model": "ministral-14b-latest",
+        "tokens_in": 1482,
+        "tokens_out": 167,
+        "cost_usd": 0.0,
+        "attempts": [
+          {
+            "model": "ministral-8b-latest",
+            "ok": true,
+            "error": null,
+            "ms": 2847.5
+          },
+          {
+            "model": "ministral-14b-latest",
+            "ok": true,
+            "error": null,
+            "ms": 3782.4
+          }
+        ],
+        "prompt": "coverage.v2",
+        "match": "related",
+        "ms": 3783.8,
+        "chosen": [
+          {
+            "p": "P1",
+            "name": "Remove Or Adjust Screen Protector"
+          },
+          {
+            "p": "P2",
+            "name": "Restart Device With Power Button"
+          },
+          {
+            "p": "P3",
+            "name": "Restart Device Using Quick Settings"
+          },
+          {
+            "p": "P4",
+            "name": "Force Restart Unresponsive Device"
+          },
+          {
+            "p": "P6",
+            "name": "Disable Full Screen Gestures"
+          },
+          {
+            "p": "P7",
+            "name": "Disable Touch Sensitivity Setting"
+          },
+          {
+            "p": "P8",
+            "name": "Update Device Software"
+          },
+          {
+            "p": "P9",
+            "name": "Enter Safe Mode By Button"
+          },
+          {
+            "p": "P10",
+            "name": "Enter Safe Mode Via Quick Settings"
+          },
+          {
+            "p": "P11",
+            "name": "Confirm Safe Mode Entry"
+          },
+          {
+            "p": "P19",
+            "name": "Contact Samsung Support"
+          }
+        ],
+        "added": [
+          "Restart Device Using Quick Settings",
+          "Check Charger Issues",
+          "Update Device Software",
+          "Factory Data Reset"
+        ]
+      },
       "model": "ministral-14b-latest",
       "tokens_in": 2022,
-      "tokens_out": 337,
+      "tokens_out": 334,
       "cost_usd": 0.0,
       "attempts": [
-        {
-          "model": "ministral-8b-latest",
-          "ok": true,
-          "error": null,
-          "ms": 4172.7
-        },
         {
           "model": "ministral-14b-latest",
           "ok": true,
           "error": null,
-          "ms": 4708.9
+          "ms": 4717.5
         }
       ],
       "prompt": "extract.v3"
@@ -954,12 +1235,12 @@
   },
   {
     "stage": "ground",
-    "ms": 379.0,
-    "summary": "27 of 27 steps grounded, 0 dropped",
+    "ms": 91.5,
+    "summary": "35 of 35 steps grounded, 0 dropped",
     "detail": {
       "threshold": 0.75,
-      "proposed_steps": 27,
-      "kept_steps": 27,
+      "proposed_steps": 35,
+      "kept_steps": 35,
       "coverage": 1.0,
       "coverage_by_intent": {
         "0": 1.0
@@ -980,7 +1261,7 @@
           ],
           "screen_path": null,
           "intent_verb": null,
-          "description": "It will improve touch accuracy",
+          "description": "It will reduce interference",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1025,7 +1306,7 @@
           ],
           "screen_path": "Settings > Display > Touch sensitivity",
           "intent_verb": "enable",
-          "description": "It will adjust sensitivity levels",
+          "description": "It will improve responsiveness",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1054,13 +1335,13 @@
           ],
           "screen_path": null,
           "intent_verb": "restart",
-          "description": "It will clear minor software glitches",
+          "description": "It will refresh system processes",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Restart Device Normally"
+          "name": "Restart Device via Power Button"
         },
         {
           "steps": [
@@ -1169,11 +1450,19 @@
               ],
               "grounded": true,
               "grounding_score": 1.0
+            },
+            {
+              "text": "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began.",
+              "src_ids": [
+                "S42"
+              ],
+              "grounded": true,
+              "grounding_score": 0.98
             }
           ],
           "screen_path": null,
           "intent_verb": "visit",
-          "description": "It will isolate third-party app issues",
+          "description": "It will check third-party app conflicts",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1193,14 +1482,75 @@
             }
           ],
           "screen_path": null,
-          "intent_verb": "visit",
-          "description": "It will get expert assistance",
+          "intent_verb": null,
+          "description": "It will get expert help",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
           "name": "Contact Samsung Support"
+        },
+        {
+          "steps": [
+            {
+              "text": "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+              "src_ids": [
+                "S21"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap the Power icon.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Restart.",
+              "src_ids": [
+                "S22"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "Tap Restart again to confirm.",
+              "src_ids": [
+                "S23"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            },
+            {
+              "text": "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
+              "src_ids": [
+                "S24"
+              ],
+              "grounded": true,
+              "grounding_score": 0.99
+            },
+            {
+              "text": "Once the device turns off, press the Power button or Side button again to turn it back on.",
+              "src_ids": [
+                "S25"
+              ],
+              "grounded": true,
+              "grounding_score": 1.0
+            }
+          ],
+          "screen_path": null,
+          "intent_verb": "restart",
+          "description": "It will restart Device Using Quick Settings",
+          "category": "manual",
+          "disruption_rank": 0,
+          "depends_on": [],
+          "link": null,
+          "intent_index": 0,
+          "name": "Restart Device Using Quick Settings"
         },
         {
           "steps": [
@@ -1236,16 +1586,24 @@
           ],
           "screen_path": null,
           "intent_verb": null,
-          "description": "It will check for the latest updates",
+          "description": "It will update Device Software",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
           "link": null,
           "intent_index": 0,
-          "name": "Software Updates"
+          "name": "Update Device Software"
         },
         {
           "steps": [
+            {
+              "text": "Before proceeding, back up your personal data to avoid losing it.",
+              "src_ids": [
+                "S46"
+              ],
+              "grounded": true,
+              "grounding_score": 0.98
+            },
             {
               "text": "Navigate to and open Settings.",
               "src_ids": [
@@ -1305,7 +1663,7 @@
           ],
           "screen_path": "Settings > General management > Reset > Factory data reset",
           "intent_verb": "reset",
-          "description": "It will restore the factory settings",
+          "description": "It will factory Data Reset",
           "category": "manual",
           "disruption_rank": 0,
           "depends_on": [],
@@ -1318,8 +1676,8 @@
   },
   {
     "stage": "resolve",
-    "ms": 70.9,
-    "summary": "3 catalog, 1 dummy, 6 manual",
+    "ms": 47.5,
+    "summary": "3 catalog, 1 dummy, 7 manual",
     "detail": {
       "links": [
         {
@@ -1356,7 +1714,7 @@
           ]
         },
         {
-          "action": "Restart Device Normally",
+          "action": "Restart Device via Power Button",
           "screen_path": null,
           "intent_verb": "restart",
           "tier": "manual",
@@ -1424,7 +1782,17 @@
         {
           "action": "Contact Samsung Support",
           "screen_path": null,
-          "intent_verb": "visit",
+          "intent_verb": null,
+          "tier": "manual",
+          "node_id": null,
+          "entry_id": null,
+          "confidence": 0.0,
+          "candidates": []
+        },
+        {
+          "action": "Restart Device Using Quick Settings",
+          "screen_path": null,
+          "intent_verb": "restart",
           "tier": "manual",
           "node_id": null,
           "entry_id": null,
@@ -1442,7 +1810,7 @@
           "candidates": []
         },
         {
-          "action": "Software Updates",
+          "action": "Update Device Software",
           "screen_path": null,
           "intent_verb": null,
           "tier": "manual",
@@ -1478,19 +1846,19 @@
       "counts": {
         "catalog": 3,
         "dummy": 1,
-        "manual": 6
+        "manual": 7
       }
     }
   },
   {
     "stage": "compile",
-    "ms": 7.2,
-    "summary": "1 goal(s), 10 actions, 0 URL leaks, schema valid",
+    "ms": 7.3,
+    "summary": "1 goal(s), 11 actions, 0 URL leaks, schema valid",
     "detail": {
       "score_inputs": [
         {
           "intent_index": 0,
-          "title": "Touchscreen lag issues",
+          "title": "Touchscreen lag delay",
           "score": 0.86,
           "relevance": 0.64,
           "grounding_coverage": 1.0,
@@ -1501,7 +1869,7 @@
       "merged": [],
       "dropped_intents": [],
       "goals": 1,
-      "actions": 10,
+      "actions": 11,
       "deduped": [],
       "url_leaks": 0,
       "schema_valid": true,
@@ -1511,17 +1879,17 @@
   },
   {
     "stage": "done",
-    "ms": 5221.4,
-    "summary": "1 goal(s), 10 action(s) in 5221.4 ms (cold)",
+    "ms": 4898.6,
+    "summary": "1 goal(s), 11 action(s) in 4898.6 ms (cold)",
     "detail": {
       "contexts": [
         {
-          "goal": "Follow these steps to perform this Touchscreen Responsiveness Problems Troubleshooting.",
-          "title": "Touchscreen lag issues",
+          "goal": "Follow these steps to perform this Touchscreen Responsiveness Issues Troubleshooting.",
+          "title": "Touchscreen lag delay",
           "actions": [
             {
               "actionName": "Remove Damaged Screen Protector",
-              "description": "It will improve touch accuracy",
+              "description": "It will reduce interference on your device",
               "stepGroups": [
                 {
                   "steps": [
@@ -1535,7 +1903,7 @@
             },
             {
               "actionName": "Enable Touch Sensitivity",
-              "description": "It will adjust sensitivity levels",
+              "description": "It will improve responsiveness on your device",
               "stepGroups": [
                 {
                   "steps": [
@@ -1625,7 +1993,7 @@
             },
             {
               "actionName": "Contact Samsung Support",
-              "description": "It will get expert assistance",
+              "description": "It will get expert help",
               "stepGroups": [
                 {
                   "steps": [
@@ -1638,8 +2006,8 @@
               "category": "manual"
             },
             {
-              "actionName": "Restart Device Normally",
-              "description": "It will clear minor software glitches",
+              "actionName": "Restart Device Via Power Button",
+              "description": "It will refresh system processes",
               "stepGroups": [
                 {
                   "steps": [
@@ -1653,15 +2021,17 @@
               "category": "critical"
             },
             {
-              "actionName": "Enter Safe Mode",
-              "description": "It will isolate third-party app issues",
+              "actionName": "Restart Device Using Quick Settings",
+              "description": "It will restart device using quick settings",
               "stepGroups": [
                 {
                   "steps": [
-                    "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
-                    "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
-                    "Touch and hold Power off.",
-                    "Tap Safe mode."
+                    "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+                    "Tap the Power icon.",
+                    "Tap Restart.",
+                    "Tap Restart again to confirm.",
+                    "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
+                    "Once the device turns off, press the Power button or Side button again to turn it back on."
                   ],
                   "actionableDeeplink": null,
                   "validationDeeplink": null
@@ -1670,8 +2040,26 @@
               "category": "critical"
             },
             {
-              "actionName": "Software Updates",
-              "description": "It will check for the latest updates",
+              "actionName": "Enter Safe Mode",
+              "description": "It will check third-party app conflicts",
+              "stepGroups": [
+                {
+                  "steps": [
+                    "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
+                    "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
+                    "Touch and hold Power off.",
+                    "Tap Safe mode.",
+                    "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began."
+                  ],
+                  "actionableDeeplink": null,
+                  "validationDeeplink": null
+                }
+              ],
+              "category": "critical"
+            },
+            {
+              "actionName": "Update Device Software",
+              "description": "It will update device software",
               "stepGroups": [
                 {
                   "steps": [
@@ -1685,10 +2073,11 @@
             },
             {
               "actionName": "Factory Data Reset",
-              "description": "It will restore the factory settings",
+              "description": "It will factory data reset",
               "stepGroups": [
                 {
                   "steps": [
+                    "Before proceeding, back up your personal data to avoid losing it.",
                     "Navigate to and open Settings.",
                     "Tap General management.",
                     "Tap Reset.",
@@ -1708,14 +2097,16 @@
         }
       ],
       "meta": {
-        "latency_ms": 5221.4,
+        "latency_ms": 4898.6,
         "cache_hit": false,
         "cache_tier": null,
         "model": "ministral-14b-latest",
-        "cost_usd": 0.0,
-        "trace_id": "t_6f2172332e",
+        "cost_usd": 0.000443,
+        "trace_id": "t_0e50051040",
         "fallback": null,
-        "source": null
+        "source": null,
+        "reason": null,
+        "message": null
       }
     }
   }

@@ -1,12 +1,12 @@
 {
   "contexts": [
     {
-      "goal": "Follow these steps to perform this Touchscreen Responsiveness Problems Troubleshooting.",
-      "title": "Touchscreen lag issues",
+      "goal": "Follow these steps to perform this Touchscreen Responsiveness Issues Troubleshooting.",
+      "title": "Touchscreen lag delay",
       "actions": [
         {
           "actionName": "Remove Damaged Screen Protector",
-          "description": "It will improve touch accuracy",
+          "description": "It will reduce interference on your device",
           "stepGroups": [
             {
               "steps": [
@@ -20,7 +20,7 @@
         },
         {
           "actionName": "Enable Touch Sensitivity",
-          "description": "It will adjust sensitivity levels",
+          "description": "It will improve responsiveness on your device",
           "stepGroups": [
             {
               "steps": [
@@ -110,7 +110,7 @@
         },
         {
           "actionName": "Contact Samsung Support",
-          "description": "It will get expert assistance",
+          "description": "It will get expert help",
           "stepGroups": [
             {
               "steps": [
@@ -123,8 +123,8 @@
           "category": "manual"
         },
         {
-          "actionName": "Restart Device Normally",
-          "description": "It will clear minor software glitches",
+          "actionName": "Restart Device Via Power Button",
+          "description": "It will refresh system processes",
           "stepGroups": [
             {
               "steps": [
@@ -138,15 +138,17 @@
           "category": "critical"
         },
         {
-          "actionName": "Enter Safe Mode",
-          "description": "It will isolate third-party app issues",
+          "actionName": "Restart Device Using Quick Settings",
+          "description": "It will restart device using quick settings",
           "stepGroups": [
             {
               "steps": [
-                "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
-                "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
-                "Touch and hold Power off.",
-                "Tap Safe mode."
+                "For devices with a Side button: Swipe down from the top of the screen with two fingers to open the Quick settings panel.",
+                "Tap the Power icon.",
+                "Tap Restart.",
+                "Tap Restart again to confirm.",
+                "If the touchscreen is completely unresponsive, force a restart by pressing and holding the Volume down button and the Power button (or Side button) simultaneously for about 10 seconds.",
+                "Once the device turns off, press the Power button or Side button again to turn it back on."
               ],
               "actionableDeeplink": null,
               "validationDeeplink": null
@@ -155,8 +157,26 @@
           "category": "critical"
         },
         {
-          "actionName": "Software Updates",
-          "description": "It will check for the latest updates",
+          "actionName": "Enter Safe Mode",
+          "description": "It will check third-party app conflicts",
+          "stepGroups": [
+            {
+              "steps": [
+                "Press and hold the Power button (or Side button) and the Volume down button at the same time.",
+                "Alternatively, swipe down from the top of the screen with two fingers and tap the Power icon.",
+                "Touch and hold Power off.",
+                "Tap Safe mode.",
+                "Once in Safe mode, try removing any third-party apps that were recently updated or installed around the time the issue began."
+              ],
+              "actionableDeeplink": null,
+              "validationDeeplink": null
+            }
+          ],
+          "category": "critical"
+        },
+        {
+          "actionName": "Update Device Software",
+          "description": "It will update device software",
           "stepGroups": [
             {
               "steps": [
@@ -170,10 +190,11 @@
         },
         {
           "actionName": "Factory Data Reset",
-          "description": "It will restore the factory settings",
+          "description": "It will factory data reset",
           "stepGroups": [
             {
               "steps": [
+                "Before proceeding, back up your personal data to avoid losing it.",
                 "Navigate to and open Settings.",
                 "Tap General management.",
                 "Tap Reset.",
@@ -193,13 +214,15 @@
     }
   ],
   "meta": {
-    "latency_ms": 5221.4,
+    "latency_ms": 4898.6,
     "cache_hit": false,
     "cache_tier": null,
     "model": "ministral-14b-latest",
-    "cost_usd": 0.0,
-    "trace_id": "t_6f2172332e",
+    "cost_usd": 0.000443,
+    "trace_id": "t_0e50051040",
     "fallback": null,
-    "source": null
+    "source": null,
+    "reason": null,
+    "message": null
   }
 }

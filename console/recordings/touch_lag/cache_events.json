@@ -2,7 +2,7 @@
   "exact": {
     "event": {
       "stage": "cache",
-      "ms": 8.5,
+      "ms": 10.0,
       "summary": "Exact hit from the cache",
       "detail": {
         "hit": true,
@@ -15,7 +15,7 @@
           "symptom": "slow",
           "intent": "fault"
         },
-        "key": "33778410d41a120c",
+        "key": "22de56238d93bb46",
         "siis_hash": "aa71c2c2cb988681",
         "siis_title": "Touchscreen issues on a Galaxy phone or tablet",
         "query": "My Galaxy S22 screen inputs are delayed and the touch responsiveness is laggy, causing a noticeable delay when I try to interact with the phone.",
@@ -31,20 +31,22 @@
       }
     },
     "meta": {
-      "latency_ms": 8.6,
+      "latency_ms": 10.1,
       "cache_hit": true,
       "cache_tier": "exact",
       "model": null,
       "cost_usd": 0.0,
-      "trace_id": "t_13f981878c",
+      "trace_id": "t_690c0f441f",
       "fallback": null,
-      "source": null
+      "source": null,
+      "reason": null,
+      "message": null
     }
   },
   "semantic": {
     "event": {
       "stage": "cache",
-      "ms": 17.6,
+      "ms": 15.9,
       "summary": "Semantic hit from the cache",
       "detail": {
         "hit": true,
@@ -57,7 +59,7 @@
           "symptom": "slow",
           "intent": "fault"
         },
-        "key": "33778410d41a120c",
+        "key": "22de56238d93bb46",
         "siis_hash": "aa71c2c2cb988681",
         "siis_title": "Touchscreen issues on a Galaxy phone or tablet",
         "query": "Screen input on my Galaxy S22 is delayed and touch responsiveness is sluggish, producing a noticeable lag whenever I interact with the phone.",
@@ -73,14 +75,16 @@
       }
     },
     "meta": {
-      "latency_ms": 17.6,
+      "latency_ms": 16.0,
       "cache_hit": true,
       "cache_tier": "semantic",
       "model": null,
       "cost_usd": 0.0,
-      "trace_id": "t_1283e235ca",
+      "trace_id": "t_6c78432826",
       "fallback": null,
-      "source": null
+      "source": null,
+      "reason": null,
+      "message": null
     },
     "paraphrase_id": "para_21_01"
   }

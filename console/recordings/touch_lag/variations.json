@@ -1,31 +1,31 @@
 {
   "kept": [
-    "Formal: I’ve noticed a significant delay in touch response on my Galaxy S22, making interactions sluggish and unresponsive.",
-    "Casual: Ugh, my Galaxy S22 is so slow—tapping feels like it’s stuck in slow motion, it’s annoying!",
-    "Keyword-only: Galaxy S22 touch lag delay unresponsive screen",
-    "Frustrated: This Galaxy S22 is useless! Every tap feels like it’s taking forever—what’s wrong with it?!",
-    "Typo-inclusive: My samsung s22 is super laggy when i try 2 touch stuff, it’s like a ghost phone!",
-    "Formal: The Galaxy S22 exhibits delayed input processing, resulting in poor touch responsiveness and operational inefficiency.",
-    "Casual: My phone’s screen is acting up—presses don’t register right, feels like I’m playing a glitchy game.",
-    "Frustrated: Why is my Galaxy S22 acting like a brick?! Every swipe is delayed—this is ridiculous!",
-    "Typo-inclusive: My gxlxy s22 is so slow, can’t even click buttons fast, it’s a mess!",
-    "Casual: My S22 is being extra—taps feel delayed, like it’s stuck in a time warp, what’s the deal?"
+    "I am experiencing an issue where my Galaxy S22 display exhibits significant input latency and poor touch responsiveness.",
+    "It is my formal request to report that the interface on my Samsung device is failing to register taps promptly.",
+    "my galaxy s22 screen is super slow and lagging when i touch it, kinda annoying.",
+    "anyone else having trouble with their s22 touch screen being super laggy lately?",
+    "galaxy s22 touch screen lag delay input",
+    "s22 laggy display unresponsive touch",
+    "My phone screen is driving me crazy! It takes forever to register a tap and keeps freezing up.",
+    "my s22 scren is very slw and touch inputs ar nt workin right.",
+    "My S22 interaction response time is quite problematic and hinders daily operation.",
+    "s22 screen inputs delayed responsiveness"
   ],
   "dropped": [
     {
-      "text": "Formal: My Galaxy S22 suffers from noticeable input latency, impairing its usability and responsiveness.",
-      "reason": "over_limit",
-      "jaccard": 0.19
-    },
-    {
-      "text": "Frustrated: This phone is a joke! Every touch feels like it’s fighting me—when will Samsung fix this?!",
-      "reason": "over_limit",
+      "text": "I seriously hate how unresponsive this handset is. My taps just don't happen when I need them to!",
+      "reason": "changes_the_problem",
       "jaccard": 0.14
     },
     {
-      "text": "s22 screen inputs delayed responsiveness",
-      "reason": "over_limit",
-      "jaccard": 0.21
+      "text": "plz help my galxy s22 is lagin bad and the screen wont respnd to my finger.",
+      "reason": "changes_the_problem",
+      "jaccard": 0.22
+    },
+    {
+      "text": "The touch performance on this unit is extremely sluggish, creating persistent synchronization errors.",
+      "reason": "changes_the_problem",
+      "jaccard": 0.09
     },
     {
       "text": "screen slow fix",
@@ -84,9 +84,9 @@
     }
   ],
   "candidates": 12,
-  "model": "ministral-8b-latest",
-  "tokens_in": 208,
-  "tokens_out": 348,
-  "cost_usd": 0.0,
+  "model": "gemini-3.1-flash-lite",
+  "tokens_in": 210,
+  "tokens_out": 260,
+  "cost_usd": 0.000443,
   "prompt": "variations.v1"
 }

@@ -4,12 +4,18 @@ import logging
 from contextlib import asynccontextmanager
 
 from anyio import to_thread
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Request, Response
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.cache import no_siis
+from app.compiler import messages
 from app.config import settings
+from app.models import StageEvent, StageName
 from app.obs import readiness
+from app.pipeline import run as pipeline_run
 from app.pipeline import segment
 from app.routes import device, metrics, stream, troubleshoot
 
@@ -33,6 +39,25 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="OneClick", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.exception_handler(RequestValidationError)
+async def unreadable_request(request: Request, exc: RequestValidationError):
+    """Hard rule 4 for bodies the lenient request model cannot read at all (not JSON, not an object): the
+    troubleshoot endpoints still answer 200 with a schema-valid, empty body that says why. Other routes
+    keep FastAPI's 422, and so does a bad query parameter (a developer's mistake, not a caller's body)."""
+    path = request.url.path
+    body_only = all((e.get("loc") or ("",))[0] == "body" for e in exc.errors())
+    if not path.startswith("/v1/troubleshoot") or not body_only:
+        return await request_validation_exception_handler(request, exc)
+    body = pipeline_run.empty_body(None, reason=messages.INVALID_REQUEST)
+    if path.endswith("/stream"):
+        done = StageEvent(stage=StageName.done, summary="The request could not be read", detail=body)
+        frame = f"event: done\ndata: {done.model_dump_json()}\n\n"
+        return StreamingResponse(iter([frame]), media_type="text/event-stream")
+    headers = {"X-Cache-Hit": "false", "X-Cache-Tier": "none"}
+    out = body if settings.include_meta else {"contexts": []}
+    return JSONResponse(out, status_code=200, headers=headers)
 
 
 @app.get("/health")

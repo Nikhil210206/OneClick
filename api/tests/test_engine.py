@@ -418,3 +418,50 @@ def test_endpoint_is_always_200_and_schema_valid():
         ContextDeeplinkResponse.model_validate(r.json())
     r = client.post("/v1/troubleshoot", json={"query": "my washing machine drum makes a loud grinding noise"})
     assert r.json()["contexts"] == [] and r.json()["meta"]["fallback"] == "no_siis_context"
+
+
+def test_typos_are_put_right_for_matching_only():
+    """pipeline/spell.py: the cache matches "screne stays blnak" as the blank-screen complaint it is."""
+    from app.pipeline.slots import extract_slots
+    from app.pipeline.spell import correct_typos
+
+    assert correct_typos("my galaxy s22 screne stays blnak") == "my galaxy s22 screen stays blank"
+    assert correct_typos("a16 dsplay went balck by itsself") == "a16 display went black by itself"
+    assert correct_typos("the batery drians super fast") == "the battery drains super fast"
+    # known words, rare real words and model names are left alone
+    assert correct_typos("Touchscreen lagging after the update") == "Touchscreen lagging after the update"
+    assert correct_typos("Galaxy S22 One UI") == "Galaxy S22 One UI"
+    # the lost symptom comes back, so the slot guard is not left wide open
+    assert (
+        extract_slots("my galaxy s22 screne stays blnak").symptom
+        == extract_slots("screen stays blank").symptom
+    )
+
+
+def test_typo_correction_can_be_switched_off(monkeypatch):
+    from app.config import settings
+    from app.pipeline.spell import correct_typos
+
+    monkeypatch.setattr(settings, "cache_typo_correction", False)
+    assert correct_typos("screne stays blnak") == "screne stays blnak"
+
+
+def test_without_a_model_an_article_about_another_part_is_turned_away():
+    """No key (the rules-only answer a judge without keys gets): no model can say the article is unrelated,
+    so the component path alone decides. A camera complaint against an article that never mentions the
+    camera is a no_match with the article_mismatch reason; the same article answers its own question."""
+    from app import cache
+    from app.pipeline.run import run
+
+    article = {
+        "title": "Keeping your Galaxy dry",
+        "content": "# Keeping your Galaxy dry\n## Rinse after salt water\nRinse the device in fresh water and "
+        "dry it with a soft cloth. Wait until the charging port is dry before you charge it.",
+    }
+    cache.clear()
+    body = run("My Galaxy camera app keeps crashing every time I open it to take a photo.", article)
+    assert body["contexts"] == [] and body["meta"]["fallback"] == "no_match"
+    assert body["meta"]["reason"] == "article_mismatch"
+    body = run("My Galaxy got wet in salt water, how do I dry it before charging?", article)
+    assert body["contexts"]
+    cache.clear()

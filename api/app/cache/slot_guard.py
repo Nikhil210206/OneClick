@@ -1,6 +1,7 @@
 """Rejects semantic hits whose lexicon slots contradict the query (black vs cracked)."""
 
 from app.models import Slots
+from app.pipeline.slots import direction
 
 
 def compatible(query: Slots, cached: Slots) -> bool:
@@ -23,3 +24,13 @@ def compatible(query: Slots, cached: Slots) -> bool:
     if query.symptom:
         return query.symptom == cached.symptom
     return True
+
+
+def same_direction(query_text: str, cached_text: str) -> bool:
+    """False when both are configure requests that name opposite directions ("add" vs "remove").
+
+    Read from the texts rather than stored as a slot, so cache entries need no new column: the incoming
+    query against the entry's original query. Either side naming no direction is a wildcard.
+    """
+    wanted, stored = direction(query_text), direction(cached_text)
+    return not (wanted and stored and wanted != stored)

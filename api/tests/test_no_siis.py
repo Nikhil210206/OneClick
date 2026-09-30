@@ -84,6 +84,8 @@ def test_a_kit_question_without_its_article_gets_its_real_plan():
     assert body["meta"]["cache_hit"] and body["meta"]["source"] == "cached_plan"
     assert body["meta"]["fallback"] == "no_siis_context"
     assert body["contexts"] == line["response"]["contexts"]
+    assert body["meta"]["reason"] == "no_article_cached_plan"
+    assert body["meta"]["message"].startswith("No support article was provided.")
 
 
 def test_a_stored_variation_without_an_article_hits_by_meaning():
@@ -120,6 +122,9 @@ def test_nothing_close_means_empty_never_generated():
     for query in (UNRELATED, "my galaxy camera app crashes when I switch to night mode", ""):
         body = ask(query)
         assert body["contexts"] == [] and body["meta"]["fallback"] == "no_siis_context"
+        assert (
+            body["meta"]["reason"] == "no_article" and "Attach the support article" in body["meta"]["message"]
+        )
 
 
 def test_an_article_the_api_received_is_remembered_for_later():

@@ -32,6 +32,7 @@ from app.cache.exact import make_key
 from app.cache.slot_guard import compatible
 from app.config import settings
 from app.models import Slots
+from app.pipeline.spell import correct_typos
 from app.retrieval import dense
 
 _lock = threading.Lock()
@@ -102,7 +103,7 @@ def prewarm() -> dict:
                 if text.strip():
                     rows.append((key, slots, {"contexts": contexts}))
                     texts.append(text)
-    matrix = np.asarray(dense.embed(texts), dtype=np.float32) if texts else None
+    matrix = np.asarray(dense.embed([correct_typos(t) for t in texts]), dtype=np.float32) if texts else None
     with _lock:
         _table_rows[:] = rows
         _table_matrix = matrix
@@ -132,7 +133,7 @@ def lookup_no_siis(norm_query: str, slots: Slots | None = None) -> NoSiisHit | N
     with _lock:
         matrix, rows = _table_matrix, list(_table_rows)
     if matrix is not None and rows:
-        sims = matrix @ np.asarray(dense.embed([norm_query])[0], dtype=np.float32)
+        sims = matrix @ np.asarray(dense.embed([correct_typos(norm_query)])[0], dtype=np.float32)
         for position in np.argsort(-sims):
             score = float(sims[position])
             if score < threshold:
@@ -183,7 +184,7 @@ def find_article(norm_query: str) -> RetrievedArticle | None:
         articles = list(_articles.items())
     if not articles:
         return None
-    query = np.asarray(dense.embed([norm_query])[0], dtype=np.float32)
+    query = np.asarray(dense.embed([correct_typos(norm_query)])[0], dtype=np.float32)
     scored = sorted(
         ((float(np.max(vectors @ query)), h, title, text) for h, (title, text, vectors) in articles),
         reverse=True,

@@ -28,7 +28,9 @@ class Settings(BaseModel):
     # The prompt follows the mode (router.prompt_version): select -> prompt_versions["extract"],
     # rewrite -> prompt_versions["extract_rewrite"].
     extract_model: str = "ministral-14b-latest"
-    extract_fast_model: str = "ministral-8b-latest"  # raced with extract_model; "" disables the race
+    # Raced with extract_model (the console's story page names both). The ladder itself is
+    # extract_models below, which ends with 8B.
+    extract_fast_model: str = "gemini-3.5-flash-lite"
     extract_thinking: str = "low"  # Gemini models only
     # The quality answer wins if it is back by then. 6.0 (the primary's own timeout) since 2026-09-27:
     # measured alone on the 20 kit articles that day, 14B took median 3.9 s, p90 5.9 s, max 7.9 s,
@@ -84,6 +86,12 @@ class Settings(BaseModel):
     # words include misspellings that happen to be words ("blak"); any word can still add support.
     mismatch_stem_chars: int = 5
     mismatch_max_word_rank: int = 10_000
+    # Second path (mismatch.py `component_absent`): a fault complaint with a symptom names a part the
+    # article never mentions ("camera app crashes" against the touchscreen article, which shares "app").
+    # Still needs call C's `unrelated`. Measured 2026-09-30 (eval/tools/measure_mismatch.py, no LLM): 0 fires
+    # on 295 matched pairs (kit 20, paraphrases 200, symptom/intent near misses 40, unseen 15); on 615
+    # cross-domain pairs the deterministic half now fires on 57% (word path alone 34%).
+    mismatch_component_path: bool = True
     # Requests per minute the free plan allows per model (x-ratelimit-limit-req-minute, 2026-09-27).
     # Call C uses the primary only while it has made fewer than (limit - coverage_leave_primary) requests
     # in the minute, so call B keeps 14B to itself under load: a burst of cold requests with call C on
@@ -109,7 +117,18 @@ class Settings(BaseModel):
     # with no key, on cooldown or at its request limit is skipped without a call. An id is bare
     # (gemini-* goes to Google, everything else to Mistral) or "provider:model" for a provider in
     # llm_providers ("gemini:" for any model on Google's API).
-    extract_models: list[str] = Field(default_factory=lambda: _env_models("ONECLICK_EXTRACT_MODELS"))
+    # Call B, decided 2026-09-30 (3 runs x kit 20 + unseen 15, judge gemini-3.5-flash-lite): 14B kit 2.60 in
+    # every run, unseen 2.76; flash-lite kit 2.40 (2.25-2.60), unseen 2.76, about 8B's level. 14B races
+    # flash-lite and wins when back within extract_prefer_deadline_s; flash-lite is the racer so that a
+    # Mistral outage or limit still leaves a model from another provider, and 8B steps into the race when
+    # either is skipped (no Gemini key, cooldown, a spent daily quota). gemini-3.5-flash is out: its free
+    # tier is 20 requests a day per project.
+    extract_models: list[str] = Field(
+        default_factory=lambda: (
+            _env_models("ONECLICK_EXTRACT_MODELS")
+            or ["ministral-14b-latest", "gemini-3.5-flash-lite", "ministral-8b-latest"]
+        )
+    )
     coverage_models: list[str] = Field(default_factory=lambda: _env_models("ONECLICK_COVERAGE_MODELS"))
     variations_models: list[str] = Field(
         default_factory=lambda: (
@@ -211,6 +230,9 @@ class Settings(BaseModel):
     # empty answer is trusted only when this many models gave one and none chose anything: 14B has
     # answered empty once for an article that did fit, while 8B answered it fully.
     extract_empty_votes: int = 2
+    # ...and one of them has to be the ladder's first model (14B): Flash-Lite and 8B alone, with 14B busy,
+    # turned kit row 7 away (2026-09-30). Without it the rules answer stands in.
+    extract_empty_needs_primary: bool = True
     # A selected action whose steps never reach its own setting ("... Tap Storage." for a Clear cache
     # path) takes up to this many following instruction sentences of its section, up to the one that does.
     extract_tail_lookahead: int = 2
@@ -298,6 +320,15 @@ class Settings(BaseModel):
     # 0.70 (a 3.5-point margin over A3's 80%) against 80.5% at 0.75. 0.70 is the lowest value where
     # every hit still serves its own row's plan; at 0.68 a hit starts serving a sibling row's plan.
     cache_sim_threshold: float = 0.70
+    # Misspelt words are put right before a complaint is matched (pipeline/spell.py: slots and cache
+    # embeddings only, never what an LLM reads). A word is known when wordninja ranks it within
+    # typo_known_max_rank, or the kit, the catalog or the slot lexicon uses it; an unknown word of at least
+    # typo_min_len letters becomes the known word one edit away, or a lexicon word two edits away when it
+    # has at least typo_edits2_min_len letters.
+    cache_typo_correction: bool = True
+    typo_min_len: int = 4
+    typo_known_max_rank: int = 30_000
+    typo_edits2_min_len: int = 6
     sqlite_path: str = os.getenv("ONECLICK_SQLITE", "cache.sqlite")
 
     # Where data/kit and data/build live. Set ONECLICK_DATA in the container.
@@ -314,6 +345,9 @@ class Settings(BaseModel):
 
     # Response (ADR-006)
     include_meta: bool = True
+    # A complaint longer than this is cut before anything reads it: a hostile 1 MB query must not cost
+    # the embedder or an LLM seconds. The longest kit complaint (a three-item list) is ~600 characters.
+    query_max_chars: int = 2000
 
     # Console stream (Vishaal): True replays data/fixtures instead of running the pipeline (demo only)
     stream_mock: bool = False

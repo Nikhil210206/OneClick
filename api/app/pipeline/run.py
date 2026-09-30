@@ -20,6 +20,7 @@ from concurrent.futures import wait
 from app import cache
 from app.cache import exact as exact_tier
 from app.cache import no_siis, store
+from app.compiler import messages
 from app.compiler.compile import compile_with_report
 from app.compiler.validate import validate_with_report
 from app.config import settings
@@ -37,10 +38,10 @@ from app.models import StageName as S
 from app.obs import metrics, readiness
 from app.obs import trace as traces
 from app.obs.logging import log_request
-from app.pipeline import capacity
+from app.pipeline import capacity, mismatch
 from app.pipeline.categorize import categorize
 from app.pipeline.enrich import enrich_rules, enrich_with_report, finish_variations, start_variations
-from app.pipeline.extract import extract_rules, extract_with_topics
+from app.pipeline.extract import extract_rules, extract_with_topics, judge_without_verdict
 from app.pipeline.ground import ground_with_report
 from app.pipeline.multi_intent import dedupe_with_report
 from app.pipeline.normalize import clean_siis, display_query, normalize_query, siis_title
@@ -91,13 +92,16 @@ class _Run:
         fallback: str | None = None,
         latency: float | None = None,
         source: str | None = None,
+        reason: str | None = None,
     ) -> StageEvent:
         """The final frame; also records the trace and the metrics window (once per request).
 
         `latency` is the time the answer was ready; results.jsonl waits for background variations after
-        that, and the wait is not part of what a caller of the API would see.
+        that, and the wait is not part of what a caller of the API would see. `reason` (meta.reason and
+        meta.message) is derived from the fallback and source when the caller has nothing more precise.
         """
         latency = self.elapsed_ms() if latency is None else latency
+        reason = reason or _reason(contexts, fallback, source)
         model = self.models[-1] if self.models else ("rules" if tier is None and contexts else None)
         meta = ResponseMeta(
             latency_ms=latency,
@@ -108,6 +112,8 @@ class _Run:
             trace_id=self.trace.trace_id,
             fallback=fallback,
             source=source,
+            reason=reason,
+            message=messages.message(reason),
         )
         self.trace.cache_tier = tier
         self.trace.model = meta.model
@@ -131,6 +137,21 @@ class _Run:
             summary=summary,
             detail={"contexts": contexts, "meta": meta.model_dump(mode="json")},
         )
+
+
+def _reason(contexts: list, fallback: str | None, source: str | None) -> str | None:
+    """meta.reason when the caller named none: why an answer is empty, or where a no-article one came from."""
+    if fallback == FALLBACK_NO_SIIS:
+        if not contexts:
+            return messages.NO_ARTICLE
+        return (
+            messages.NO_ARTICLE_RETRIEVED
+            if source == "retrieved_article"
+            else messages.NO_ARTICLE_CACHED_PLAN
+        )
+    if not contexts:
+        return messages.NO_GROUNDED_FIX
+    return None
 
 
 def _llm_configured() -> bool:
@@ -182,7 +203,9 @@ def _serve_hit(
         yield run.done(body["contexts"], tier=hit.tier, fallback=FALLBACK_NO_SIIS, source="cached_plan")
         return
     fallback = None if body["contexts"] else FALLBACK_NO_MATCH
-    yield run.done(body["contexts"], tier=hit.tier, fallback=fallback)
+    # A repeat carries the reason the first answer had (a rules-only plan says so every time).
+    reason = (hit.plan or {}).get("reason") if body["contexts"] else None
+    yield run.done(body["contexts"], tier=hit.tier, fallback=fallback, reason=reason)
 
 
 # ---- cold path --------------------------------------------------------------------------------------
@@ -328,7 +351,7 @@ def _cold(
     else:
         try:
             actions, topics, info = extract_with_topics(
-                intents, sentences, sections=sections, query=query_text
+                intents, sentences, sections=sections, query=query_text, article=siis_clean
             )
         except Exception as exc:  # noqa: BLE001
             run.degraded.append(f"extract:{type(exc).__name__}")
@@ -340,6 +363,13 @@ def _cold(
     if info.get("degraded"):
         run.degraded.append("extract:llm_failed")
     rules_only = info.get("source") == "rules"
+    if rules_only and actions:
+        try:
+            actions, topics, info = judge_without_verdict(
+                actions, topics, info, query_text, sentences, siis_clean
+            )
+        except Exception as exc:  # noqa: BLE001 - the rules answer stands
+            run.degraded.append(f"mismatch:{type(exc).__name__}")
     if info.get("intents"):
         # Select mode: call B also split the complaint into problems; those become the intents, and
         # section relevance is scored against them (sentence ids are unchanged).
@@ -427,11 +457,17 @@ def _cold(
     )
 
     fallback = None if contexts else FALLBACK_NO_MATCH
+    if not contexts:
+        gate = info.get("mismatch") or {}
+        reason = messages.ARTICLE_MISMATCH if gate.get("acted") else _empty_reason(query_text, siis_clean)
+    else:
+        reason = messages.RULES_ONLY if rules_only else None
     if retrieved is not None:
         # The article was matched, not given: the score says how sure that match is.
         for goal in contexts:
             goal["score"] = round(min(1.0, max(0.0, goal["score"] * retrieved.similarity)), 2)
         fallback = FALLBACK_NO_SIIS
+        reason = None  # derived in done(): where a no-article answer came from matters more
     answer_ready_ms = run.elapsed_ms()
     if future is not None:
         if wait_variations:
@@ -453,7 +489,12 @@ def _cold(
                 siis_hash=siis_hash,
                 slots=slots,
                 # A rules-only answer while a model is configured is marked, so it can be retried later.
-                plan={"contexts": contexts, **({"degraded": True} if degraded else {})},
+                plan={
+                    "contexts": contexts,
+                    "prompt_version": settings.prompt_version,
+                    **({"degraded": True} if degraded else {}),
+                    **({"reason": reason} if reason else {}),
+                },
                 query_texts=texts,
             )
 
@@ -471,7 +512,18 @@ def _cold(
     if sink is not None:
         sink["variations"] = variations
     source = "retrieved_article" if retrieved is not None else None
-    yield run.done(contexts, fallback=fallback, latency=answer_ready_ms, source=source)
+    yield run.done(contexts, fallback=fallback, latency=answer_ready_ms, source=source, reason=reason)
+
+
+def _empty_reason(query_text: str, siis_clean: str) -> str:
+    """Why an answer that is already empty is empty. Every model chose nothing, or nothing was grounded:
+    when the article also shares no word, or never mentions the part the complaint names (mismatch.py),
+    "does not match" is the truer sentence. Only the message depends on this, never the answer."""
+    try:
+        unrelated = mismatch.check([query_text], [siis_clean])["unrelated"]
+    except Exception:  # noqa: BLE001 - the plainer sentence is still true
+        unrelated = False
+    return messages.ARTICLE_MISMATCH if unrelated else messages.NO_GROUNDED_FIX
 
 
 def _cold_guarded(run: _Run, *args, **kwargs):
@@ -551,7 +603,7 @@ def _run_stream(
         if not (slots.component or slots.symptom or recognisable(norm_query, siis_clean)):
             # Nothing in the complaint can be read, so any plan would be a guess: no_match, no LLM call.
             run.degraded.append("query:unrecognisable")
-            yield run.done([], fallback=FALLBACK_NO_MATCH)
+            yield run.done([], fallback=FALLBACK_NO_MATCH, reason=messages.UNREADABLE_QUERY)
             return
         yield from _cold_guarded(
             run,
@@ -639,6 +691,19 @@ def _lookup(norm_query: str, slots: Slots, siis_hash: str | None):
     return hit
 
 
+def empty_body(siis: object, reason: str | None = None) -> dict:
+    """The last-resort answer (hard rule 4): no contexts, and the fallback and reason a missing article or
+    a failure gets. Used where the pipeline itself could not run (a malformed request, an exception)."""
+    try:
+        has_article = bool(clean_siis(siis)[0]) if isinstance(siis, dict | str) else False
+    except Exception:  # noqa: BLE001
+        has_article = False
+    fallback = FALLBACK_NO_MATCH if has_article or reason else FALLBACK_NO_SIIS
+    reason = reason or (messages.NO_GROUNDED_FIX if has_article else messages.NO_ARTICLE)
+    meta = ResponseMeta(fallback=fallback, reason=reason, message=messages.message(reason))
+    return {"contexts": [], "meta": meta.model_dump(mode="json")}
+
+
 def run(query: str, siis: dict | str | None) -> dict:
     """The response body ({contexts, meta}) for one request. Never raises, never waits for variations."""
     body, _ = _drain(query, siis, wait=False)
@@ -660,8 +725,5 @@ def _drain(query: str, siis: dict | str | None, *, wait: bool) -> tuple[dict, li
         last = event
     variations = sink.get("variations") or variations
     if last is None or last.stage is not S.done:
-        return {
-            "contexts": [],
-            "meta": ResponseMeta(fallback=FALLBACK_NO_MATCH).model_dump(mode="json"),
-        }, variations
+        return empty_body(siis), variations
     return last.detail, variations

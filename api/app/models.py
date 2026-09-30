@@ -113,6 +113,10 @@ class ResponseMeta(BaseModel):
     fallback: str | None = None  # no_match | no_siis_context | None
     # Requests without an article only: where the answer came from (cached_plan | retrieved_article).
     source: str | None = None
+    # Why the answer looks the way it does (compiler/messages.py): a stable code and the sentence for it.
+    # Set on every empty answer and on answers from memory or from the rules extractor; None otherwise.
+    reason: str | None = None
+    message: str | None = None
 
 
 class StageName(str, Enum):

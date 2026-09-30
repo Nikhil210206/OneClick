@@ -5,9 +5,10 @@ import threading
 import numpy as np
 
 from app.cache import store
-from app.cache.slot_guard import compatible
+from app.cache.slot_guard import compatible, same_direction
 from app.config import settings
 from app.models import CacheEntry, Slots
+from app.pipeline.spell import correct_typos
 from app.retrieval import dense
 
 # One row per stored phrasing; _keys[i] says which cache entry row i belongs to.
@@ -33,7 +34,8 @@ def index(entry: CacheEntry) -> None:
     texts = list(dict.fromkeys(t for t in entry.query_texts if t.strip() and t not in seen))
     if not texts:
         return
-    vectors = np.asarray(dense.embed(texts), dtype=np.float32)  # outside the lock: it is the slow part
+    # Misspellings put right on both sides (pipeline/spell.py); _indexed keeps the texts as stored.
+    vectors = np.asarray(dense.embed([correct_typos(t) for t in texts]), dtype=np.float32)  # the slow part
     with _index_lock:
         _matrix = vectors if _matrix is None else np.vstack([_matrix, vectors])
         _keys.extend([entry.key] * len(texts))
@@ -77,7 +79,7 @@ def _search(norm_query: str, slots: Slots, siis_hash, threshold: float) -> tuple
     if matrix is None or not keys:
         return None
 
-    query_vector = np.asarray(dense.embed([norm_query])[0], dtype=np.float32)
+    query_vector = np.asarray(dense.embed([correct_typos(norm_query)])[0], dtype=np.float32)
     similarities = matrix @ query_vector  # rows are normalized, so this is cosine similarity
 
     entries = store.entries()
@@ -90,7 +92,15 @@ def _search(norm_query: str, slots: Slots, siis_hash, threshold: float) -> tuple
             continue
         if siis_hash is not _ANY_ARTICLE and entry.siis_hash != siis_hash:
             continue
+        # A plan made by other prompts (a cache.sqlite kept across a prompt bump) is not served: the exact
+        # tier's key carries the version, and without this check the same query hit its old plan here at
+        # similarity 1.0. Plans stored before plans carried a version (tests, eval scripts) still match.
+        version = (entry.plan or {}).get("prompt_version")
+        if version is not None and version != settings.prompt_version:
+            continue
         if not compatible(slots, entry.slots):  # component, intent, one-sided symptom
+            continue
+        if entry.query_texts and not same_direction(norm_query, entry.query_texts[0]):  # add vs remove
             continue
         store.record_hit(entry.key)
         return entry.plan, entry.key, score
@@ -113,7 +123,7 @@ def best_match(norm_query: str) -> tuple[str | None, float]:
         matrix, keys = _matrix, list(_keys)
     if matrix is None or not keys:
         return None, 0.0
-    query_vector = np.asarray(dense.embed([norm_query])[0], dtype=np.float32)
+    query_vector = np.asarray(dense.embed([correct_typos(norm_query)])[0], dtype=np.float32)
     similarities = matrix @ query_vector
     position = int(np.argmax(similarities))
     return keys[position], float(similarities[position])

@@ -71,6 +71,33 @@ def siis_text(siis: dict | str | None) -> str:
     return "\n".join(v for k, v in siis.items() if k != "title" and isinstance(v, str))
 
 
+def coerce_query(value: object, max_chars: int) -> str:
+    """Any JSON value as the complaint (hard rule 4: a malformed request still gets an answer).
+
+    null or an object is "", a number or boolean its text, a list its string items joined; the result
+    is cut to `max_chars`.
+    """
+    if isinstance(value, str):
+        text = value
+    elif isinstance(value, bool | int | float):
+        text = str(value)
+    elif isinstance(value, list):
+        text = " ".join(v for v in value if isinstance(v, str))
+    else:
+        text = ""
+    return text[:max_chars]
+
+
+def coerce_siis(value: object) -> dict | str | None:
+    """Any JSON value as the article: a list of articles (strings or {title, content}) becomes their
+    texts joined; anything else that is not a string or an object is no article."""
+    if value is None or isinstance(value, dict | str):
+        return value
+    if isinstance(value, list):
+        return "\n\n".join(t for t in (siis_text(v) for v in value) if t.strip())
+    return None
+
+
 def siis_title(siis: dict | str | None) -> str | None:
     title = siis.get("title") if isinstance(siis, dict) else None
     return scrub(title) if isinstance(title, str) and title.strip() else None

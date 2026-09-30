@@ -22,7 +22,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 
 from app.config import settings
-from app.models import ResponseMeta, StageEvent, StageName
+from app.models import StageEvent, StageName
 from app.pipeline import run as pipeline_run
 from app.routes.troubleshoot import TroubleshootRequest
 
@@ -77,8 +77,7 @@ def _mark_mock(ev: StageEvent) -> StageEvent:
 
 def _no_scenario(req: TroubleshootRequest) -> list[StageEvent]:
     """Honest empty answer: the mock never invents a plan for a query it has no fixture for."""
-    fallback = "no_siis_context" if req.siis_response is None else "no_match"
-    meta = ResponseMeta(trace_id="t_mock_none", fallback=fallback).model_dump(mode="json")
+    meta = {**pipeline_run.empty_body(req.siis_response)["meta"], "trace_id": "t_mock_none"}
     return [
         StageEvent(
             stage=StageName.cache,

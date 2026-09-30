@@ -192,6 +192,8 @@ def _race_clients(delays: dict[str, float], answers: dict[str, dict]):
 
 @pytest.fixture
 def race(monkeypatch, keys):
+    """The race mechanics on a two-Mistral ladder (the shipped one races Gemini second)."""
+    monkeypatch.setattr(settings, "extract_models", [])
     monkeypatch.setattr(settings, "extract_model", "ministral-14b-latest")
     monkeypatch.setattr(settings, "extract_fast_model", "ministral-8b-latest")
     monkeypatch.setattr(settings, "extract_prefer_deadline_s", 0.4)
@@ -274,14 +276,20 @@ def test_call_c_does_not_race_when_the_primary_is_kept_for_call_b(coverage_race)
 
 
 # ---- ladders and quota (llm/registry.py, llm/quota.py) ----------------------------------------------
-def test_the_shipped_ladders_write_answers_with_open_weight_mistral_models_only():
-    """Bake-off 2026-09-29: call B and call C stay on Ministral; variations run Gemini, then 8B; there
-    is no dead last rung (mistral-small-latest is served 0 requests a minute on the free plan)."""
-    assert registry.ladder("extract") == ["ministral-14b-latest", "ministral-8b-latest"]
+def test_the_shipped_ladders():
+    """Bake-offs 2026-09-29 and 2026-09-30: call B puts 14B first, races Gemini Flash-Lite against it (another
+    provider, so one outage never takes both racers) and ends with 8B; call C stays on Ministral;
+    variations run Gemini, then 8B. No dead last rung (mistral-small-latest is served 0 requests a minute
+    on the free plan) and no gemini-3.5-flash (20 requests a day on the free tier)."""
+    assert registry.ladder("extract") == [
+        "ministral-14b-latest",
+        "gemini-3.5-flash-lite",
+        "ministral-8b-latest",
+    ]
     assert registry.ladder("coverage") == ["ministral-14b-latest", "ministral-8b-latest"]
     assert registry.ladder("variations") == ["gemini-3.1-flash-lite", "ministral-8b-latest"]
-    for stage in ("extract", "coverage"):
-        assert {registry.parse(m)[0] for m in registry.ladder(stage)} == {"mistral"}
+    assert registry.ladder("extract")[0] == "ministral-14b-latest"  # the bake-off winner answers first
+    assert {registry.parse(m)[0] for m in registry.ladder("coverage")} == {"mistral"}
 
 
 def test_model_ids_name_their_provider():
@@ -504,9 +512,11 @@ def test_over_the_cold_capacity_the_answer_is_rules_only_and_no_model_is_called(
     cache.clear()
 
 
-def _answers(*answers):
+def _answers(*answers, models=None):
     """A stand-in router: each answer goes through the caller's accept check, then the call fails the
-    way the real router fails when nothing was accepted."""
+    way the real router fails when nothing was accepted. The n-th answer is the n-th model's: the
+    shipped extract ladder's unless `models` says otherwise."""
+    names = list(models or registry.ladder("extract"))
 
     def complete_json(prompt_name, variables, schema, *, stage=None, info=None, clients=None, accept=None):
         if prompt_name == "variations":
@@ -517,7 +527,10 @@ def _answers(*answers):
                     info.update(model="fake", tokens_in=1, tokens_out=1, cost_usd=0.0, attempts=[])
                 return answer
         raise router.LLMError(
-            [{"model": f"m{i}", "ok": False, "error": "rejected", "ms": 1} for i in answers]
+            [
+                {"model": names[i] if i < len(names) else f"m{i}", "ok": False, "error": "rejected", "ms": 1}
+                for i in range(len(answers))
+            ]
         )
 
     return complete_json
@@ -531,6 +544,19 @@ def test_every_model_choosing_nothing_is_a_no_match_not_a_failure(monkeypatch, k
     events = {e.stage.value: e.detail for e in run_stream(REQUEST["query"], REQUEST["siis_response"])}
     assert events["extract"]["no_match"] is True and events["extract"]["actions"] == []
     assert events["done"]["contexts"] == [] and events["done"]["meta"]["fallback"] == "no_match"
+    cache.clear()
+
+
+def test_empty_votes_without_the_first_model_are_not_trusted(monkeypatch, keys):
+    """Gate replica 2026-09-30: 14B was at its request limit, Flash-Lite and 8B both chose nothing on kit
+    row 7's loosely paired article, and the row came back empty. Without 14B's own empty vote the models
+    only failed: the rules answer stands in."""
+    others = ["gemini-3.5-flash-lite", "ministral-8b-latest"]
+    monkeypatch.setattr(router, "complete_json", _answers({"goals": []}, {"goals": []}, models=others))
+    cache.clear()
+    events = {e.stage.value: e.detail for e in run_stream(REQUEST["query"], REQUEST["siis_response"])}
+    assert not events["extract"].get("no_match") and events["extract"]["source"] == "rules"
+    assert events["done"]["contexts"]
     cache.clear()
 
 
@@ -765,6 +791,8 @@ def test_an_article_is_turned_away_when_call_c_and_the_word_check_agree(monkeypa
         gate["acted"] and gate["verdict"] == "unrelated" and gate["terms"] == ["hot"] and gate["shared"] == []
     )
     assert events["done"]["contexts"] == [] and events["done"]["meta"]["fallback"] == "no_match"
+    meta = events["done"]["meta"]
+    assert meta["reason"] == "article_mismatch" and "does not match the complaint" in meta["message"]
 
 
 def test_the_models_verdict_alone_never_turns_an_article_away(monkeypatch, keys):
@@ -871,15 +899,55 @@ def test_the_word_check_ignores_typos_generic_words_and_model_numbers():
     hot = mismatch.check(["My Galaxy S22 phone is hot"], ARTICLE)
     assert hot == {
         "unrelated": True,
+        "path": "no_shared_word",
         "terms": ["hot"],
         "shared": [],
         "typos": [],
+        "components": [],
     }  # phone, galaxy, s22: nothing
     assert mismatch.check(["my fon is blak and dead"], ARTICLE)["terms"] == [
         "dead"
     ]  # rare words never trigger
     assert mismatch.check(["asdkjh qwe zzz 12345"], ARTICLE)["unrelated"] is False  # no real word: no verdict
     assert mismatch.check([""], ARTICLE)["unrelated"] is False
+
+
+def test_a_fault_naming_a_part_the_article_never_mentions_is_unrelated(monkeypatch):
+    """The word path misses a complaint that shares a stray word with the article ("app"); the component
+    path catches it when the part it names is nowhere in the article, by any lexicon phrase."""
+    from app.pipeline import mismatch
+
+    monkeypatch.setattr(settings, "mismatch_component_path", True)
+    article = [*ARTICLE, "Close any app running in the background."]
+    crash = mismatch.check(["My camera app keeps crashing"], article)
+    assert crash["unrelated"] is True and crash["path"] == "component_absent"
+    assert crash["components"] == ["camera"] and crash["shared"] == ["app"]
+    # one mention of the part (or a synonym: "photos") saves the article
+    assert (
+        mismatch.check(["My camera app keeps crashing"], [*article, "Clear the camera cache."])["path"]
+        is None
+    )
+    assert (
+        mismatch.check(["My camera app keeps crashing"], [*article, "Back up your photos."])["path"] is None
+    )
+    # a question with no symptom names parts in passing: no verdict
+    assert mismatch.check(["I want the camera app to open faster"], article)["path"] is None
+    # a weak part ("app") is never enough
+    assert mismatch.check(["My app keeps crashing"], article)["path"] is None
+    monkeypatch.setattr(settings, "mismatch_component_path", False)
+    assert mismatch.check(["My camera app keeps crashing"], article)["unrelated"] is False
+
+
+def test_mentions_component_is_whole_word_and_takes_plurals():
+    from app.pipeline.slots import mentions_component, named_components
+
+    assert mentions_component("Remove and reinsert the SIM card.", "sim")
+    assert not mentions_component("A similar problem.", "sim")
+    assert mentions_component("Old batteries swell.", "battery")
+    assert named_components("my camera is blurry and the sound is distorted") == {"camera", "sound"}
+    assert named_components("my camera is blurry and there is no sound") == {"camera"}  # denied
+    assert named_components("the camera is fine but the screen is black") == {"camera", "screen"}
+    assert "camera" not in named_components("there is no camera problem, the screen flickers")
 
 
 def test_a_misspelt_complaint_gets_no_verdict():

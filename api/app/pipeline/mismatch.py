@@ -33,6 +33,7 @@ from collections.abc import Iterable
 
 from app.config import settings
 from app.pipeline.deglue import is_known_word, word_rank
+from app.pipeline.slots import INTENT_FAULT, extract_slots, mentions_component, named_components
 from app.pipeline.text import STOPWORDS, UI_VERBS, tokens, word_block
 
 # Words that say nothing about what is wrong: they are in nearly every complaint and every article.
@@ -90,14 +91,43 @@ def distinctive_words(text: str) -> list[str]:
     return list(out)
 
 
-def check(complaints: Iterable[str], article: Iterable[str]) -> dict:
-    """{unrelated, terms, shared, typos}. `unrelated` is True when the complaint has at least one common
-    English word, no complaint word at all (common or not) appears in the article, and no word of it looks
-    misspelt. `terms` are the common words, `shared` the complaint words the article uses, `typos` the words
-    that are not English, not Samsung support vocabulary and not in the article.
+def component_absent(complaints: list[str], article: list[str]) -> list[str]:
+    """The parts a fault complaint names that the article never mentions, or [] when that proves nothing.
 
-    A misspelt complaint gets no verdict: its real words are few, and the words it lost may be exactly the
-    ones the article shares (measured: the misspelt paraphrases are what a bare word check flags)."""
+    Only a fault with a symptom counts ("camera app crashes", "battery drains fast"): a question without a
+    symptom ("I want the volume louder") names parts in passing, and there the lexicon's broad synonyms
+    misfire (measured: "volume" maps to sound, which row 12's article never mentions, though its plan is
+    right). Weak labels ("app") are never named. One mention of any named part, by any of its lexicon
+    phrases, saves the article.
+    """
+    text = " ".join(complaints)
+    slots = extract_slots(text)
+    if not slots.symptom or slots.intent != INTENT_FAULT:
+        return []
+    named = named_components(text)
+    body = " ".join(article)
+    if not named or any(mentions_component(body, label) for label in named):
+        return []
+    return sorted(named)
+
+
+def check(complaints: Iterable[str], article: Iterable[str]) -> dict:
+    """{unrelated, path, terms, shared, typos, components}. `unrelated` is True on either path:
+
+    * `no_shared_word`: the complaint has at least one common English word, no complaint word at all
+      (common or not) appears in the article, and no word of it looks misspelt.
+    * `component_absent` (settings.mismatch_component_path): a fault complaint with a symptom names a part
+      (camera, battery...) and the article never mentions it, by any of its lexicon phrases. This catches
+      the complaint that shares a stray word with the article ("camera app crashes" against the
+      touchscreen article shares "app").
+
+    `terms` are the common words, `shared` the complaint words the article uses, `typos` the words that are
+    not English, not Samsung support vocabulary and not in the article, `components` the absent parts.
+
+    A misspelt complaint gets no verdict on the word path: its real words are few, and the words it lost
+    may be exactly the ones the article shares (measured: the misspelt paraphrases are what a bare word
+    check flags). The caller still needs the model's own `unrelated` verdict on top of either path."""
+    complaints, article = list(complaints), list(article)
     words: dict[str, None] = {}
     alphabetic: dict[str, None] = {}
     for text in complaints:
@@ -107,9 +137,14 @@ def check(complaints: Iterable[str], article: Iterable[str]) -> dict:
     real = sorted(w for w in words if _common(w))
     shared = sorted(w for w in words if _stem(w) in vocabulary)
     typos = sorted(w for w in alphabetic if not is_known_word(w) and _stem(w) not in vocabulary)
+    no_shared = bool(real) and not shared and not typos
+    absent = component_absent(complaints, article) if settings.mismatch_component_path else []
+    path = "no_shared_word" if no_shared else "component_absent" if absent else None
     return {
-        "unrelated": bool(real) and not shared and not typos,
+        "unrelated": path is not None,
+        "path": path,
         "terms": real,
         "shared": shared,
         "typos": typos,
+        "components": absent,
     }

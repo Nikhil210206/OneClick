@@ -1,5 +1,5 @@
 {
-  "_readme": "Deterministic slots for the cache guard. Add synonyms freely; keep values lowercase. Longest matching phrase wins, earliest mention breaks a tie, and a phrase denied by 'no' or 'not' is ignored. Components in _weak_components only win when nothing else matches: an app name is usually where the problem was noticed, not the faulty part ('opening Gmail makes the SCREEN flash'). intent is 'configure' when a configure phrase appears and 'fault' otherwise, so 'how do I fix...' stays a fault.",
+  "_readme": "Deterministic slots for the cache guard. Add synonyms freely; keep values lowercase. Longest matching phrase wins, earliest mention breaks a tie, and a phrase denied by 'no' or 'not' is ignored. Components in _weak_components only win when nothing else matches: an app name is usually where the problem was noticed, not the faulty part ('opening Gmail makes the SCREEN flash'). intent is 'configure' when a configure phrase appears and 'fault' otherwise, so 'how do I fix...' stays a fault. direction ('add' or 'remove') is read only on configure requests and only when one side of the choice is named; the cache guard then keeps 'I want to add a floating circle' from being served 'I want to remove it'.",
   "component": {
     "screen": [
       "screen",
@@ -208,6 +208,41 @@
       "i'd also like",
       "id also like",
       "i would also like"
+    ]
+  },
+  "direction": {
+    "add": [
+      "add",
+      "added",
+      "adding",
+      "enable",
+      "enabled",
+      "turn on",
+      "turn it on",
+      "switch on",
+      "activate",
+      "install",
+      "put back",
+      "bring back",
+      "set up"
+    ],
+    "remove": [
+      "remove",
+      "removed",
+      "removing",
+      "get rid",
+      "turn off",
+      "turn it off",
+      "switch off",
+      "disable",
+      "disabled",
+      "deactivate",
+      "delete",
+      "uninstall",
+      "hide",
+      "gone",
+      "take off",
+      "take it off"
     ]
   }
 }

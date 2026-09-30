@@ -1539,7 +1539,7 @@ def extract_select_llm(
         schema = select_schema([s.id for s in sentences])
         answer = complete_json("extract", variables, schema, stage="extract", info=info, accept=accept)
     except LLMError as exc:
-        if len(empty) >= settings.extract_empty_votes and all(empty):
+        if len(empty) >= settings.extract_empty_votes and all(empty) and _primary_voted(exc.attempts):
             # Every model that answered says the article does not address the complaint: that is the
             # answer (no_match), not a failure to fall back from.
             return [], [], {"source": "llm", "mode": "select", "no_match": True, "attempts": exc.attempts}
@@ -1554,7 +1554,9 @@ def extract_select_llm(
     # or the gate is off: no verdict, and the plan is built as before. Only the customer's own words count:
     # call B's problem statements explain causes ("software malfunctions") the article shares with any
     # complaint, which blinded the check for "phone is hot" against the touchscreen article.
-    gate = _mismatch(coverage_info if fixes is not None else {}, query, sentences)
+    gate = _mismatch(
+        coverage_info if fixes is not None else {}, query, sentences, (carrier or {}).get("article")
+    )
 
     def nothing() -> tuple[list[DraftAction], list[str], dict]:
         detail = {"source": "llm", "mode": "select", "no_match": True, "mismatch": gate}
@@ -1588,16 +1590,51 @@ def extract_select_llm(
     return actions, topics, detail | {k: info.get(k) for k in keys}
 
 
-def _mismatch(coverage_info: dict, query: str, sentences: list[SiisSentence]) -> dict:
-    """{verdict, acted, terms, shared, typos}: whether the article is turned away for this complaint. It is
-    only when call C said `unrelated` AND the article shares no word with the complaint (mismatch.py): the
-    model's verdict alone is wording-sensitive, the word check alone misses synonyms and typos."""
+def _primary_voted(attempts: list[dict]) -> bool:
+    """True when the ladder's first model is among those that chose nothing (or the rule is off).
+
+    Flash-Lite races 14B and chooses nothing on loosely paired articles more often; with 14B busy (its
+    request limit in an unpaced burst), Flash-Lite and 8B made the two empty votes and kit row 7 came back
+    empty (gate replica, 2026-09-30). Without 14B's vote the models only failed, so the rules answer
+    stands in, as it did when 8B was the only other rung.
+    """
+    if not settings.extract_empty_needs_primary:
+        return True
+    from app.llm import registry
+
+    ladder = registry.ladder("extract")
+    primary = ladder[0] if ladder else None
+    return any(a.get("model") == primary and a.get("error") == "rejected" for a in attempts)
+
+
+def _article_texts(sentences: list[SiisSentence], article: str | None) -> list[str]:
+    """What the mismatch check reads: the whole cleaned article when the caller has it (its breadcrumb and
+    title too: kit row 10 names the screen only there), else the segmented sentences and headings."""
+    if article:
+        return [article]
+    return [*(s.text for s in sentences), *dict.fromkeys(s.section for s in sentences)]
+
+
+def _mismatch(
+    coverage_info: dict, query: str, sentences: list[SiisSentence], article: str | None = None
+) -> dict:
+    """{verdict, acted, path, terms, shared, typos, components}: whether the article is turned away for this
+    complaint. It is only when call C said `unrelated` AND mismatch.py agrees (no shared word, or the named
+    part is absent): the model's verdict alone is wording-sensitive, the word check alone misses synonyms
+    and typos."""
     verdict = coverage_info.get("match")
-    gate = {"verdict": verdict, "acted": False, "terms": [], "shared": [], "typos": []}
+    gate = {
+        "verdict": verdict,
+        "acted": False,
+        "path": None,
+        "terms": [],
+        "shared": [],
+        "typos": [],
+        "components": [],
+    }
     if settings.coverage_mismatch != "no_match" or verdict != "unrelated":
         return gate
-    article = [*(s.text for s in sentences), *dict.fromkeys(s.section for s in sentences)]
-    evidence = mismatch.check([query], article)
+    evidence = mismatch.check([query], _article_texts(sentences, article))
     acted = evidence.pop("unrelated")
     return {**gate, **evidence, "acted": acted}
 
@@ -1617,11 +1654,45 @@ def judge_rules(
     if not carrier.get("coverage") or settings.coverage_mismatch == "off":
         return actions, topics, info
     fixes, coverage_info = finish_coverage(carrier["coverage"], carrier["started"])
-    gate = _mismatch(coverage_info if fixes is not None else {}, query, sentences)
+    gate = _mismatch(
+        coverage_info if fixes is not None else {}, query, sentences, (carrier or {}).get("article")
+    )
     info = {**info, "mismatch": gate, **({"coverage": coverage_info} if fixes is not None else {})}
     if gate["acted"]:
         return [], topics, {**info, "no_match": True}
     return actions, topics, info
+
+
+def judge_without_verdict(
+    actions: list[DraftAction],
+    topics: list[str],
+    info: dict,
+    query: str,
+    sentences: list[SiisSentence],
+    article: str | None = None,
+) -> tuple[list[DraftAction], list[str], dict]:
+    """A rules-only answer no model has judged (no key, the cold-capacity limit, call C unheard). The rules
+    extractor takes the article's most relevant sections whatever the article is about, and embedding
+    relevance cannot tell ("phone is hot" against the touchscreen article scores like a real kit row), so
+    without a verdict the component path alone may turn the article away: a fault complaint whose named part
+    the article never mentions (0 fires on 295 matched pairs). The word path is never used alone: it
+    flags misspelt paraphrases."""
+    gate = info.get("mismatch") or {}
+    if gate.get("verdict") or settings.coverage_mismatch == "off" or not settings.mismatch_component_path:
+        return actions, topics, info
+    absent = mismatch.component_absent([query], _article_texts(sentences, article))
+    if not absent:
+        return actions, topics, info
+    gate = {
+        "verdict": None,
+        "acted": True,
+        "path": "component_absent",
+        "terms": [],
+        "shared": [],
+        "typos": [],
+        "components": absent,
+    }
+    return [], topics, {**info, "mismatch": gate, "no_match": True}
 
 
 # ---- entry point ------------------------------------------------------------------------------------
@@ -1631,8 +1702,10 @@ def extract_with_topics(
     *,
     sections: list[dict] | None = None,
     query: str | None = None,
+    article: str | None = None,
 ) -> tuple[list[DraftAction], list[str], dict]:
     """(actions, topics, info); info says which extractor ran: {source, model, tokens_in, tokens_out, ...}.
+    `article`: the whole cleaned article, for the mismatch check.
 
     LLM first when a key is set; rules-only when it fails, returns nothing usable, or no key is set.
     Select mode also returns the intents it found in `info["intents"]` (the caller adopts them).
@@ -1642,7 +1715,7 @@ def extract_with_topics(
     rules_info = {"source": "rules", "model": None, "tokens_in": 0, "tokens_out": 0}
     if available() and sentences:
         text = query or (intents[0].text if intents else "")
-        carrier: dict = {}
+        carrier: dict = {"article": article}
         try:
             if settings.extract_mode == "select":
                 return extract_select_llm(text, sentences, sections, carrier)

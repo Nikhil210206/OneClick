@@ -183,3 +183,32 @@ def test_an_old_snapshot_without_the_intent_column_still_loads(tmp_path, monkeyp
     monkeypatch.setattr(settings, "sqlite_path", str(path))
     assert cache.init() == 1
     assert cache.store.entries()["k1"].slots.intent is None
+
+
+def test_a_plan_from_other_prompts_is_not_served_by_meaning(monkeypatch):
+    """A cache.sqlite kept across a prompt bump: the exact key changes with the version, and the semantic
+    tier must not hand the old plan back at similarity 1.0 either."""
+    entry = _store(BLACK_SCREEN, BLACK_VARIATIONS)
+    cache.put(entry.model_copy(update={"plan": {**PLAN, "prompt_version": settings.prompt_version}}))
+    paraphrase = BLACK_VARIATIONS[0]
+    assert cache.lookup(paraphrase, extract_slots(paraphrase), HASH) is not None
+    monkeypatch.setattr(settings, "prompt_version", "a-newer-prompt")
+    assert cache.lookup(BLACK_SCREEN, extract_slots(BLACK_SCREEN), HASH) is None
+    assert cache.lookup(paraphrase, extract_slots(paraphrase), HASH) is None
+
+
+def test_a_request_for_the_opposite_setting_is_not_served_the_stored_plan():
+    """Near miss nm_12_3: "I want to add a floating circle" shares every slot (screen, configure) with the
+    stored "...I want to remove it", and was served its plan. The add/remove direction now blocks it; a
+    paraphrase that names no direction still hits."""
+    remove = (
+        "my galaxy s25 has a floating circle that hovers on my screen with shortcuts to recent apps, home "
+        "and back; i want to remove it"
+    )
+    _store(remove, ["i want to turn off the floating shortcut circle on my galaxy s25 screen"])
+    add = (
+        "i want to add a floating circle to my galaxy s25 screen with shortcuts to recent apps, home and back"
+    )
+    assert cache.lookup(add, extract_slots(add), HASH) is None
+    same = "my galaxy s25 screen has a floating circle with shortcuts to recent apps, home and back, i want it gone"
+    assert cache.lookup(same, extract_slots(same), HASH) is not None

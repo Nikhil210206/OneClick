@@ -58,6 +58,23 @@ KIT_MISMATCH = (
     "with its words run together). The engine may only use the article, so it answers with the "
     "article's nearest fixes, and the judge marks those plans irrelevant or incomplete."
 )
+# The Appendix C prompt for section 6 names "domain gaps" and "settings hierarchy variations"; neither is a
+# number a run produces, so both are written here from the catalog and the kit.
+DOMAIN_GAPS = (
+    "The kit's 20 complaints are all Display problems; Battery, Camera and Performance are covered only by "
+    "the 15 held-out unseen scenarios (section 2). The catalog is uneven across domains: Camera has few "
+    "Settings screens (most camera fixes happen inside the Camera app), so camera steps more often take "
+    "`bixby://dummy_positive` or no link, and a domain the catalog barely covers gets correct steps with "
+    "fewer one-tap links."
+)
+SETTINGS_HIERARCHY = (
+    'Menu paths differ across One UI versions and devices ("Battery" vs "Battery and device care", '
+    '"Security" vs "Security and privacy"), and articles name them as the writer\'s phone did. Links are '
+    "therefore matched on the screen's own name and description, not on the exact path the article gives, "
+    "with a leaf-name boost so a parent menu does not win. Some settings exist in the catalog only as the "
+    "screen that holds them, so a change with no on/off entry opens that screen's page, and only when the "
+    "page is on the step's own path. Several screens have no entry in any form (see Catalog gaps)."
+)
 MULTI_INTENT_CACHE = (
     "The cache's slot check looks at what broke, not at how many problems a complaint names, so a two-problem "
     "complaint on an article already solved for one of them can be served that one-problem plan from "
@@ -67,7 +84,7 @@ MULTI_INTENT_CACHE = (
 
 def load(name: str, results_dir: Path) -> dict | None:
     path = results_dir / name
-    return json.loads(path.read_text()) if path.exists() else None
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
 def _kit_scores(judged: dict) -> list[tuple]:
@@ -94,7 +111,7 @@ def judge_runs(results_dir: Path, judge: dict | None) -> tuple[list[dict], int]:
     folder = results_dir / "judge_runs"
     if not judge or not folder.is_dir():
         return [], 0
-    runs = [json.loads(p.read_text()) for p in sorted(folder.glob("*.json"))]
+    runs = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(folder.glob("*.json"))]
     runs = [r for r in runs if r.get("prompt_version") == judge.get("prompt_version") and r.get("judged")]
     mine = _kit_scores(judge)
     if runs and not any(_kit_scores(r) == mine for r in runs):
@@ -131,14 +148,14 @@ def engine_models(load: dict | None) -> str | None:
 
 def embed_model() -> str:
     """The embedding model id as configured, read from config.py without importing the engine."""
-    text = (API_DIR / "app" / "config.py").read_text()
+    text = (API_DIR / "app" / "config.py").read_text(encoding="utf-8")
     match = re.search(r'embed_model:\s*str\s*=\s*"([^"]+)"', text)
     return f"{match.group(1)} (ONNX via fastembed)" if match else NM
 
 
 def llm_cooldown_s() -> str:
     """How long a model answering 429/5xx is skipped, read from config.py without importing the engine."""
-    text = (API_DIR / "app" / "config.py").read_text()
+    text = (API_DIR / "app" / "config.py").read_text(encoding="utf-8")
     match = re.search(r"llm_cooldown_s:\s*float\s*=\s*([\d.]+)", text)
     return f"{float(match.group(1)):g} s" if match else "a short"
 
@@ -148,14 +165,40 @@ def model_name(model: str) -> str:
     return "no model (declined, no_match)" if model == "none" else model
 
 
+def _windows_ram_bytes() -> int:
+    """Total physical memory on Windows (GlobalMemoryStatusEx), without a third-party package."""
+    import ctypes
+
+    class _MemoryStatus(ctypes.Structure):
+        _fields_ = [
+            ("dwLength", ctypes.c_ulong),
+            ("dwMemoryLoad", ctypes.c_ulong),
+            ("ullTotalPhys", ctypes.c_ulonglong),
+            ("ullAvailPhys", ctypes.c_ulonglong),
+            ("ullTotalPageFile", ctypes.c_ulonglong),
+            ("ullAvailPageFile", ctypes.c_ulonglong),
+            ("ullTotalVirtual", ctypes.c_ulonglong),
+            ("ullAvailVirtual", ctypes.c_ulonglong),
+            ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+        ]
+
+    status = _MemoryStatus()
+    status.dwLength = ctypes.sizeof(_MemoryStatus)
+    if not ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+        raise OSError("GlobalMemoryStatusEx failed")
+    return int(status.ullTotalPhys)
+
+
 def local_env() -> str:
     ram = ""
     try:
         if sys.platform == "darwin":
             out = subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, check=True)
             ram = f" / {int(out.stdout) / 2**30:.0f} GB RAM"
+        elif sys.platform == "win32":
+            ram = f" / {_windows_ram_bytes() / 2**30:.0f} GB RAM"
         elif Path("/proc/meminfo").exists():
-            kb = int(Path("/proc/meminfo").read_text().split()[1])
+            kb = int(Path("/proc/meminfo").read_text(encoding="utf-8").split()[1])
             ram = f" / {kb / 2**20:.0f} GB RAM"
     except (OSError, ValueError, subprocess.CalledProcessError):
         pass
@@ -596,7 +639,7 @@ def actions_per_plan(results: Path) -> float | None:
     """Mean actions per plan in the submitted results file: one deeplink lookup per action."""
     counts = []
     if results.exists():
-        for line in results.read_text().splitlines():
+        for line in results.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
             contexts = (json.loads(line).get("response") or {}).get("contexts") or []
@@ -662,7 +705,11 @@ def section5(ablation: dict | None, shared: float | None = None, per_plan: float
 
 
 def section6(ablation: dict | None, load: dict | None, gates: dict | None, judge: dict | None) -> list[str]:
-    items = [f"**Catalog gaps.** {CATALOG_GAPS}"]
+    items = [
+        f"**Catalog gaps.** {CATALOG_GAPS}",
+        f"**Domain gaps.** {DOMAIN_GAPS}",
+        f"**Settings hierarchy variations.** {SETTINGS_HIERARCHY}",
+    ]
     link = ours(ablation)
     if ablation:
         g = ablation["gold"]["by_tier"]
@@ -740,8 +787,8 @@ def section6(ablation: dict | None, load: dict | None, gates: dict | None, judge
             f"cold answer stays inside the 8 s budget on the free tier; a second, parallel call (coverage) "
             f"marks the article paragraphs that help, and the ones the model skipped are added from the "
             f"article's own sentences, with a numbered procedure's general-fix steps (up to "
-            f"`extract_complete_max_actions`, 12). Under load that call moves from 14B to 8B, which judges "
-            f"relevance less well. The judge marked a missing article fix on "
+            f"`extract_complete_max_actions`, 12). That call races 14B against 8B and keeps 14B's answer when "
+            f"it is back within 4 s; 8B judges relevance less well. The judge marked a missing article fix on "
             f"{judge.get('plans_missing_a_fix')} of {judge.get('n')} plans. "
             f"Critical actions come last as the spec requires, after contacting support; "
             f"{judge.get('order_problems')} plans were still marked with an ordering problem."
@@ -813,7 +860,8 @@ def main() -> None:
     parser.add_argument("--results", type=Path, default=RESULTS_JSONL, help="plans for actions per query")
     parser.add_argument("--out", type=Path, default=OUT_PATH)
     args = parser.parse_args()
-    args.out.write_text(build(args))
+    # UTF-8 with LF on every OS: Windows defaults to cp1252 and CRLF, which GitHub shows as mojibake.
+    args.out.write_text(build(args), encoding="utf-8", newline="\n")
     print(f"written to {args.out}")
 
 

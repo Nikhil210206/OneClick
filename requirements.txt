@@ -1,0 +1,24 @@
+# OneClick: everything needed to run the API, its tests and the evaluation tools.
+# Python 3.11 or newer (the Docker image uses 3.11). Versions tested together on 2026-09-30.
+#
+#   pip install -r requirements.txt
+#
+# The Docker image installs api/requirements.txt, which lists the same packages.
+
+# API
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+pydantic==2.13.5
+python-dotenv==1.2.3
+httpx==0.28.1
+
+# Retrieval and text processing (embeddings run locally on CPU through ONNX)
+fastembed==0.8.1
+rank-bm25==0.2.2
+wordninja==2.0.0
+# numpy 2.5 (tested) needs Python 3.12+; any 2.x works, so a range keeps Python 3.11 installable
+numpy>=1.26,<3
+
+# Tests and lint
+pytest==9.1.1
+ruff==0.16.8

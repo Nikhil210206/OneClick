@@ -231,6 +231,8 @@ eval/results/judge_runs/
 eval/results/*.jsonl
 # The model bake-off's raw outputs stay local; its SUMMARY.md is committed
 eval/results/bakeoff/raw/
+# Independent kit runs behind the step-accuracy range (api/scripts/make_results.py --out)
+eval/results/runs/
 
 # Console (Next.js)
 node_modules/
@@ -244,4 +246,4 @@ console/AGENTS.md
 console/CLAUDE.md
 # Local AI-assistant files: kept on each machine, never committed
 /.claude/
-/CLAUDE.md
+CLAUDE.md
